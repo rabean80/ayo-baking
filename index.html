@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ayoung's Bakery Studio</title>
+<title>Ayo's Baking</title>
 <style>
   :root {
     --bg: #f8f1e4;
@@ -392,7 +392,7 @@
 
   <!-- HEADER -->
   <header class="topbar">
-    <div class="logo">🥐</div>
+    <div class="logo">🥖</div>
     <div class="brand">
       <h1>Ayoung's Bakery Studio</h1>
       <div class="tag">Schedule · Recipes · Notes</div>
@@ -403,10 +403,10 @@
 
   <!-- TABS -->
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="scheduler"><span class="ico">🥖</span> 스케쥴러</button>
-    <button class="tab-btn" data-tab="recipes"><span class="ico">📖</span> 레시피</button>
-    <button class="tab-btn" data-tab="history"><span class="ico">📅</span> 히스토리</button>
-    <button class="tab-btn" data-tab="tips"><span class="ico">💡</span> 베이킹 팁</button>
+    <button class="tab-btn active" data-tab="scheduler"><span class="ico">🥖</span> Scheduler</button>
+    <button class="tab-btn" data-tab="recipes"><span class="ico">📖</span> Recipe</button>
+    <button class="tab-btn" data-tab="history"><span class="ico">📅</span> History</button>
+    <button class="tab-btn" data-tab="tips"><span class="ico">💡</span> Baking Tips</button>
   </nav>
 
   <!-- SCHEDULER PANEL -->
@@ -414,7 +414,7 @@
     <div class="surface">
       <div class="section-head">
         <div>
-          <div class="section-title">제빵 스케쥴러</div>
+          <div class="section-title">Baking Scheduler</div>
           <div class="section-sub">드래그하여 단계 시간을 조정하고, 완성 목표 시각을 맞춰보세요.</div>
         </div>
         <div style="display:flex;gap:8px;">
@@ -423,7 +423,6 @@
         </div>
       </div>
       <div class="chips">
-        <div class="chip">✨ <strong>Tangzhong / Yudane</strong> 단계 포함</div>
         <div class="chip">🕒 단계별 시간 드래그 조정</div>
         <div class="chip">📝 완성 목표 시각 기준 역산</div>
       </div>
@@ -443,7 +442,7 @@
       <div class="section-head">
         <div>
           <div class="section-title">저장된 레시피</div>
-          <div class="section-sub">자주 만드는 빵과 페이스트리를 기록하고 꺼내어 보세요.</div>
+          <div class="section-sub">자주 만드는 빵을 기록하고 꺼내어 보세요.</div>
         </div>
         <button class="btn btn-primary" id="addRecipeBtn">＋ 레시피 추가</button>
       </div>
@@ -456,7 +455,7 @@
     <div class="surface">
       <div class="section-head">
         <div>
-          <div class="section-title">베이킹 히스토리</div>
+          <div class="section-title">Baking History</div>
           <div class="section-sub">오늘 구운 빵, 변수, 다음번을 위한 한 줄 메모.</div>
         </div>
         <button class="btn btn-primary" id="addHistoryBtn">＋ 기록 추가</button>
@@ -552,9 +551,9 @@
       <label>폴더</label>
       <select id="tFolder"></select>
     </div>
-    <div class="field"><label>팁 제목</label><input type="text" id="tTitle" placeholder="예: 탕종 전자레인지 vs 스토브탑"></div>
+    <div class="field"><label>팁 제목</label><input type="text" id="tTitle" placeholder="예: 유다네 전자레인지 vs 스토브탑"></div>
     <div class="field"><label>내용</label>
-      <textarea id="tBody" placeholder="소량 탕종은 전자레인지 or 열탕 방식이 비율 유지에 더 안정적. 스토브탑은 증발로 수분비 어긋남."></textarea>
+      <textarea id="tBody" placeholder="유다네(끓는 물 사용)이 탕종보다 효율적. 스토브탑은 증발로 수분비 어긋남."></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn btn-danger left" id="tDelete" style="display:none;">삭제</button>
@@ -605,7 +604,7 @@ const DEFAULT_RECIPES = [
     temp: '175°C', time: '28분', updated: Date.now()
   },
   {
-    id: uid(), emoji: '🥐', tag: '페이스트리', name: '버터 스콘 (기본)',
+    id: uid(), emoji: '🥮', tag: '스콘', name: '버터 스콘 (기본)',
     note: '박력분 250g, 베이킹파우더 8g, 설탕 40g, 소금 2g, 차가운 버터 80g, 달걀 1개, 요거트 60g\n버터 콩알만하게 → 액체 한번에 → 반죽 최소화 → 2시간 냉장 휴지',
     temp: '200°C', time: '15-18분', updated: Date.now()
   }
@@ -615,7 +614,7 @@ const DEFAULT_FOLDERS = [
   { id: uid(), icon: '🔥', name: '오븐 관리' },
   { id: uid(), icon: '🥄', name: '재료 믹싱' },
   { id: uid(), icon: '🌾', name: '밀가루 블렌드' },
-  { id: uid(), icon: '💧', name: '유다네 / 탕종' },
+  { id: uid(), icon: '💧', name: '유다네' },
   { id: uid(), icon: '❄️', name: '저온 발효' }
 ];
 
