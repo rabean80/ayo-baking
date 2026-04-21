@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>제빵 스케줄러 — 드래그 타임라인 v2</title>
+<title>Baking Scheduler</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f8f6;color:#1a1a1a;padding:1.5rem}
@@ -90,7 +90,7 @@ h1{font-size:18px;font-weight:500;margin-bottom:1rem;color:#1a1a1a}
 </head>
 <body>
 
-<h1>제빵 스케줄러 — 드래그 타임라인</h1>
+<h1>Baking Scheduler</h1>
 
 <div class="top-bar">
   <span class="date-label">🗓️ 완성 목표 날짜</span>
@@ -168,17 +168,17 @@ h1{font-size:18px;font-weight:500;margin-bottom:1rem;color:#1a1a1a}
 const DEFAULT_BREADS=[
   {id:'hard_m',name:'하드빵 (기계)',color:'#5DCAA5',
    stages:[
-    {n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {n:'1차 먹이',m:180,g:'르방',note:'1:1:1, 23°C 3시간'},
-    {n:'2차 먹이',m:180,g:'르방',note:'23°C 3시간'},
-    {n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
-    {n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
-    {n:'1차발효+폴딩',m:80,g:'반죽',note:'50분 후 1회 펀치'},
-    {n:'성형+실온휴지',m:45,g:'성형',note:'최종 성형, 30분 실온'},
-    {n:'저온 숙성',m:840,g:'냉장',note:'냉장 14시간'},
-    {n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
-    {n:'굽기',m:30,g:'굽기',note:'30분 내외'},
-    {n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
+    {n:'르방 실온화',h:2,m:30,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
+    {n:'1차 먹이',h:3,m:0,g:'르방',note:'1:1:1, 23°C 3시간'},
+    {n:'2차 먹이',h:3,m:0,g:'르방',note:'23°C 3시간'},
+    {n:'오토리즈',h:0,m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
+    {n:'본반죽',h:0,m:20,g:'반죽',note:'르방+소금 투입'},
+    {n:'1차발효+폴딩',h:1,m:20,g:'반죽',note:'50분 후 1회 펀치'},
+    {n:'성형+실온휴지',h:0,m:45,g:'성형',note:'최종 성형, 30분 실온'},
+    {n:'저온 숙성',h:14,m:0,g:'냉장',note:'냉장 14시간'},
+    {n:'오븐 예열',h:0,m:30,g:'굽기',note:'30분 예열'},
+    {n:'굽기',h: 0,m:30,g:'굽기',note:'30분 내외'},
+    {n:'식히기',h:1,m:0,g:'완성',note:'1시간 후 먹기'},
    ],overlap:60,defaultEnd:10*60},
   {id:'hard_h',name:'하드빵 (손반죽)',color:'#7F77DD',
    stages:[
