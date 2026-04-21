@@ -394,7 +394,7 @@
   <header class="topbar">
     <div class="logo">🥖</div>
     <div class="brand">
-      <h1>Ayoung's Bakery Studio</h1>
+      <h1>Ayo's Baking</h1>
       <div class="tag">Schedule · Recipes · Notes</div>
     </div>
     <div class="spacer"></div>
@@ -429,7 +429,7 @@
       <div class="iframe-wrap">
         <div class="iframe-toolbar">
           <span class="dot"></span>
-          <span>baking_scheduler_v2.html</span>
+          <span>Ayo's Baking Plan</span>
         </div>
         <iframe src="baking_scheduler_v2.html" id="schedIframe" title="Baking Scheduler"></iframe>
       </div>
@@ -599,42 +599,42 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 // ============================
 const DEFAULT_RECIPES = [
   {
-    id: uid(), emoji: '🍞', tag: '쇼쿠팡', name: '유다네 쇼쿠팡 (1.5근)',
-    note: '유다네: 강력분 50g + 끓는물 50g (전날 냉장 숙성)\n본반죽: 강력분 250g, 설탕 25g, 소금 5g, 드라이이스트 3g, 우유 170g, 버터 25g, 달걀 30g\n1차 발효 27°C 60분, 벤치 15분, 성형 후 2차 35°C 50분',
+    id: uid(), emoji: '🍞', tag: '식빵', name: '저온숙성 유다네 식빵(2개)',
+    note: '유다네: 강력분 50g + 끓는물 50g (전날 냉장 숙성)\n본반죽: T45 450g, T55 50g, 설탕 45g, 소금 9.5g, 드라이이스트 7.5g, 우유 125g, 물 200g, 버터 45g, 달걀 30g, 요거트 15g, 르방 30g, 사전반죽 50g(옵션), 유다네 50~100g\n1차 발효 저온숙성 12~14시간, 실온화 1시간, 성형 후 2차 발효 35°C 50분',
     temp: '175°C', time: '28분', updated: Date.now()
   },
   {
-    id: uid(), emoji: '🥮', tag: '스콘', name: '버터 스콘 (기본)',
-    note: '박력분 250g, 베이킹파우더 8g, 설탕 40g, 소금 2g, 차가운 버터 80g, 달걀 1개, 요거트 60g\n버터 콩알만하게 → 액체 한번에 → 반죽 최소화 → 2시간 냉장 휴지',
+    id: uid(), emoji: '🥮', tag: '스콘', name: '딸기 요거트 스콘',
+    note: '박력분 200g, 베이킹파우더 8g, 설탕 30g, 소금 1g, 차가운 버터 80g~90g, 요거트 110g, 딸기 다이스, 오렌지필(옵션), 토핑용 치아씨드\n버터 콩알만하게 → 액체 한번에 → 반죽 최소화 → 2시간 냉장 휴지',
     temp: '200°C', time: '15-18분', updated: Date.now()
   }
 ];
 
 const DEFAULT_FOLDERS = [
   { id: uid(), icon: '🔥', name: '오븐 관리' },
-  { id: uid(), icon: '🥄', name: '재료 믹싱' },
+  { id: uid(), icon: '🥄', name: '재료 조합' },
   { id: uid(), icon: '🌾', name: '밀가루 블렌드' },
-  { id: uid(), icon: '💧', name: '유다네' },
-  { id: uid(), icon: '❄️', name: '저온 발효' }
+  { id: uid(), icon: '💧', name: '수분률' },
+  { id: uid(), icon: '❄️', name: '저온 숙성' }
 ];
 
 const DEFAULT_TIPS = (folders) => [
   {
     id: uid(), folderId: folders[3].id,
-    title: '소량 탕종, 전자레인지가 더 안정',
-    body: '소량 탕종은 전자레인지 or 열탕 방식이 비율 유지에 유리. 스토브탑은 수분 증발로 65% 수분비가 틀어짐.',
+    title: '탕종 vs 유다네',
+    body: '소량일 경우 탕종보다는 유다네. 작업 용이성도 좋음',
     updated: Date.now()
   },
   {
     id: uid(), folderId: folders[2].id,
-    title: '통밀 → 탕종 효율 낮음',
-    body: '통밀은 전분량↓ + 섬유질↑ → 탕종 호화 효율 떨어짐. 장시간 저온 발효로 부분 보완 가능하나 산미 리스크 ↔ 풍미 trade-off.',
+    title: '쌀가루 유다네',
+    body: '촉촉하고 쫄깃하나 냉동 후 토스트하면 식감이 떨어지는 경향(떡과 비슷)1~2일 정도는 실온에 두고 먹는 것이 차라리 나음.',
     updated: Date.now()
   },
   {
     id: uid(), folderId: folders[0].id,
-    title: '윗면이 진하게 나올 때',
-    body: '컨벡션 오븐은 설정 온도에서 -10~15°C 낮추기. 윗면 덮개(호일)는 10-12분 경과 후.',
+    title: '하드빵 굽기',
+    body: '반죽의 사이즈, 총 굽는 양에 따라 온도 조절 세밀하게. 빵 사이즈가 작으면 예열도 250도 까지만. 280도까지 올리면 바닥과 겉면만 새까맣게 탐.',
     updated: Date.now()
   }
 ];
