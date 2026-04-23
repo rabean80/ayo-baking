@@ -3,82 +3,129 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>제빵 스케줄러 — 드래그 타임라인</title>
+<title>Baking Scheduler</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f8f6;color:#1a1a1a;padding:1.5rem}
-h1{font-size:18px;font-weight:500;margin-bottom:1.25rem;color:#1a1a1a}
-.controls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:.75rem;align-items:center}
+h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
+
+/* Controls */
+.top-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:.5rem;align-items:center}
+.date-row{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;font-size:12px;color:#666}
+.date-row input[type=date]{padding:4px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a}
+.date-row .date-label{font-weight:500;color:#444}
 .toggles{display:flex;gap:6px;flex-wrap:wrap;flex:1}
-.toggle-btn{padding:5px 13px;border-radius:20px;border:1.5px solid;font-size:12px;font-weight:500;cursor:pointer;background:transparent;transition:all .15s;color:#1a1a1a}
+.toggle-btn{padding:5px 11px;border-radius:20px;border:1.5px solid;font-size:12px;font-weight:500;cursor:pointer;background:transparent;transition:all .15s;color:#1a1a1a;display:inline-flex;align-items:center;gap:4px}
 .toggle-btn.active{color:#fff}
-.reset-btn{padding:5px 13px;border-radius:20px;border:0.5px solid #ccc;font-size:12px;cursor:pointer;background:transparent;color:#666;transition:all .15s}
-.reset-btn:hover{background:#f0eeea}
+.toggle-btn .edit-ico{font-size:10px;opacity:.7;cursor:pointer;padding:1px 3px;border-radius:3px}
+.toggle-btn .edit-ico:hover{opacity:1;background:rgba(255,255,255,.25)}
+.action-btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{padding:5px 12px;border-radius:20px;border:1px solid #ccc;font-size:12px;cursor:pointer;background:#fff;color:#444;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{background:#f0eeea}
+.btn-add{background:#5DCAA5;color:#fff;border-color:#4ab893}
+.btn-add:hover{background:#4ab893}
+.btn-reset{background:transparent;color:#888;border-color:#ddd}
+
 .hint{font-size:11px;color:#999;margin-bottom:10px}
+
+/* Summary cards */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1rem}
 .card{background:#f0eeea;border-radius:8px;padding:8px 12px}
 .card-label{font-size:11px;color:#666;margin-bottom:2px;display:flex;align-items:center;gap:4px}
 .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
 .card-val{font-size:15px;font-weight:500;color:#1a1a1a}
 .card-sub{font-size:10px;color:#888;margin-top:1px}
-.tl-wrap{overflow-x:auto}
 
-/* 헤더: sticky + 날짜선 위에 올라오도록 */
-.tl-header{
-  display:flex;
-  margin-bottom:2px;
-  position:sticky;
-  top:0;
-  z-index:10;
-  background:#f9f8f6;
-  padding-bottom:2px;
-}
+/* Timeline */
+.tl-wrap{overflow-x:auto}
+.tl-header{display:flex;margin-bottom:2px;position:sticky;top:0;z-index:10;background:#f9f8f6;padding-bottom:2px}
 .tl-name-col{width:150px;min-width:150px;font-size:11px;color:#aaa;padding-bottom:4px}
 .tl-hours{flex:1;display:flex;min-width:1400px;position:relative}
-
-/* 시간 눈금: 배경 채워서 날짜 라벨이 바에 묻히지 않도록 */
-.tl-tick{
-  flex:1;
-  font-size:11px;
-  color:#aaa;
-  text-align:center;
-  border-left:0.5px solid #e8e6e0;
-  padding-bottom:4px;
-  position:relative;
-  z-index:5;
-  background:#f9f8f6;
-}
-
-/* 날짜 구분선 라벨 */
-.tl-tick.date-start{color:#8a7060;font-weight:600;font-size:10.5px;}
+.tl-tick{flex:1;font-size:11px;color:#aaa;text-align:center;border-left:0.5px solid #e8e6e0;padding-bottom:4px;position:relative;z-index:5;background:#f9f8f6}
+.tl-tick.date-start{color:#8a7060;font-weight:600;font-size:10.5px}
 
 .bread-row{margin-bottom:16px}
 .row-inner{display:flex;align-items:center;min-width:1550px}
-.name-col{width:150px;min-width:150px;font-size:11px;font-weight:500}
+.name-col{width:150px;min-width:150px;font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px}
 .bar-area{flex:1;position:relative;height:36px}
 .grid-line{position:absolute;top:0;height:100%;width:0.5px;background:#e8e6e0;pointer-events:none}
-.grid-line.date-line{background:#c9b8a0;width:1px;}
+.grid-line.date-line{background:#c9b8a0;width:1px}
 
 .seg{position:absolute;top:2px;height:32px;border-radius:4px;display:flex;align-items:center;overflow:hidden;cursor:grab;user-select:none;transition:opacity .1s}
 .seg:active{cursor:grabbing}
 .seg.dragging{opacity:.85;z-index:10}
 .seg span{font-size:10.5px;font-weight:500;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+
+/* Tooltip */
 .tooltip-box{position:absolute;background:#fff;border:0.5px solid #ccc;border-radius:8px;padding:7px 11px;font-size:11px;color:#1a1a1a;pointer-events:none;z-index:20;display:none;white-space:nowrap;bottom:38px;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,.07)}
+
+/* Legend */
 .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .leg-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#777}
 .leg-sw{width:14px;height:9px;border-radius:2px}
 .no-sel{text-align:center;padding:2rem;color:#bbb;font-size:13px}
+
+/* Modal */
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:100}
+.modal-back.show{display:flex}
+.modal-box{background:#fff;border-radius:12px;width:100%;max-width:480px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.modal-box h3{font-size:15px;font-weight:600;margin-bottom:14px;color:#1a1a1a}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;color:#888;margin-bottom:3px;font-weight:500}
+.field input,.field select,.field textarea{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fafafa}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#5DCAA5;background:#fff}
+.field textarea{min-height:70px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #eee;flex-wrap:wrap}
+.modal-actions .left{margin-right:auto}
+.m-btn{padding:7px 14px;border-radius:20px;border:none;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.m-btn-primary{background:#5DCAA5;color:#fff}
+.m-btn-primary:hover{background:#4ab893}
+.m-btn-ghost{background:transparent;border:1px solid #ddd;color:#555}
+.m-btn-ghost:hover{background:#f5f5f5}
+.m-btn-danger{background:#fff;color:#d94040;border:1px solid #f0c0c0}
+.m-btn-danger:hover{background:#fff0f0}
+
+/* Stage list in bread modal */
+.stage-list{border:1px solid #eee;border-radius:8px;overflow:hidden;margin-top:6px}
+.stage-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:12px;background:#fafafa}
+.stage-item:last-child{border-bottom:none}
+.stage-item .s-name{flex:1;color:#333;font-weight:500}
+.stage-item .s-dur{color:#888;min-width:50px;text-align:right}
+.stage-item .s-group{font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px}
+.stage-item .s-acts{display:flex;gap:3px;margin-left:4px}
+.s-btn{background:transparent;border:none;cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;color:#aaa}
+.s-btn:hover{background:#eee;color:#555}
+.s-btn.del:hover{color:#d94040;background:#fff0f0}
+.add-stage-btn{width:100%;padding:7px;background:transparent;border:none;border-top:1px dashed #ddd;font-size:12px;color:#5DCAA5;cursor:pointer;font-family:inherit}
+.add-stage-btn:hover{background:#f0faf6}
+
+/* Color picker for bread */
+.color-options{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.color-opt{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.color-opt.selected{border-color:#333;transform:scale(1.15)}
 </style>
 </head>
 <body>
 
-<h1>제빵 스케줄러 — 드래그 타임라인</h1>
+<h1>Baking Scheduler</h1>
 
-<div class="controls">
+<div class="top-row">
   <div class="toggles" id="toggles"></div>
-  <button class="reset-btn" id="resetBtn">초기화</button>
+  <div class="action-btns">
+    <button class="btn btn-add" id="addBreadBtn">＋ 새 프로젝트 (복사)</button>
+    <button class="btn btn-reset" id="resetBtn">초기화</button>
+  </div>
 </div>
-<p class="hint">바를 좌우로 드래그하면 해당 빵의 전체 스케줄이 이동합니다 (5분 단위)</p>
+
+<div class="date-row">
+  <span class="date-label">완성 목표 날짜</span>
+  <input type="date" id="targetDate">
+  <span id="targetDateLabel" style="color:#888;font-size:11px"></span>
+</div>
+
+<p class="hint">바를 좌우로 드래그하면 해당 빵의 전체 스케줄이 이동합니다 (5분 단위). 빵 이름 옆 ✏️ 버튼으로 단계를 편집·삭제하거나 이 빵을 복사할 수 있어요.</p>
+
 <div class="cards" id="cards"></div>
 <div class="tl-wrap">
   <div class="tl-header">
@@ -89,85 +136,77 @@ h1{font-size:18px;font-weight:500;margin-bottom:1.25rem;color:#1a1a1a}
 </div>
 <div class="legend" id="legend"></div>
 
-<script>
-const BREADS=[
-  {id:'hard_m',name:'하드빵 (기계)',color:'#5DCAA5',
-   stages:[
-    {n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {n:'1차 먹이',m:180,g:'르방',note:'1:1:1, 23°C 3시간'},
-    {n:'2차 먹이',m:180,g:'르방',note:'23°C 3시간'},
-    {n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
-    {n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
-    {n:'1차발효+폴딩',m:80,g:'반죽',note:'50분 후 1회 펀치'},
-    {n:'성형+실온휴지',m:45,g:'성형',note:'최종 성형, 30분 실온'},
-    {n:'저온 숙성',m:840,g:'냉장',note:'냉장 14시간'},
-    {n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
-    {n:'굽기',m:30,g:'굽기',note:'30분 내외'},
-    {n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
-   ],overlap:60,defaultEnd:10*60},
-  {id:'hard_h',name:'하드빵 (손반죽)',color:'#7F77DD',
-   stages:[
-    {n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
-    {n:'2차 먹이',m:240,g:'르방',note:'4시간'},
-    {n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
-    {n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
-    {n:'1차발효+폴딩',m:160,g:'반죽',note:'40분 간격 4회 접기'},
-    {n:'성형+실온휴지',m:45,g:'성형',note:'최종 성형, 30분 실온'},
-    {n:'저온 숙성',m:840,g:'냉장',note:'냉장 14시간'},
-    {n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
-    {n:'굽기',m:30,g:'굽기',note:'쿠프 후 굽기'},
-    {n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
-   ],overlap:60,defaultEnd:10*60},
-  {id:'ciab_m',name:'치아바타 (기계)',color:'#F0997B',
-   stages:[
-    {n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
-    {n:'2차 먹이',m:240,g:'르방',note:'4시간'},
-    {n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
-    {n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
-    {n:'1차발효+폴딩',m:60,g:'반죽',note:'50분 후 1회 펀치'},
-    {n:'실온 휴지',m:30,g:'성형',note:'30분 실온'},
-    {n:'저온 숙성',m:600,g:'냉장',note:'냉장 10시간'},
-    {n:'실온화',m:60,g:'성형',note:'실온화+발효실 준비'},
-    {n:'성형+발효',m:90,g:'성형',note:'성형 및 발효 90분'},
-    {n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
-    {n:'굽기',m:15,g:'굽기',note:'15분'},
-    {n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
-   ],overlap:60,defaultEnd:10*60},
-  {id:'ciab_h',name:'치아바타 (손반죽)',color:'#D4537E',
-   stages:[
-    {n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
-    {n:'2차 먹이',m:240,g:'르방',note:'4시간'},
-    {n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
-    {n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
-    {n:'1차발효+폴딩',m:160,g:'반죽',note:'40분 간격 4회 접기'},
-    {n:'실온 휴지',m:30,g:'성형',note:'30분 실온'},
-    {n:'저온 숙성',m:600,g:'냉장',note:'냉장 10시간'},
-    {n:'실온화',m:60,g:'성형',note:'실온화 1시간'},
-    {n:'성형+발효',m:90,g:'성형',note:'성형 및 발효 90분'},
-    {n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
-    {n:'굽기',m:15,g:'굽기',note:'15분'},
-    {n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
-   ],overlap:60,defaultEnd:10*60},
-  {id:'pullman',name:'식빵',color:'#EF9F27',
-   stages:[
-    {n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
-    {n:'2차 먹이',m:240,g:'르방',note:'4시간'},
-    {n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
-    {n:'1차발효+폴딩',m:60,g:'반죽',note:'50분 후 1회 펀치'},
-    {n:'실온 휴지',m:30,g:'성형',note:'30분 실온'},
-    {n:'저온 숙성',m:600,g:'냉장',note:'냉장 10시간'},
-    {n:'실온화',m:60,g:'성형',note:'실온화+발효실 준비'},
-    {n:'성형+2차발효',m:90,g:'성형',note:'성형 및 2차 발효'},
-    {n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
-    {n:'굽기',m:30,g:'굽기',note:'30분 내외'},
-    {n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
-   ],overlap:0,defaultEnd:10*60},
-];
+<!-- ===== BREAD MODAL ===== -->
+<div class="modal-back" id="breadModal">
+  <div class="modal-box">
+    <h3 id="breadModalTitle">빵 편집</h3>
+    <div class="field">
+      <label>이름</label>
+      <input type="text" id="bName" placeholder="예: 하드빵 (기계)">
+    </div>
+    <div class="field">
+      <label>완성 목표 시각 (시:분)</label>
+      <input type="time" id="bEndTime" value="10:00">
+    </div>
+    <div class="field">
+      <label>컬러</label>
+      <div class="color-options" id="colorOptions"></div>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label>공정 단계 <span style="color:#aaa;font-weight:400">(드래그 순서 변경 예정)</span></label>
+      <div class="stage-list" id="stageList"></div>
+      <button class="add-stage-btn" id="addStageInBreadBtn">＋ 단계 추가</button>
+    </div>
+    <div class="modal-actions">
+      <button class="m-btn m-btn-danger left" id="bDelete">삭제</button>
+      <button class="m-btn m-btn-ghost" data-close="breadModal">취소</button>
+      <button class="m-btn m-btn-primary" id="bSave">저장</button>
+    </div>
+  </div>
+</div>
 
+<!-- ===== STAGE MODAL ===== -->
+<div class="modal-back" id="stageModal">
+  <div class="modal-box">
+    <h3 id="stageModalTitle">단계 추가</h3>
+    <div class="field">
+      <label>단계 이름</label>
+      <input type="text" id="sName" placeholder="예: 1차 발효">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>소요 시간 (분)</label>
+        <input type="number" id="sDur" placeholder="60" min="1">
+      </div>
+      <div class="field">
+        <label>그룹</label>
+        <select id="sGroup">
+          <option value="르방">르방</option>
+          <option value="반죽">반죽</option>
+          <option value="성형">성형</option>
+          <option value="냉장">냉장</option>
+          <option value="굽기">굽기</option>
+          <option value="완성">완성</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>메모 (선택)</label>
+      <textarea id="sNote" placeholder="예: 23°C 3시간, 1:1:1 비율"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="m-btn m-btn-danger left" id="sDelete" style="display:none">삭제</button>
+      <button class="m-btn m-btn-ghost" data-close="stageModal">취소</button>
+      <button class="m-btn m-btn-primary" id="sSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========================
+// Data
+// ========================
+const COLORS=['#5DCAA5','#7F77DD','#F0997B','#D4537E','#EF9F27','#5B9BD5','#E06C75','#56B6C2'];
 const GC={
   '르방':{bg:'#E6F1FB',fg:'#185FA5'},
   '반죽':{bg:'#EAF3DE',fg:'#3B6D11'},
@@ -177,86 +216,402 @@ const GC={
   '완성':{bg:'#E1F5EE',fg:'#0F6E56'},
 };
 
-function computeTimings(bread,endMin){
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+const DEFAULT_BREADS=[
+  {id:uid(),name:'하드빵 (기계)',color:'#5DCAA5',defaultEnd:10*60,overlap:60,stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:180,g:'르방',note:'1:1:1, 23°C 3시간'},
+    {id:uid(),n:'2차 먹이',m:180,g:'르방',note:'23°C 3시간'},
+    {id:uid(),n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
+    {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
+    {id:uid(),n:'1차발효+폴딩',m:80,g:'반죽',note:'50분 후 1회 펀치'},
+    {id:uid(),n:'성형+실온휴지',m:45,g:'성형',note:'최종 성형, 30분 실온'},
+    {id:uid(),n:'저온 숙성',m:840,g:'냉장',note:'냉장 14시간'},
+    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
+    {id:uid(),n:'굽기',m:30,g:'굽기',note:'30분 내외'},
+    {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
+  ]},
+  {id:uid(),name:'하드빵 (손반죽)',color:'#7F77DD',defaultEnd:10*60,overlap:60,stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
+    {id:uid(),n:'2차 먹이',m:240,g:'르방',note:'4시간'},
+    {id:uid(),n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
+    {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
+    {id:uid(),n:'1차발효+폴딩',m:160,g:'반죽',note:'40분 간격 4회 접기'},
+    {id:uid(),n:'성형+실온휴지',m:45,g:'성형',note:'최종 성형, 30분 실온'},
+    {id:uid(),n:'저온 숙성',m:840,g:'냉장',note:'냉장 14시간'},
+    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
+    {id:uid(),n:'굽기',m:30,g:'굽기',note:'쿠프 후 굽기'},
+    {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
+  ]},
+  {id:uid(),name:'치아바타 (기계)',color:'#F0997B',defaultEnd:10*60,overlap:60,stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
+    {id:uid(),n:'2차 먹이',m:240,g:'르방',note:'4시간'},
+    {id:uid(),n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
+    {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
+    {id:uid(),n:'1차발효+폴딩',m:60,g:'반죽',note:'50분 후 1회 펀치'},
+    {id:uid(),n:'실온 휴지',m:30,g:'성형',note:'30분 실온'},
+    {id:uid(),n:'저온 숙성',m:600,g:'냉장',note:'냉장 10시간'},
+    {id:uid(),n:'실온화',m:60,g:'성형',note:'실온화+발효실 준비'},
+    {id:uid(),n:'성형+발효',m:90,g:'성형',note:'성형 및 발효 90분'},
+    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
+    {id:uid(),n:'굽기',m:15,g:'굽기',note:'15분'},
+    {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
+  ]},
+  {id:uid(),name:'치아바타 (손반죽)',color:'#D4537E',defaultEnd:10*60,overlap:60,stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
+    {id:uid(),n:'2차 먹이',m:240,g:'르방',note:'4시간'},
+    {id:uid(),n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
+    {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
+    {id:uid(),n:'1차발효+폴딩',m:160,g:'반죽',note:'40분 간격 4회 접기'},
+    {id:uid(),n:'실온 휴지',m:30,g:'성형',note:'30분 실온'},
+    {id:uid(),n:'저온 숙성',m:600,g:'냉장',note:'냉장 10시간'},
+    {id:uid(),n:'실온화',m:60,g:'성형',note:'실온화 1시간'},
+    {id:uid(),n:'성형+발효',m:90,g:'성형',note:'성형 및 발효 90분'},
+    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
+    {id:uid(),n:'굽기',m:15,g:'굽기',note:'15분'},
+    {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
+  ]},
+  {id:uid(),name:'식빵',color:'#EF9F27',defaultEnd:10*60,overlap:0,stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
+    {id:uid(),n:'2차 먹이',m:240,g:'르방',note:'4시간'},
+    {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
+    {id:uid(),n:'1차발효+폴딩',m:60,g:'반죽',note:'50분 후 1회 펀치'},
+    {id:uid(),n:'실온 휴지',m:30,g:'성형',note:'30분 실온'},
+    {id:uid(),n:'저온 숙성',m:600,g:'냉장',note:'냉장 10시간'},
+    {id:uid(),n:'실온화',m:60,g:'성형',note:'실온화+발효실 준비'},
+    {id:uid(),n:'성형+2차발효',m:90,g:'성형',note:'성형 및 2차 발효'},
+    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
+    {id:uid(),n:'굽기',m:30,g:'굽기',note:'30분 내외'},
+    {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
+  ]},
+];
+
+// ========================
+// State (localStorage)
+// ========================
+const LS={
+  get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+
+let breads=LS.get('sched.breads',null);
+if(!breads){breads=DEFAULT_BREADS;LS.set('sched.breads',breads);}
+
+let selected=new Set(LS.get('sched.selected',[breads[0]?.id]));
+let offsets={};
+breads.forEach(b=>{offsets[b.id]=LS.get('sched.offset.'+b.id,0);});
+
+// ========================
+// Date target
+// ========================
+const today=new Date();
+const todayStr=today.toISOString().slice(0,10);
+const targetDateEl=document.getElementById('targetDate');
+targetDateEl.value=LS.get('sched.targetDate',todayStr);
+
+function getTargetDateLabel(){
+  const d=new Date(targetDateEl.value+'T00:00:00');
+  const dow=['일','월','화','수','목','금','토'][d.getDay()];
+  return `· ${d.getMonth()+1}/${d.getDate()}(${dow}) 오전 10시 완성 기준`;
+}
+document.getElementById('targetDateLabel').textContent=getTargetDateLabel();
+targetDateEl.addEventListener('change',()=>{
+  LS.set('sched.targetDate',targetDateEl.value);
+  document.getElementById('targetDateLabel').textContent=getTargetDateLabel();
+  render();
+});
+
+// ========================
+// Helpers
+// ========================
+function fmtTime(m){
+  const base=new Date(targetDateEl.value+'T00:00:00');
+  const d=new Date(base.getTime()+m*60000);
+  const h=d.getHours(),mn=d.getMinutes();
+  return (h<12?'오전':'오후')+' '+(h%12||12)+':'+String(mn).padStart(2,'0');
+}
+function fmtDur(m){
+  if(m<60)return m+'분';
+  const h=Math.floor(m/60),mn=m%60;
+  return mn?h+'시간 '+mn+'분':h+'시간';
+}
+function computeTimings(bread){
+  const endMin=bread.defaultEnd+(offsets[bread.id]||0);
   const stages=bread.stages,n=stages.length,times=[];
   let cur=endMin;
-  for(let i=n-1;i>=0;i--){times[i]={...stages[i],startMin:cur-stages[i].m,endMin:cur};cur-=stages[i].m;}
+  for(let i=n-1;i>=0;i--){
+    times[i]={...stages[i],startMin:cur-stages[i].m,endMin:cur};
+    cur-=stages[i].m;
+  }
+  // overlap: 오토리즈와 2차먹이 병행
   if(bread.overlap>0){
     const ot=stages.findIndex(s=>s.n==='오토리즈');
     const lr2=stages.map((s,i)=>({s,i})).filter(x=>x.s.n.includes('2차 먹이')&&x.s.g==='르방').pop();
-    if(ot>=0&&lr2){const sh=bread.overlap;for(let i=0;i<=lr2.i;i++){times[i].startMin-=sh;times[i].endMin-=sh;}}
+    if(ot>=0&&lr2){
+      const sh=bread.overlap;
+      for(let i=0;i<=lr2.i;i++){times[i].startMin-=sh;times[i].endMin-=sh;}
+    }
   }
   return times;
 }
 
-function fmtTime(m){
-  const d=minToDate(m);
-  const h=d.getHours(),mn=d.getMinutes();
-  return (h<12?'오전':'오후')+' '+(h%12||12)+':'+String(mn).padStart(2,'0');
+// ========================
+// Modals
+// ========================
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('[data-close]').forEach(b=>{
+  b.addEventListener('click',()=>closeModal(b.dataset.close));
+});
+document.querySelectorAll('.modal-back').forEach(mb=>{
+  mb.addEventListener('click',e=>{if(e.target===mb)mb.classList.remove('show');});
+});
+
+// ========================
+// Bread Modal
+// ========================
+let editingBreadId=null;
+let editingStages=[];
+let selectedColor=COLORS[0];
+
+function openBreadModal(breadId){
+  editingBreadId=breadId;
+  const bread=breads.find(b=>b.id===breadId);
+  document.getElementById('breadModalTitle').textContent=bread?'빵 편집':'새 빵 추가';
+  document.getElementById('bName').value=bread?bread.name:'';
+  const endH=bread?(Math.floor(bread.defaultEnd/60)):10;
+  const endM=bread?(bread.defaultEnd%60):0;
+  document.getElementById('bEndTime').value=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
+  selectedColor=bread?bread.color:COLORS[0];
+  editingStages=bread?bread.stages.map(s=>({...s})):[];
+
+  // color picker
+  const co=document.getElementById('colorOptions');
+  co.innerHTML='';
+  COLORS.forEach(c=>{
+    const el=document.createElement('div');el.className='color-opt'+(c===selectedColor?' selected':'');
+    el.style.background=c;
+    el.addEventListener('click',()=>{selectedColor=c;document.querySelectorAll('.color-opt').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');});
+    co.appendChild(el);
+  });
+
+  // delete button
+  document.getElementById('bDelete').style.display=bread?'':'none';
+
+  renderStageList();
+  openModal('breadModal');
 }
 
-function fmtDur(m){
-  if(m<60) return m+'분';
-  const h=Math.floor(m/60),mn=m%60;
-  return mn ? h+'시간 '+mn+'분' : h+'시간';
+function renderStageList(){
+  const list=document.getElementById('stageList');
+  list.innerHTML='';
+  editingStages.forEach((s,i)=>{
+    const gc=GC[s.g]||{bg:'#eee',fg:'#555'};
+    const el=document.createElement('div');el.className='stage-item';
+    el.innerHTML=`
+      <span class="s-name">${s.n}</span>
+      <span class="s-group" style="background:${gc.bg};color:${gc.fg}">${s.g}</span>
+      <span class="s-dur">${fmtDur(s.m)}</span>
+      <div class="s-acts">
+        <button class="s-btn edit" title="편집">✏️</button>
+        <button class="s-btn del" title="삭제">🗑</button>
+      </div>`;
+    el.querySelector('.edit').addEventListener('click',()=>openStageModal(i));
+    el.querySelector('.del').addEventListener('click',()=>{
+      if(!confirm(`'${s.n}' 단계를 삭제할까요?`))return;
+      editingStages.splice(i,1);renderStageList();
+    });
+    list.appendChild(el);
+  });
 }
 
-// 절대 분 → Date (기준: 오늘 자정)
-const BASE=new Date();BASE.setHours(0,0,0,0);
-function minToDate(m){return new Date(BASE.getTime()+m*60000);}
+document.getElementById('addStageInBreadBtn').addEventListener('click',()=>openStageModal(null));
 
-const selected=new Set(['hard_m']);
-const offsets={};
-BREADS.forEach(b=>{offsets[b.id]=0;});
+document.getElementById('bSave').addEventListener('click',()=>{
+  const name=document.getElementById('bName').value.trim();
+  if(!name){alert('빵 이름을 입력하세요');return;}
+  const [eh,em]=document.getElementById('bEndTime').value.split(':').map(Number);
+  const endMin=eh*60+em;
+  if(editingBreadId){
+    breads=breads.map(b=>b.id===editingBreadId?{...b,name,color:selectedColor,defaultEnd:endMin,stages:editingStages}:b);
+  } else {
+    const nb={id:uid(),name,color:selectedColor,defaultEnd:endMin,overlap:0,stages:editingStages};
+    breads.push(nb);
+    offsets[nb.id]=0;
+  }
+  LS.set('sched.breads',breads);
+  closeModal('breadModal');
+  buildToggles();
+  render();
+});
+
+document.getElementById('bDelete').addEventListener('click',()=>{
+  if(!editingBreadId)return;
+  if(!confirm('이 빵을 삭제할까요?'))return;
+  breads=breads.filter(b=>b.id!==editingBreadId);
+  selected.delete(editingBreadId);
+  delete offsets[editingBreadId];
+  LS.set('sched.breads',breads);
+  closeModal('breadModal');
+  buildToggles();
+  render();
+});
+
+// ========================
+// Stage Modal
+// ========================
+let editingStageIdx=null;
+
+function openStageModal(idx){
+  editingStageIdx=idx;
+  const s=idx!==null?editingStages[idx]:null;
+  document.getElementById('stageModalTitle').textContent=s?'단계 편집':'단계 추가';
+  document.getElementById('sName').value=s?s.n:'';
+  document.getElementById('sDur').value=s?s.m:'';
+  document.getElementById('sGroup').value=s?s.g:'르방';
+  document.getElementById('sNote').value=s?s.note:'';
+  document.getElementById('sDelete').style.display=s?'':'none';
+  openModal('stageModal');
+}
+
+document.getElementById('sSave').addEventListener('click',()=>{
+  const n=document.getElementById('sName').value.trim();
+  const m=parseInt(document.getElementById('sDur').value,10);
+  if(!n){alert('단계 이름을 입력하세요');return;}
+  if(!m||m<1){alert('소요 시간을 입력하세요');return;}
+  const stage={id:editingStageIdx!==null?editingStages[editingStageIdx].id:uid(),n,m,g:document.getElementById('sGroup').value,note:document.getElementById('sNote').value};
+  if(editingStageIdx!==null){editingStages[editingStageIdx]=stage;}
+  else{editingStages.push(stage);}
+  closeModal('stageModal');
+  renderStageList();
+});
+
+document.getElementById('sDelete').addEventListener('click',()=>{
+  if(editingStageIdx===null)return;
+  if(!confirm('이 단계를 삭제할까요?'))return;
+  editingStages.splice(editingStageIdx,1);
+  closeModal('stageModal');
+  renderStageList();
+});
+
+// ========================
+// Add Bread (copy)
+// ========================
+document.getElementById('addBreadBtn').addEventListener('click',()=>{
+  const active=breads.filter(b=>selected.has(b.id));
+  const base=active.length>0?active[0]:breads[0];
+  if(!base){openBreadModal(null);return;}
+  // copy first selected bread
+  const nb={
+    ...base,
+    id:uid(),
+    name:base.name+' (복사)',
+    stages:base.stages.map(s=>({...s,id:uid()}))
+  };
+  breads.push(nb);
+  offsets[nb.id]=0;
+  selected.add(nb.id);
+  LS.set('sched.breads',breads);
+  LS.set('sched.selected',[...selected]);
+  buildToggles();
+  render();
+  // open edit modal right away
+  openBreadModal(nb.id);
+});
+
+// ========================
+// Timeline render
+// ========================
+function buildToggles(){
+  const cont=document.getElementById('toggles');
+  cont.innerHTML='';
+  breads.forEach(b=>{
+    const btn=document.createElement('button');
+    btn.className='toggle-btn'+(selected.has(b.id)?' active':'');
+    btn.style.borderColor=b.color;
+    if(selected.has(b.id)){btn.style.background=b.color;btn.style.color='#fff';}
+
+    const nameSpan=document.createElement('span');nameSpan.textContent=b.name;
+    const editIco=document.createElement('span');editIco.className='edit-ico';editIco.textContent='✏️';editIco.title='편집';
+
+    btn.appendChild(nameSpan);
+    btn.appendChild(editIco);
+
+    // toggle selection on name click
+    nameSpan.addEventListener('click',()=>{
+      if(selected.has(b.id)){selected.delete(b.id);btn.classList.remove('active');btn.style.background='transparent';btn.style.color='#1a1a1a';}
+      else{selected.add(b.id);btn.classList.add('active');btn.style.background=b.color;btn.style.color='#fff';}
+      LS.set('sched.selected',[...selected]);
+      render();
+    });
+
+    // edit on pencil click
+    editIco.addEventListener('click',e=>{
+      e.stopPropagation();
+      openBreadModal(b.id);
+    });
+
+    cont.appendChild(btn);
+  });
+}
 
 function render(){
-  const active=BREADS.filter(b=>selected.has(b.id));
-  const allTimes=active.map(b=>computeTimings(b,b.defaultEnd+offsets[b.id]));
+  const active=breads.filter(b=>selected.has(b.id));
+  const allTimes=active.map(b=>computeTimings(b));
+
   let gMin=Infinity,gMax=-Infinity;
   allTimes.forEach(times=>times.forEach(t=>{if(t.startMin<gMin)gMin=t.startMin;if(t.endMin>gMax)gMax=t.endMin;}));
   if(!active.length){gMin=0;gMax=24*60;}
   const span=gMax-gMin;
   const startH=Math.floor(gMin/60),endH=Math.ceil(gMax/60),numTicks=endH-startH+1;
 
-  // 시간 눈금
+  // hour ticks
   const ticks=document.getElementById('hourTicks');
   ticks.innerHTML='';
   for(let h=startH;h<=endH;h++){
-    const el=document.createElement('div');
-    el.className='tl-tick';
+    const el=document.createElement('div');el.className='tl-tick';
     const absH=((h%24)+24)%24;
-    // 자정(0시)이면 날짜 변경 표시
-    if(absH===0 && h!==startH){
+    if(absH===0&&h!==startH){
       el.classList.add('date-start');
-      const d=new Date(BASE.getTime()+h*3600000);
+      const base=new Date(targetDateEl.value+'T00:00:00');
+      const d=new Date(base.getTime()+h*3600000);
       el.textContent=(d.getMonth()+1)+'/'+(d.getDate())+'('+['일','월','화','수','목','금','토'][d.getDay()]+') 0시';
-    } else {
-      el.textContent=absH+'시';
-    }
+    } else {el.textContent=absH+'시';}
     ticks.appendChild(el);
   }
 
-  // 카드
+  // summary cards
   document.getElementById('cards').innerHTML=active.map((b,bi)=>{
     const times=allTimes[bi];
     const st=times[0].startMin,en=times[times.length-1].endMin;
-    const dh=Math.floor((en-st)/60),dm=Math.round((en-st)%60);
-    return `<div class="card"><div class="card-label"><span class="dot" style="background:${b.color}"></span>${b.name}</div><div class="card-val">${fmtTime(st)}</div><div class="card-sub">→ ${fmtTime(en)} (${dh}시간${dm?dm+'분':''})</div></div>`;
+    return `<div class="card"><div class="card-label"><span class="dot" style="background:${b.color}"></span>${b.name}</div><div class="card-val">${fmtTime(st)}</div><div class="card-sub">→ ${fmtTime(en)} (${fmtDur(en-st)})</div></div>`;
   }).join('');
 
-  const body=document.getElementById('tlBody');
-  body.innerHTML='';
+  const body=document.getElementById('tlBody');body.innerHTML='';
   if(!active.length){body.innerHTML='<div class="no-sel">빵을 하나 이상 선택해 주세요</div>';return;}
 
   active.forEach((bread,bi)=>{
     const times=allTimes[bi];
     const row=document.createElement('div');row.className='bread-row';
     const inner=document.createElement('div');inner.className='row-inner';
+
     const nameCol=document.createElement('div');nameCol.className='name-col';
-    nameCol.style.color=bread.color;nameCol.textContent=bread.name;inner.appendChild(nameCol);
+    nameCol.style.color=bread.color;
+    const nameSpan=document.createElement('span');nameSpan.textContent=bread.name;
+    const editBtn=document.createElement('button');
+    editBtn.style.cssText='background:transparent;border:none;cursor:pointer;font-size:11px;padding:1px 3px;border-radius:3px;color:#bbb;';
+    editBtn.textContent='✏️';editBtn.title='편집';
+    editBtn.addEventListener('click',()=>openBreadModal(bread.id));
+    nameCol.appendChild(nameSpan);nameCol.appendChild(editBtn);
+    inner.appendChild(nameCol);
+
     const barArea=document.createElement('div');barArea.className='bar-area';barArea.style.minWidth='1400px';
 
-    // 그리드 라인 (자정선 강조)
     for(let gi=0;gi<=numTicks;gi++){
       const absH=((startH+gi)%24+24)%24;
       const gl=document.createElement('div');
@@ -272,30 +627,36 @@ function render(){
       const seg=document.createElement('div');seg.className='seg';
       seg.style.cssText=`left:${lp}%;width:${wp}%;background:${gc.bg};color:${gc.fg};border:0.5px solid ${gc.fg}55;`;
       const sp=document.createElement('span');sp.textContent=t.n;seg.appendChild(sp);
+
       const tip=document.createElement('div');tip.className='tooltip-box';
-      tip.innerHTML=`<strong>${t.n}</strong><br>${fmtTime(t.startMin)} → ${fmtTime(t.endMin)}<br><span style="color:#888">${fmtDur(t.m)} · ${t.note}</span>`;
+      tip.innerHTML=`<strong>${t.n}</strong><br>${fmtTime(t.startMin)} → ${fmtTime(t.endMin)}<br><span style="color:#888">${fmtDur(t.m)} · ${t.note||''}</span>`;
       seg.appendChild(tip);
       seg.addEventListener('mouseenter',()=>tip.style.display='block');
       seg.addEventListener('mouseleave',()=>tip.style.display='none');
 
+      // drag
       let dragStartX=null,dragStartOffset=null;
       seg.addEventListener('mousedown',e=>{
         if(e.button!==0)return;e.preventDefault();
-        dragStartX=e.clientX;dragStartOffset=offsets[bread.id];seg.classList.add('dragging');tip.style.display='none';
+        dragStartX=e.clientX;dragStartOffset=offsets[bread.id]||0;seg.classList.add('dragging');tip.style.display='none';
         const onMove=ev=>{
           const barW=barArea.getBoundingClientRect().width||1400;
           const deltaMin=Math.round((ev.clientX-dragStartX)/(barW/span)/5)*5;
-          offsets[bread.id]=dragStartOffset+deltaMin;render();
+          offsets[bread.id]=dragStartOffset+deltaMin;
+          LS.set('sched.offset.'+bread.id,offsets[bread.id]);
+          render();
         };
         const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);};
         document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
       });
       seg.addEventListener('touchstart',e=>{
-        e.preventDefault();dragStartX=e.touches[0].clientX;dragStartOffset=offsets[bread.id];tip.style.display='none';
+        e.preventDefault();dragStartX=e.touches[0].clientX;dragStartOffset=offsets[bread.id]||0;tip.style.display='none';
         const onMove=ev=>{
           const barW=barArea.getBoundingClientRect().width||1400;
           const deltaMin=Math.round((ev.touches[0].clientX-dragStartX)/(barW/span)/5)*5;
-          offsets[bread.id]=dragStartOffset+deltaMin;render();
+          offsets[bread.id]=dragStartOffset+deltaMin;
+          LS.set('sched.offset.'+bread.id,offsets[bread.id]);
+          render();
         };
         const onUp=()=>{document.removeEventListener('touchmove',onMove);document.removeEventListener('touchend',onUp);};
         document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onUp);
@@ -303,31 +664,29 @@ function render(){
 
       barArea.appendChild(seg);
     });
+
     inner.appendChild(barArea);row.appendChild(inner);body.appendChild(row);
   });
 
+  // legend
   document.getElementById('legend').innerHTML=Object.entries(GC).map(([k,v])=>
     `<div class="leg-item"><div class="leg-sw" style="background:${v.bg};border:0.5px solid ${v.fg}44"></div>${k}</div>`
   ).join('');
+
+  // save selected
+  LS.set('sched.selected',[...selected]);
 }
 
-function buildToggles(){
-  const cont=document.getElementById('toggles');
-  BREADS.forEach(b=>{
-    const btn=document.createElement('button');btn.className='toggle-btn'+(selected.has(b.id)?' active':'');
-    btn.style.borderColor=b.color;
-    if(selected.has(b.id)){btn.style.background=b.color;btn.style.color='#fff';}
-    btn.textContent=b.name;
-    btn.addEventListener('click',()=>{
-      if(selected.has(b.id)){selected.delete(b.id);btn.classList.remove('active');btn.style.background='transparent';btn.style.color='#1a1a1a';}
-      else{selected.add(b.id);btn.classList.add('active');btn.style.background=b.color;btn.style.color='#fff';}
-      render();
-    });
-    cont.appendChild(btn);
-  });
-}
+// Reset
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(!confirm('모든 시간 조정을 초기화할까요?'))return;
+  breads.forEach(b=>{offsets[b.id]=0;LS.set('sched.offset.'+b.id,0);});
+  render();
+});
 
-document.getElementById('resetBtn').addEventListener('click',()=>{BREADS.forEach(b=>{offsets[b.id]=0;});render();});
+// ========================
+// Init
+// ========================
 buildToggles();
 render();
 </script>
