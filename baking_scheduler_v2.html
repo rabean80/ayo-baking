@@ -7,18 +7,45 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f8f6;color:#1a1a1a;padding:1.5rem}
-h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
+h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 
-/* Controls */
+/* Top row */
 .top-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:.5rem;align-items:center}
-.date-row{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;font-size:12px;color:#666}
-.date-row input[type=date]{padding:4px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a}
-.date-row .date-label{font-weight:500;color:#444}
+.date-row{display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap}
+.date-row input[type=date]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fff;color:#1a1a1a}
+.date-info{display:flex;flex-direction:column;gap:2px}
+.date-start-label{font-size:11px;color:#aaa}
+.date-end-label{font-size:14px;font-weight:700;color:#7a4f30}
+.total-time-btn{padding:5px 12px;border-radius:20px;border:1px solid #b8704a;font-size:12px;cursor:pointer;background:#fff;color:#b8704a;transition:all .15s}
+.total-time-btn:hover{background:#b8704a;color:#fff}
+.total-time-popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 8px 30px rgba(0,0,0,.15);z-index:200;min-width:260px}
+.total-time-popup.show{display:block}
+.total-time-popup h4{font-size:14px;color:#7a4f30;margin-bottom:12px}
+.total-time-popup .t-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #f0eeea}
+.total-time-popup .t-row:last-child{border-bottom:none;font-weight:600;padding-top:8px}
+.popup-close{position:absolute;top:10px;right:12px;background:none;border:none;cursor:pointer;font-size:16px;color:#aaa}
+
 .toggles{display:flex;gap:6px;flex-wrap:wrap;flex:1}
 .toggle-btn{padding:5px 11px;border-radius:20px;border:1.5px solid;font-size:12px;font-weight:500;cursor:pointer;background:transparent;transition:all .15s;color:#1a1a1a;display:inline-flex;align-items:center;gap:4px}
 .toggle-btn.active{color:#fff}
 .toggle-btn .edit-ico{font-size:10px;opacity:.7;cursor:pointer;padding:1px 3px;border-radius:3px}
 .toggle-btn .edit-ico:hover{opacity:1;background:rgba(255,255,255,.25)}
+
+/* Project selector */
+.proj-selector-btn{padding:5px 14px;border-radius:20px;border:1.5px solid #b8704a;font-size:12px;font-weight:600;cursor:pointer;background:#b8704a;color:#fff;transition:all .15s}
+.proj-selector-btn:hover{background:#a06040}
+.proj-panel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:14px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:200;min-width:320px;max-width:480px;width:90%}
+.proj-panel.show{display:block}
+.proj-panel h4{font-size:15px;font-weight:600;color:#7a4f30;margin-bottom:14px}
+.proj-list{display:flex;flex-direction:column;gap:6px;max-height:360px;overflow-y:auto}
+.proj-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:#f9f8f6;border:1px solid #eee;cursor:pointer;transition:all .15s}
+.proj-item:hover{background:#f0eeea}
+.proj-item.active-proj{background:#fff5ee;border-color:#b8704a}
+.proj-item .p-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.proj-item .p-name{flex:1;font-size:13px;font-weight:500}
+.proj-item .p-check{font-size:14px;color:#b8704a}
+.proj-panel-close{position:absolute;top:10px;right:12px;background:none;border:none;cursor:pointer;font-size:16px;color:#aaa}
+
 .action-btns{display:flex;gap:6px;flex-wrap:wrap}
 .btn{padding:5px 12px;border-radius:20px;border:1px solid #ccc;font-size:12px;cursor:pointer;background:#fff;color:#444;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
 .btn:hover{background:#f0eeea}
@@ -29,12 +56,13 @@ h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
 .hint{font-size:11px;color:#999;margin-bottom:10px}
 
 /* Summary cards */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1rem}
-.card{background:#f0eeea;border-radius:8px;padding:8px 12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:1rem}
+.card{background:#f0eeea;border-radius:8px;padding:10px 12px}
 .card-label{font-size:11px;color:#666;margin-bottom:2px;display:flex;align-items:center;gap:4px}
 .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
-.card-val{font-size:15px;font-weight:500;color:#1a1a1a}
-.card-sub{font-size:10px;color:#888;margin-top:1px}
+.card-start{font-size:11px;color:#aaa;margin-bottom:1px}
+.card-end{font-size:15px;font-weight:700;color:#7a4f30}
+.card-dur{font-size:10px;color:#888;margin-top:2px}
 
 /* Timeline */
 .tl-wrap{overflow-x:auto}
@@ -50,14 +78,11 @@ h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
 .bar-area{flex:1;position:relative;height:36px}
 .grid-line{position:absolute;top:0;height:100%;width:0.5px;background:#e8e6e0;pointer-events:none}
 .grid-line.date-line{background:#c9b8a0;width:1px}
-
 .seg{position:absolute;top:2px;height:32px;border-radius:4px;display:flex;align-items:center;overflow:hidden;cursor:grab;user-select:none;transition:opacity .1s}
 .seg:active{cursor:grabbing}
 .seg.dragging{opacity:.85;z-index:10}
 .seg span{font-size:10.5px;font-weight:500;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
-
-/* Tooltip */
-.tooltip-box{position:absolute;background:#fff;border:0.5px solid #ccc;border-radius:8px;padding:7px 11px;font-size:11px;color:#1a1a1a;pointer-events:none;z-index:20;display:none;white-space:nowrap;bottom:38px;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.tooltip-box{position:absolute;background:#fff;border:0.5px solid #ccc;border-radius:8px;padding:8px 12px;font-size:11px;color:#1a1a1a;pointer-events:none;z-index:20;display:none;white-space:nowrap;bottom:38px;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,.1)}
 
 /* Legend */
 .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -65,52 +90,105 @@ h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
 .leg-sw{width:14px;height:9px;border-radius:2px}
 .no-sel{text-align:center;padding:2rem;color:#bbb;font-size:13px}
 
+/* Overlay backdrop */
+.backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:150}
+.backdrop.show{display:block}
+
+/* View mode toggle */
+.view-toggle{display:flex;gap:6px;margin-bottom:12px;align-items:center}
+.view-btn{padding:5px 14px;border-radius:20px;border:1px solid #ddd;font-size:12px;cursor:pointer;background:#fff;color:#666;transition:all .15s;font-family:inherit}
+.view-btn.active{background:#b8704a;color:#fff;border-color:#b8704a}
+
+/* Calendar */
+.cal-wrap{background:#fff;border-radius:12px;border:1px solid #eee;overflow:hidden}
+.cal-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#faf8f5;border-bottom:1px solid #eee}
+.cal-header h3{font-size:15px;font-weight:600;color:#7a4f30}
+.cal-nav{background:transparent;border:1px solid #ddd;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:13px;color:#666}
+.cal-nav:hover{background:#f0eeea}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid #f0f0f0}
+.cal-dow{text-align:center;padding:8px 4px;font-size:11px;font-weight:600;color:#aaa;border-right:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;background:#faf8f5}
+.cal-dow:first-child{color:#e06c75}
+.cal-dow:last-child{color:#5b9bd5}
+.cal-cell{min-height:80px;padding:4px;border-right:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;position:relative;background:#fff;transition:background .1s}
+.cal-cell:hover{background:#fdf9f5}
+.cal-cell.other-month{background:#fafafa}
+.cal-cell.today .cal-day{background:#b8704a;color:#fff;border-radius:50%}
+.cal-day{font-size:12px;font-weight:500;color:#444;width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+.cal-cell.other-month .cal-day{color:#ccc}
+.cal-event{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default;line-height:1.4}
+.cal-event:hover{opacity:.85}
+.cal-legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;border-top:1px solid #f0f0f0;background:#faf8f5}
+.cal-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#777}
+.cal-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
 /* Modal */
-.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:100}
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;z-index:200}
 .modal-back.show{display:flex}
-.modal-box{background:#fff;border-radius:12px;width:100%;max-width:480px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.15)}
-.modal-box h3{font-size:15px;font-weight:600;margin-bottom:14px;color:#1a1a1a}
+.modal-box{background:#fff;border-radius:14px;width:100%;max-width:520px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.modal-box h3{font-size:15px;font-weight:600;margin-bottom:14px;color:#3a2a17}
 .field{margin-bottom:10px}
 .field label{display:block;font-size:11px;color:#888;margin-bottom:3px;font-weight:500}
 .field input,.field select,.field textarea{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fafafa}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#5DCAA5;background:#fff}
-.field textarea{min-height:70px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#b8704a;background:#fff}
+.field textarea{resize:vertical;line-height:1.6}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #eee;flex-wrap:wrap}
 .modal-actions .left{margin-right:auto}
 .m-btn{padding:7px 14px;border-radius:20px;border:none;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
-.m-btn-primary{background:#5DCAA5;color:#fff}
-.m-btn-primary:hover{background:#4ab893}
+.m-btn-primary{background:#b8704a;color:#fff}
+.m-btn-primary:hover{background:#a06040}
 .m-btn-ghost{background:transparent;border:1px solid #ddd;color:#555}
 .m-btn-ghost:hover{background:#f5f5f5}
 .m-btn-danger{background:#fff;color:#d94040;border:1px solid #f0c0c0}
 .m-btn-danger:hover{background:#fff0f0}
 
-/* Stage list in bread modal */
-.stage-list{border:1px solid #eee;border-radius:8px;overflow:hidden;margin-top:6px}
-.stage-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:12px;background:#fafafa}
+/* Stage list */
+.stage-list{border:1px solid #eee;border-radius:8px;overflow:hidden;margin-top:6px;max-height:280px;overflow-y:auto}
+.stage-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:12px;background:#fafafa;cursor:default}
 .stage-item:last-child{border-bottom:none}
+.stage-drag-handle{cursor:grab;color:#ccc;font-size:14px;padding:0 2px;user-select:none}
+.stage-drag-handle:active{cursor:grabbing}
+.stage-item.drag-over{background:#fff5ee;border-top:2px solid #b8704a}
 .stage-item .s-name{flex:1;color:#333;font-weight:500}
-.stage-item .s-dur{color:#888;min-width:50px;text-align:right}
-.stage-item .s-group{font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px}
+.stage-item .s-dur{color:#888;min-width:60px;text-align:right;font-size:11px}
+.stage-item .s-group{font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px;white-space:nowrap}
 .stage-item .s-acts{display:flex;gap:3px;margin-left:4px}
 .s-btn{background:transparent;border:none;cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;color:#aaa}
 .s-btn:hover{background:#eee;color:#555}
 .s-btn.del:hover{color:#d94040;background:#fff0f0}
-.add-stage-btn{width:100%;padding:7px;background:transparent;border:none;border-top:1px dashed #ddd;font-size:12px;color:#5DCAA5;cursor:pointer;font-family:inherit}
-.add-stage-btn:hover{background:#f0faf6}
+.add-stage-btn{width:100%;padding:7px;background:transparent;border:none;border-top:1px dashed #ddd;font-size:12px;color:#b8704a;cursor:pointer;font-family:inherit}
+.add-stage-btn:hover{background:#fff5ee}
 
-/* Color picker for bread */
+/* Group manager */
+.group-manager{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.group-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid transparent}
+.group-tag .g-del{opacity:0;font-size:10px;color:inherit}
+.group-tag:hover .g-del{opacity:.7}
+.add-group-btn{padding:3px 8px;border-radius:12px;font-size:11px;border:1px dashed #ccc;background:transparent;cursor:pointer;color:#888}
+.add-group-btn:hover{border-color:#b8704a;color:#b8704a}
+
+/* Recipe section in bread modal */
+.recipe-section{border:1px solid #eee;border-radius:8px;padding:10px;background:#fafafa;margin-top:6px}
+.recipe-section textarea{width:100%;border:none;background:transparent;font-size:12.5px;font-family:inherit;color:#444;resize:vertical;min-height:80px;line-height:1.7;outline:none}
+
+/* Color picker */
 .color-options{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
 .color-opt{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
 .color-opt.selected{border-color:#333;transform:scale(1.15)}
+
+/* Duration input with unit toggle */
+.dur-split-wrap{display:flex;align-items:center;gap:6px}
+.dur-split-wrap input{width:64px;text-align:center}
+.dur-split-label{font-size:12px;color:#666;white-space:nowrap}
 </style>
 </head>
 <body>
 
 <h1>Baking Scheduler</h1>
+<p style="font-size:13px;color:#8a7253;margin-bottom:1rem">오늘은 어떤 빵을 만들까요?</p>
 
 <div class="top-row">
+  <button class="proj-selector-btn" id="projSelectorBtn">프로젝트 선택</button>
   <div class="toggles" id="toggles"></div>
   <div class="action-btns">
     <button class="btn btn-add" id="addBreadBtn">＋ 새 프로젝트 (복사)</button>
@@ -119,12 +197,18 @@ h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
 </div>
 
 <div class="date-row">
-  <span class="date-label">완성 목표 날짜</span>
+  <span style="font-size:12px;color:#666;font-weight:500">완성 목표 날짜</span>
   <input type="date" id="targetDate">
-  <span id="targetDateLabel" style="color:#888;font-size:11px"></span>
+  <div class="date-info" id="dateInfo"></div>
+  <button class="total-time-btn" id="totalTimeBtn">총 작업시간 보기</button>
 </div>
 
-<p class="hint">바를 좌우로 드래그하면 해당 빵의 전체 스케줄이 이동합니다 (5분 단위). 빵 이름 옆 ✏️ 버튼으로 단계를 편집·삭제하거나 이 빵을 복사할 수 있어요.</p>
+
+<div class="view-toggle">
+  <button class="view-btn active" id="viewTimeline">📊 타임라인</button>
+  <button class="view-btn" id="viewCalendar">📅 캘린더</button>
+</div>
+<p class="hint" id="hintText">바를 좌우로 드래그하면 해당 빵의 전체 스케줄이 이동합니다 (5분 단위). 빵 이름 옆 ✏️ 버튼으로 단계를 편집하거나 삭제할 수 있어요.</p>
 
 <div class="cards" id="cards"></div>
 <div class="tl-wrap">
@@ -136,7 +220,36 @@ h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
 </div>
 <div class="legend" id="legend"></div>
 
-<!-- ===== BREAD MODAL ===== -->
+<!-- Calendar view -->
+<div id="calView" style="display:none">
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <button class="cal-nav" id="calPrev">‹</button>
+      <h3 id="calTitle"></h3>
+      <button class="cal-nav" id="calNext">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend" id="calLegend"></div>
+  </div>
+</div>
+
+<!-- Total time popup -->
+<div class="backdrop" id="totalBackdrop"></div>
+<div class="total-time-popup" id="totalTimePopup">
+  <button class="popup-close" id="totalTimeClose">✕</button>
+  <h4>총 작업시간</h4>
+  <div id="totalTimeContent"></div>
+</div>
+
+<!-- Project selector panel -->
+<div class="backdrop" id="projBackdrop"></div>
+<div class="proj-panel" id="projPanel">
+  <button class="proj-panel-close" id="projPanelClose">✕</button>
+  <h4>프로젝트 선택</h4>
+  <div class="proj-list" id="projList"></div>
+</div>
+
+<!-- Bread Modal -->
 <div class="modal-back" id="breadModal">
   <div class="modal-box">
     <h3 id="breadModalTitle">빵 편집</h3>
@@ -145,15 +258,22 @@ h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
       <input type="text" id="bName" placeholder="예: 하드빵 (기계)">
     </div>
     <div class="field">
-      <label>완성 목표 시각 (시:분)</label>
-      <input type="time" id="bEndTime" value="10:00">
-    </div>
-    <div class="field">
       <label>컬러</label>
       <div class="color-options" id="colorOptions"></div>
     </div>
-    <div class="field" style="margin-top:12px">
-      <label>공정 단계 <span style="color:#aaa;font-weight:400">(드래그 순서 변경 예정)</span></label>
+    <div class="field" style="margin-top:6px">
+      <label>레시피 메모</label>
+      <div class="recipe-section">
+        <textarea id="bRecipe" placeholder="재료, 배합비, 포인트 등 간단한 레시피를 적어두세요..."></textarea>
+      </div>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label style="display:flex;align-items:center;justify-content:space-between">
+        <span>공정 단계 <span style="color:#aaa;font-weight:400;font-size:10px">≡ 드래그로 순서 변경</span></span>
+        <span style="font-size:10px;color:#aaa">그룹 기준 자동정렬:
+          <button id="autoSortBtn" style="font-size:10px;padding:2px 6px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;color:#b8704a">정렬</button>
+        </span>
+      </label>
       <div class="stage-list" id="stageList"></div>
       <button class="add-stage-btn" id="addStageInBreadBtn">＋ 단계 추가</button>
     </div>
@@ -165,7 +285,7 @@ h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
   </div>
 </div>
 
-<!-- ===== STAGE MODAL ===== -->
+<!-- Stage Modal -->
 <div class="modal-back" id="stageModal">
   <div class="modal-box">
     <h3 id="stageModalTitle">단계 추가</h3>
@@ -175,24 +295,22 @@ h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
     </div>
     <div class="field-row">
       <div class="field">
-        <label>소요 시간 (분)</label>
-        <input type="number" id="sDur" placeholder="60" min="1">
+        <label>소요 시간</label>
+        <div class="dur-split-wrap">
+          <input type="number" id="sDurHr" placeholder="0" min="0" max="99">
+          <span class="dur-split-label">시간</span>
+          <input type="number" id="sDurMin" placeholder="0" min="0" max="59">
+          <span class="dur-split-label">분</span>
+        </div>
       </div>
       <div class="field">
         <label>그룹</label>
-        <select id="sGroup">
-          <option value="르방">르방</option>
-          <option value="반죽">반죽</option>
-          <option value="성형">성형</option>
-          <option value="냉장">냉장</option>
-          <option value="굽기">굽기</option>
-          <option value="완성">완성</option>
-        </select>
+        <select id="sGroup"></select>
       </div>
     </div>
     <div class="field">
       <label>메모 (선택)</label>
-      <textarea id="sNote" placeholder="예: 23°C 3시간, 1:1:1 비율"></textarea>
+      <textarea id="sNote" placeholder="예: 23°C 3시간, 1:1:1 비율" style="min-height:60px"></textarea>
     </div>
     <div class="modal-actions">
       <button class="m-btn m-btn-danger left" id="sDelete" style="display:none">삭제</button>
@@ -202,27 +320,52 @@ h1{font-size:18px;font-weight:500;margin-bottom:.5rem;color:#1a1a1a}
   </div>
 </div>
 
+<!-- Group Edit Modal -->
+<div class="modal-back" id="groupModal">
+  <div class="modal-box" style="max-width:360px">
+    <h3>그룹 관리</h3>
+    <div class="field">
+      <label>현재 그룹</label>
+      <div class="group-manager" id="groupManager"></div>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label>새 그룹 추가</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="newGroupName" placeholder="그룹 이름" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:7px;font-size:13px;font-family:inherit">
+        <button class="m-btn m-btn-primary" id="addGroupSave" style="white-space:nowrap">추가</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="m-btn m-btn-ghost" data-close="groupModal">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ========================
-// Data
+// Constants
 // ========================
-const COLORS=['#5DCAA5','#7F77DD','#F0997B','#D4537E','#EF9F27','#5B9BD5','#E06C75','#56B6C2'];
-const GC={
-  '르방':{bg:'#E6F1FB',fg:'#185FA5'},
-  '반죽':{bg:'#EAF3DE',fg:'#3B6D11'},
-  '성형':{bg:'#FAEEDA',fg:'#854F0B'},
-  '냉장':{bg:'#EEEDFE',fg:'#534AB7'},
-  '굽기':{bg:'#FCEBEB',fg:'#A32D2D'},
-  '완성':{bg:'#E1F5EE',fg:'#0F6E56'},
-};
-
+const COLORS=['#5DCAA5','#7F77DD','#F0997B','#D4537E','#EF9F27','#5B9BD5','#E06C75','#56B6C2','#C49A6C','#85C1A0'];
 const uid=()=>Math.random().toString(36).slice(2,9);
 
+// Default groups (르방 -> 사전 준비)
+const DEFAULT_GROUPS=[
+  {id:'g1',name:'사전 준비',bg:'#E6F1FB',fg:'#185FA5'},
+  {id:'g2',name:'반죽',bg:'#EAF3DE',fg:'#3B6D11'},
+  {id:'g3',name:'성형',bg:'#FAEEDA',fg:'#854F0B'},
+  {id:'g4',name:'냉장',bg:'#EEEDFE',fg:'#534AB7'},
+  {id:'g5',name:'굽기',bg:'#FCEBEB',fg:'#A32D2D'},
+  {id:'g6',name:'완성',bg:'#E1F5EE',fg:'#0F6E56'},
+];
+
+// Group order for auto-sort
+const GROUP_ORDER=['사전 준비','반죽','성형','냉장','굽기','완성'];
+
 const DEFAULT_BREADS=[
-  {id:uid(),name:'하드빵 (기계)',color:'#5DCAA5',defaultEnd:10*60,overlap:60,stages:[
-    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {id:uid(),n:'1차 먹이',m:180,g:'르방',note:'1:1:1, 23°C 3시간'},
-    {id:uid(),n:'2차 먹이',m:180,g:'르방',note:'23°C 3시간'},
+  {id:uid(),name:'하드빵 (기계)',color:'#5DCAA5',defaultEnd:10*60,overlap:60,recipe:'',stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'사전 준비',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:180,g:'사전 준비',note:'1:1:1, 23°C 3시간'},
+    {id:uid(),n:'2차 먹이',m:180,g:'사전 준비',note:'23°C 3시간'},
     {id:uid(),n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
     {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
     {id:uid(),n:'1차발효+폴딩',m:80,g:'반죽',note:'50분 후 1회 펀치'},
@@ -232,10 +375,10 @@ const DEFAULT_BREADS=[
     {id:uid(),n:'굽기',m:30,g:'굽기',note:'30분 내외'},
     {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
   ]},
-  {id:uid(),name:'하드빵 (손반죽)',color:'#7F77DD',defaultEnd:10*60,overlap:60,stages:[
-    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {id:uid(),n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
-    {id:uid(),n:'2차 먹이',m:240,g:'르방',note:'4시간'},
+  {id:uid(),name:'하드빵 (손반죽)',color:'#7F77DD',defaultEnd:10*60,overlap:60,recipe:'',stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'사전 준비',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:330,g:'사전 준비',note:'5.5시간'},
+    {id:uid(),n:'2차 먹이',m:240,g:'사전 준비',note:'4시간'},
     {id:uid(),n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
     {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
     {id:uid(),n:'1차발효+폴딩',m:160,g:'반죽',note:'40분 간격 4회 접기'},
@@ -245,10 +388,10 @@ const DEFAULT_BREADS=[
     {id:uid(),n:'굽기',m:30,g:'굽기',note:'쿠프 후 굽기'},
     {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
   ]},
-  {id:uid(),name:'치아바타 (기계)',color:'#F0997B',defaultEnd:10*60,overlap:60,stages:[
-    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {id:uid(),n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
-    {id:uid(),n:'2차 먹이',m:240,g:'르방',note:'4시간'},
+  {id:uid(),name:'치아바타 (기계)',color:'#F0997B',defaultEnd:10*60,overlap:60,recipe:'',stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'사전 준비',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:330,g:'사전 준비',note:'5.5시간'},
+    {id:uid(),n:'2차 먹이',m:240,g:'사전 준비',note:'4시간'},
     {id:uid(),n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
     {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
     {id:uid(),n:'1차발효+폴딩',m:60,g:'반죽',note:'50분 후 1회 펀치'},
@@ -260,10 +403,10 @@ const DEFAULT_BREADS=[
     {id:uid(),n:'굽기',m:15,g:'굽기',note:'15분'},
     {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
   ]},
-  {id:uid(),name:'치아바타 (손반죽)',color:'#D4537E',defaultEnd:10*60,overlap:60,stages:[
-    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {id:uid(),n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
-    {id:uid(),n:'2차 먹이',m:240,g:'르방',note:'4시간'},
+  {id:uid(),name:'치아바타 (손반죽)',color:'#D4537E',defaultEnd:10*60,overlap:60,recipe:'',stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'사전 준비',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:330,g:'사전 준비',note:'5.5시간'},
+    {id:uid(),n:'2차 먹이',m:240,g:'사전 준비',note:'4시간'},
     {id:uid(),n:'오토리즈',m:60,g:'반죽',note:'르방 완성 1시간 전 병행'},
     {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
     {id:uid(),n:'1차발효+폴딩',m:160,g:'반죽',note:'40분 간격 4회 접기'},
@@ -275,10 +418,10 @@ const DEFAULT_BREADS=[
     {id:uid(),n:'굽기',m:15,g:'굽기',note:'15분'},
     {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
   ]},
-  {id:uid(),name:'식빵',color:'#EF9F27',defaultEnd:10*60,overlap:0,stages:[
-    {id:uid(),n:'르방 실온화',m:150,g:'르방',note:'냉장고에서 꺼내 실온 두기'},
-    {id:uid(),n:'1차 먹이',m:330,g:'르방',note:'5.5시간'},
-    {id:uid(),n:'2차 먹이',m:240,g:'르방',note:'4시간'},
+  {id:uid(),name:'식빵',color:'#EF9F27',defaultEnd:10*60,overlap:0,recipe:'',stages:[
+    {id:uid(),n:'르방 실온화',m:150,g:'사전 준비',note:'냉장고에서 꺼내 실온 두기'},
+    {id:uid(),n:'1차 먹이',m:330,g:'사전 준비',note:'5.5시간'},
+    {id:uid(),n:'2차 먹이',m:240,g:'사전 준비',note:'4시간'},
     {id:uid(),n:'본반죽',m:20,g:'반죽',note:'르방+소금 투입'},
     {id:uid(),n:'1차발효+폴딩',m:60,g:'반죽',note:'50분 후 1회 펀치'},
     {id:uid(),n:'실온 휴지',m:30,g:'성형',note:'30분 실온'},
@@ -289,10 +432,45 @@ const DEFAULT_BREADS=[
     {id:uid(),n:'굽기',m:30,g:'굽기',note:'30분 내외'},
     {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
   ]},
+  {id:uid(),name:'밤식빵',color:'#C49A6C',defaultEnd:10*60,overlap:0,recipe:'밤 페이스트 + 식빵 반죽\n밤 필링: 삶은 밤 200g, 버터 20g, 설탕 30g',stages:[
+    {id:uid(),n:'탕종 준비',m:30,g:'사전 준비',note:'강력분 50g + 끓는물 50g'},
+    {id:uid(),n:'본반죽',m:25,g:'반죽',note:'탕종+기타 재료 믹싱'},
+    {id:uid(),n:'1차 발효',m:60,g:'반죽',note:'27°C 60분'},
+    {id:uid(),n:'분할+벤치',m:20,g:'성형',note:'분할 후 벤치타임 15분'},
+    {id:uid(),n:'성형+밤필링',m:20,g:'성형',note:'밤 페이스트 넣어 성형'},
+    {id:uid(),n:'저온 숙성',m:600,g:'냉장',note:'냉장 10시간'},
+    {id:uid(),n:'실온화+2차발효',m:90,g:'성형',note:'실온화 후 2차 발효'},
+    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'180°C 예열'},
+    {id:uid(),n:'굽기',m:30,g:'굽기',note:'180°C 30분'},
+    {id:uid(),n:'식히기',m:60,g:'완성',note:'완전히 식힌 후 슬라이스'},
+  ]},
+  {id:uid(),name:'시나몬 모카 비스킷 식빵',color:'#85C1A0',defaultEnd:10*60,overlap:0,recipe:'모카 비스킷: 버터 45g, 설탕 50g, 달걀 20g, 에스프레소 12~15g, 박력분 90g, BP 1g\n아몬드 시나몬 필링: 무염버터 60g, 흑설탕 70g, 아몬드가루 50g, 시나몬가루 15~20g',stages:[
+    {id:uid(),n:'모카 비스킷 반죽',m:20,g:'사전 준비',note:'버터크림화 후 냉장 휴지'},
+    {id:uid(),n:'시나몬 필링 준비',m:15,g:'사전 준비',note:'재료 혼합'},
+    {id:uid(),n:'본반죽',m:20,g:'반죽',note:'식빵 반죽'},
+    {id:uid(),n:'냉장 발효',m:720,g:'냉장',note:'냉장 12시간'},
+    {id:uid(),n:'실온화',m:60,g:'성형',note:'실온화 1시간'},
+    {id:uid(),n:'성형+2차발효',m:90,g:'성형',note:'필링 넣어 성형, 2차 발효'},
+    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'175°C 예열'},
+    {id:uid(),n:'굽기',m:30,g:'굽기',note:'175°C 30분'},
+    {id:uid(),n:'식히기',m:60,g:'완성',note:'완전히 식힌 후 마무리'},
+  ]},
+  {id:uid(),name:'비가 깜빠뉴 바리에이션',color:'#5B9BD5',defaultEnd:11*60,overlap:0,recipe:'비가 (50%): 통밀가루 150g, 물 100, 이스트 한꼬집 (르방 사용시 30g)\n탕종 (10%): 강력분 30g, 끓는물 30g\n본반죽: 강력분 120g, 물 120~130g, 소금 6g, 드라이이스트 2g, 올리브유 20g',stages:[
+    {id:uid(),n:'비가 반죽',m:15,g:'사전 준비',note:'전날 오후 9시, 16도 발효'},
+    {id:uid(),n:'탕종 만들기',m:10,g:'사전 준비',note:'강력분 30g + 끓는물 30g'},
+    {id:uid(),n:'냉장반죽 실온화',m:60,g:'반죽',note:'1시간 실온화'},
+    {id:uid(),n:'본반죽',m:20,g:'반죽',note:'물에 탕종+비가 풀고 나머지 재료 믹싱'},
+    {id:uid(),n:'1차발효+폴딩',m:60,g:'반죽',note:'30분 간격 펀치+늘어접기 2회'},
+    {id:uid(),n:'분할, 휴지, 성형',m:40,g:'성형',note:'분할 후 성형'},
+    {id:uid(),n:'2차 발효',m:50,g:'성형',note:'오븐 230도 예열 시작'},
+    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'230°C 예열'},
+    {id:uid(),n:'굽기',m:20,g:'굽기',note:'230°C 20~25분, 스팀 필수'},
+    {id:uid(),n:'식히기',m:60,g:'완성',note:'완전히 식힌 후 먹기'},
+  ]},
 ];
 
 // ========================
-// State (localStorage)
+// State
 // ========================
 const LS={
   get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}},
@@ -302,35 +480,32 @@ const LS={
 let breads=LS.get('sched.breads',null);
 if(!breads){breads=DEFAULT_BREADS;LS.set('sched.breads',breads);}
 
-let selected=new Set(LS.get('sched.selected',[breads[0]?.id]));
+let groups=LS.get('sched.groups',null);
+if(!groups){groups=DEFAULT_GROUPS;LS.set('sched.groups',groups);}
+
+let selected=new Set(LS.get('sched.selected',[breads[0]?.id].filter(Boolean)));
 let offsets={};
 breads.forEach(b=>{offsets[b.id]=LS.get('sched.offset.'+b.id,0);});
 
 // ========================
-// Date target
+// Date
 // ========================
 const today=new Date();
 const todayStr=today.toISOString().slice(0,10);
 const targetDateEl=document.getElementById('targetDate');
 targetDateEl.value=LS.get('sched.targetDate',todayStr);
 
-function getTargetDateLabel(){
-  const d=new Date(targetDateEl.value+'T00:00:00');
-  const dow=['일','월','화','수','목','금','토'][d.getDay()];
-  return `· ${d.getMonth()+1}/${d.getDate()}(${dow}) 오전 10시 완성 기준`;
-}
-document.getElementById('targetDateLabel').textContent=getTargetDateLabel();
-targetDateEl.addEventListener('change',()=>{
-  LS.set('sched.targetDate',targetDateEl.value);
-  document.getElementById('targetDateLabel').textContent=getTargetDateLabel();
-  render();
-});
+function getBaseDate(){return new Date(targetDateEl.value+'T00:00:00');}
 
-// ========================
-// Helpers
-// ========================
-function fmtTime(m){
-  const base=new Date(targetDateEl.value+'T00:00:00');
+function fmtDateTime(m){
+  const base=getBaseDate();
+  const d=new Date(base.getTime()+m*60000);
+  const mo=d.getMonth()+1,dy=d.getDate();
+  const h=d.getHours(),mn=d.getMinutes();
+  return `${mo}/${dy} `+(h<12?'오전':'오후')+' '+(h%12||12)+':'+String(mn).padStart(2,'0');
+}
+function fmtTimeOnly(m){
+  const base=getBaseDate();
   const d=new Date(base.getTime()+m*60000);
   const h=d.getHours(),mn=d.getMinutes();
   return (h<12?'오전':'오후')+' '+(h%12||12)+':'+String(mn).padStart(2,'0');
@@ -340,6 +515,98 @@ function fmtDur(m){
   const h=Math.floor(m/60),mn=m%60;
   return mn?h+'시간 '+mn+'분':h+'시간';
 }
+
+function updateDateInfo(){
+  const active=breads.filter(b=>selected.has(b.id));
+  if(!active.length){document.getElementById('dateInfo').innerHTML='';return;}
+  const allTimes=active.map(b=>computeTimings(b));
+  let gMin=Infinity,gMax=-Infinity;
+  allTimes.forEach(times=>times.forEach(t=>{if(t.startMin<gMin)gMin=t.startMin;if(t.endMin>gMax)gMax=t.endMin;}));
+  document.getElementById('dateInfo').innerHTML=
+    `<span class="date-start-label">시작: ${fmtDateTime(gMin)}</span>`+
+    `<span class="date-end-label">완료: ${fmtDateTime(gMax)}</span>`;
+}
+
+targetDateEl.addEventListener('change',()=>{
+  LS.set('sched.targetDate',targetDateEl.value);
+  updateDateInfo();
+  render();
+});
+
+// ========================
+// Total time popup
+// ========================
+document.getElementById('totalTimeBtn').addEventListener('click',()=>{
+  const active=breads.filter(b=>selected.has(b.id));
+  const content=document.getElementById('totalTimeContent');
+  if(!active.length){content.innerHTML='<div style="color:#aaa;font-size:12px">선택된 빵이 없어요</div>';} 
+  else {
+    let rows='';
+    let grandTotal=0;
+    active.forEach(b=>{
+      const total=b.stages.reduce((s,st)=>s+st.m,0);
+      grandTotal+=total;
+      rows+=`<div class="t-row"><span>${b.name}</span><span>${fmtDur(total)}</span></div>`;
+    });
+    if(active.length>1)rows+=`<div class="t-row"><span>전체 합계</span><span>${fmtDur(grandTotal)}</span></div>`;
+    content.innerHTML=rows;
+  }
+  document.getElementById('totalBackdrop').classList.add('show');
+  document.getElementById('totalTimePopup').classList.add('show');
+});
+document.getElementById('totalTimeClose').addEventListener('click',()=>{
+  document.getElementById('totalBackdrop').classList.remove('show');
+  document.getElementById('totalTimePopup').classList.remove('show');
+});
+document.getElementById('totalBackdrop').addEventListener('click',()=>{
+  document.getElementById('totalBackdrop').classList.remove('show');
+  document.getElementById('totalTimePopup').classList.remove('show');
+  document.getElementById('projBackdrop').classList.remove('show');
+  document.getElementById('projPanel').classList.remove('show');
+});
+
+// ========================
+// Project selector
+// ========================
+function renderProjPanel(){
+  const list=document.getElementById('projList');
+  list.innerHTML='';
+  breads.forEach(b=>{
+    const el=document.createElement('div');
+    el.className='proj-item'+(selected.has(b.id)?' active-proj':'');
+    el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span>${selected.has(b.id)?'<span class="p-check">✓</span>':''}`;
+    el.addEventListener('click',()=>{
+      if(selected.has(b.id)){selected.delete(b.id);}else{selected.add(b.id);}
+      LS.set('sched.selected',[...selected]);
+      renderProjPanel();
+      buildToggles();
+      render();
+    });
+    list.appendChild(el);
+  });
+}
+document.getElementById('projSelectorBtn').addEventListener('click',()=>{
+  renderProjPanel();
+  document.getElementById('projBackdrop').classList.add('show');
+  document.getElementById('projPanel').classList.add('show');
+});
+document.getElementById('projPanelClose').addEventListener('click',()=>{
+  document.getElementById('projBackdrop').classList.remove('show');
+  document.getElementById('projPanel').classList.remove('show');
+});
+document.getElementById('projBackdrop').addEventListener('click',()=>{
+  document.getElementById('projBackdrop').classList.remove('show');
+  document.getElementById('projPanel').classList.remove('show');
+});
+
+// ========================
+// Helpers
+// ========================
+function getGroupStyle(gName){
+  const g=groups.find(x=>x.name===gName);
+  return g?{bg:g.bg,fg:g.fg}:{bg:'#eee',fg:'#555'};
+}
+
 function computeTimings(bread){
   const endMin=bread.defaultEnd+(offsets[bread.id]||0);
   const stages=bread.stages,n=stages.length,times=[];
@@ -347,15 +614,6 @@ function computeTimings(bread){
   for(let i=n-1;i>=0;i--){
     times[i]={...stages[i],startMin:cur-stages[i].m,endMin:cur};
     cur-=stages[i].m;
-  }
-  // overlap: 오토리즈와 2차먹이 병행
-  if(bread.overlap>0){
-    const ot=stages.findIndex(s=>s.n==='오토리즈');
-    const lr2=stages.map((s,i)=>({s,i})).filter(x=>x.s.n.includes('2차 먹이')&&x.s.g==='르방').pop();
-    if(ot>=0&&lr2){
-      const sh=bread.overlap;
-      for(let i=0;i<=lr2.i;i++){times[i].startMin-=sh;times[i].endMin-=sh;}
-    }
   }
   return times;
 }
@@ -373,24 +631,36 @@ document.querySelectorAll('.modal-back').forEach(mb=>{
 });
 
 // ========================
+// Duration unit toggle
+// ========================
+function getDurInMin(){
+  const hr=parseInt(document.getElementById('sDurHr').value)||0;
+  const mn=parseInt(document.getElementById('sDurMin').value)||0;
+  return hr*60+mn;
+}
+function setDurDisplay(m){
+  const h=Math.floor(m/60),mn=m%60;
+  document.getElementById('sDurHr').value=h||'';
+  document.getElementById('sDurMin').value=mn||'';
+}
+
+// ========================
 // Bread Modal
 // ========================
 let editingBreadId=null;
 let editingStages=[];
 let selectedColor=COLORS[0];
+let dragSrcIdx=null;
 
 function openBreadModal(breadId){
   editingBreadId=breadId;
   const bread=breads.find(b=>b.id===breadId);
   document.getElementById('breadModalTitle').textContent=bread?'빵 편집':'새 빵 추가';
   document.getElementById('bName').value=bread?bread.name:'';
-  const endH=bread?(Math.floor(bread.defaultEnd/60)):10;
-  const endM=bread?(bread.defaultEnd%60):0;
-  document.getElementById('bEndTime').value=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
+  document.getElementById('bRecipe').value=bread?(bread.recipe||''):'';
   selectedColor=bread?bread.color:COLORS[0];
   editingStages=bread?bread.stages.map(s=>({...s})):[];
 
-  // color picker
   const co=document.getElementById('colorOptions');
   co.innerHTML='';
   COLORS.forEach(c=>{
@@ -400,9 +670,7 @@ function openBreadModal(breadId){
     co.appendChild(el);
   });
 
-  // delete button
   document.getElementById('bDelete').style.display=bread?'':'none';
-
   renderStageList();
   openModal('breadModal');
 }
@@ -411,9 +679,10 @@ function renderStageList(){
   const list=document.getElementById('stageList');
   list.innerHTML='';
   editingStages.forEach((s,i)=>{
-    const gc=GC[s.g]||{bg:'#eee',fg:'#555'};
-    const el=document.createElement('div');el.className='stage-item';
+    const gc=getGroupStyle(s.g);
+    const el=document.createElement('div');el.className='stage-item';el.dataset.idx=i;
     el.innerHTML=`
+      <span class="stage-drag-handle" draggable="false">≡</span>
       <span class="s-name">${s.n}</span>
       <span class="s-group" style="background:${gc.bg};color:${gc.fg}">${s.g}</span>
       <span class="s-dur">${fmtDur(s.m)}</span>
@@ -426,40 +695,53 @@ function renderStageList(){
       if(!confirm(`'${s.n}' 단계를 삭제할까요?`))return;
       editingStages.splice(i,1);renderStageList();
     });
+    // drag to reorder
+    el.setAttribute('draggable','true');
+    el.addEventListener('dragstart',e=>{dragSrcIdx=i;e.dataTransfer.effectAllowed='move';el.style.opacity='.5';});
+    el.addEventListener('dragend',()=>{el.style.opacity='1';document.querySelectorAll('.stage-item').forEach(x=>x.classList.remove('drag-over'));});
+    el.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';document.querySelectorAll('.stage-item').forEach(x=>x.classList.remove('drag-over'));el.classList.add('drag-over');});
+    el.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(dragSrcIdx===null||dragSrcIdx===i)return;
+      const moved=editingStages.splice(dragSrcIdx,1)[0];
+      editingStages.splice(i,0,moved);
+      dragSrcIdx=null;
+      renderStageList();
+    });
     list.appendChild(el);
   });
 }
+
+// Auto sort by group order
+document.getElementById('autoSortBtn').addEventListener('click',()=>{
+  editingStages.sort((a,b)=>{
+    const ai=GROUP_ORDER.indexOf(a.g),bi=GROUP_ORDER.indexOf(b.g);
+    return (ai===-1?999:ai)-(bi===-1?999:bi);
+  });
+  renderStageList();
+});
 
 document.getElementById('addStageInBreadBtn').addEventListener('click',()=>openStageModal(null));
 
 document.getElementById('bSave').addEventListener('click',()=>{
   const name=document.getElementById('bName').value.trim();
   if(!name){alert('빵 이름을 입력하세요');return;}
-  const [eh,em]=document.getElementById('bEndTime').value.split(':').map(Number);
-  const endMin=eh*60+em;
+  const recipe=document.getElementById('bRecipe').value;
   if(editingBreadId){
-    breads=breads.map(b=>b.id===editingBreadId?{...b,name,color:selectedColor,defaultEnd:endMin,stages:editingStages}:b);
+    breads=breads.map(b=>b.id===editingBreadId?{...b,name,color:selectedColor,recipe,stages:editingStages}:b);
   } else {
-    const nb={id:uid(),name,color:selectedColor,defaultEnd:endMin,overlap:0,stages:editingStages};
-    breads.push(nb);
-    offsets[nb.id]=0;
+    const nb={id:uid(),name,color:selectedColor,defaultEnd:10*60,overlap:0,recipe,stages:editingStages};
+    breads.push(nb);offsets[nb.id]=0;
   }
-  LS.set('sched.breads',breads);
-  closeModal('breadModal');
-  buildToggles();
-  render();
+  LS.set('sched.breads',breads);closeModal('breadModal');buildToggles();render();
 });
 
 document.getElementById('bDelete').addEventListener('click',()=>{
   if(!editingBreadId)return;
   if(!confirm('이 빵을 삭제할까요?'))return;
   breads=breads.filter(b=>b.id!==editingBreadId);
-  selected.delete(editingBreadId);
-  delete offsets[editingBreadId];
-  LS.set('sched.breads',breads);
-  closeModal('breadModal');
-  buildToggles();
-  render();
+  selected.delete(editingBreadId);delete offsets[editingBreadId];
+  LS.set('sched.breads',breads);closeModal('breadModal');buildToggles();render();
 });
 
 // ========================
@@ -467,13 +749,21 @@ document.getElementById('bDelete').addEventListener('click',()=>{
 // ========================
 let editingStageIdx=null;
 
+function populateGroupSelect(){
+  const sel=document.getElementById('sGroup');
+  const cur=sel.value;
+  sel.innerHTML=groups.map(g=>`<option value="${g.name}">${g.name}</option>`).join('');
+  if(cur)sel.value=cur;
+}
+
 function openStageModal(idx){
   editingStageIdx=idx;
   const s=idx!==null?editingStages[idx]:null;
   document.getElementById('stageModalTitle').textContent=s?'단계 편집':'단계 추가';
   document.getElementById('sName').value=s?s.n:'';
-  document.getElementById('sDur').value=s?s.m:'';
-  document.getElementById('sGroup').value=s?s.g:'르방';
+  if(s)setDurDisplay(s.m); else {document.getElementById('sDurHr').value='';document.getElementById('sDurMin').value='';}
+  populateGroupSelect();
+  document.getElementById('sGroup').value=s?s.g:groups[0]?.name||'';
   document.getElementById('sNote').value=s?s.note:'';
   document.getElementById('sDelete').style.display=s?'':'none';
   openModal('stageModal');
@@ -481,81 +771,83 @@ function openStageModal(idx){
 
 document.getElementById('sSave').addEventListener('click',()=>{
   const n=document.getElementById('sName').value.trim();
-  const m=parseInt(document.getElementById('sDur').value,10);
+  const m=getDurInMin();
   if(!n){alert('단계 이름을 입력하세요');return;}
   if(!m||m<1){alert('소요 시간을 입력하세요');return;}
   const stage={id:editingStageIdx!==null?editingStages[editingStageIdx].id:uid(),n,m,g:document.getElementById('sGroup').value,note:document.getElementById('sNote').value};
-  if(editingStageIdx!==null){editingStages[editingStageIdx]=stage;}
-  else{editingStages.push(stage);}
-  closeModal('stageModal');
-  renderStageList();
+  if(editingStageIdx!==null){editingStages[editingStageIdx]=stage;}else{editingStages.push(stage);}
+  closeModal('stageModal');renderStageList();
 });
 
 document.getElementById('sDelete').addEventListener('click',()=>{
   if(editingStageIdx===null)return;
   if(!confirm('이 단계를 삭제할까요?'))return;
-  editingStages.splice(editingStageIdx,1);
-  closeModal('stageModal');
-  renderStageList();
+  editingStages.splice(editingStageIdx,1);closeModal('stageModal');renderStageList();
 });
 
 // ========================
-// Add Bread (copy)
+// Group Modal
+// ========================
+function openGroupModal(){
+  renderGroupManager();
+  openModal('groupModal');
+}
+function renderGroupManager(){
+  const gm=document.getElementById('groupManager');
+  gm.innerHTML='';
+  groups.forEach(g=>{
+    const el=document.createElement('div');
+    el.className='group-tag';
+    el.style.cssText=`background:${g.bg};color:${g.fg};border-color:${g.fg}44`;
+    el.innerHTML=`${g.name} <span class="g-del" title="삭제">✕</span>`;
+    el.querySelector('.g-del').addEventListener('click',()=>{
+      if(!confirm(`'${g.name}' 그룹을 삭제할까요?`))return;
+      groups=groups.filter(x=>x.id!==g.id);
+      LS.set('sched.groups',groups);renderGroupManager();populateGroupSelect();
+    });
+    gm.appendChild(el);
+  });
+}
+document.getElementById('addGroupSave').addEventListener('click',()=>{
+  const name=document.getElementById('newGroupName').value.trim();
+  if(!name)return;
+  const palette=['#E8F4F8','#E8F8F0','#FEF0E8','#F0E8FE','#FEF8E8','#F8E8F0'];
+  const fgPalette=['#1a7a9a','#1a7a4a','#7a4a1a','#4a1a7a','#7a6a1a','#7a1a4a'];
+  const ci=groups.length%palette.length;
+  groups.push({id:uid(),name,bg:palette[ci],fg:fgPalette[ci]});
+  LS.set('sched.groups',groups);
+  document.getElementById('newGroupName').value='';
+  renderGroupManager();populateGroupSelect();
+});
+
+// ========================
+// Add Bread
 // ========================
 document.getElementById('addBreadBtn').addEventListener('click',()=>{
   const active=breads.filter(b=>selected.has(b.id));
   const base=active.length>0?active[0]:breads[0];
   if(!base){openBreadModal(null);return;}
-  // copy first selected bread
-  const nb={
-    ...base,
-    id:uid(),
-    name:base.name+' (복사)',
-    stages:base.stages.map(s=>({...s,id:uid()}))
-  };
-  breads.push(nb);
-  offsets[nb.id]=0;
-  selected.add(nb.id);
-  LS.set('sched.breads',breads);
-  LS.set('sched.selected',[...selected]);
-  buildToggles();
-  render();
-  // open edit modal right away
-  openBreadModal(nb.id);
+  const nb={...base,id:uid(),name:base.name+' (복사)',stages:base.stages.map(s=>({...s,id:uid()}))};
+  breads.push(nb);offsets[nb.id]=0;selected.add(nb.id);
+  LS.set('sched.breads',breads);LS.set('sched.selected',[...selected]);
+  buildToggles();render();openBreadModal(nb.id);
 });
 
 // ========================
-// Timeline render
+// Timeline
 // ========================
 function buildToggles(){
-  const cont=document.getElementById('toggles');
-  cont.innerHTML='';
-  breads.forEach(b=>{
+  const cont=document.getElementById('toggles');cont.innerHTML='';
+  const activeBr=breads.filter(b=>selected.has(b.id));
+  activeBr.forEach(b=>{
     const btn=document.createElement('button');
-    btn.className='toggle-btn'+(selected.has(b.id)?' active':'');
-    btn.style.borderColor=b.color;
-    if(selected.has(b.id)){btn.style.background=b.color;btn.style.color='#fff';}
-
+    btn.className='toggle-btn active';
+    btn.style.borderColor=b.color;btn.style.background=b.color;btn.style.color='#fff';
     const nameSpan=document.createElement('span');nameSpan.textContent=b.name;
     const editIco=document.createElement('span');editIco.className='edit-ico';editIco.textContent='✏️';editIco.title='편집';
-
-    btn.appendChild(nameSpan);
-    btn.appendChild(editIco);
-
-    // toggle selection on name click
-    nameSpan.addEventListener('click',()=>{
-      if(selected.has(b.id)){selected.delete(b.id);btn.classList.remove('active');btn.style.background='transparent';btn.style.color='#1a1a1a';}
-      else{selected.add(b.id);btn.classList.add('active');btn.style.background=b.color;btn.style.color='#fff';}
-      LS.set('sched.selected',[...selected]);
-      render();
-    });
-
-    // edit on pencil click
-    editIco.addEventListener('click',e=>{
-      e.stopPropagation();
-      openBreadModal(b.id);
-    });
-
+    btn.appendChild(nameSpan);btn.appendChild(editIco);
+    nameSpan.addEventListener('click',()=>{selected.delete(b.id);LS.set('sched.selected',[...selected]);buildToggles();render();});
+    editIco.addEventListener('click',e=>{e.stopPropagation();openBreadModal(b.id);});
     cont.appendChild(btn);
   });
 }
@@ -563,78 +855,72 @@ function buildToggles(){
 function render(){
   const active=breads.filter(b=>selected.has(b.id));
   const allTimes=active.map(b=>computeTimings(b));
-
   let gMin=Infinity,gMax=-Infinity;
   allTimes.forEach(times=>times.forEach(t=>{if(t.startMin<gMin)gMin=t.startMin;if(t.endMin>gMax)gMax=t.endMin;}));
   if(!active.length){gMin=0;gMax=24*60;}
   const span=gMax-gMin;
   const startH=Math.floor(gMin/60),endH=Math.ceil(gMax/60),numTicks=endH-startH+1;
 
-  // hour ticks
-  const ticks=document.getElementById('hourTicks');
-  ticks.innerHTML='';
+  const ticks=document.getElementById('hourTicks');ticks.innerHTML='';
   for(let h=startH;h<=endH;h++){
     const el=document.createElement('div');el.className='tl-tick';
     const absH=((h%24)+24)%24;
     if(absH===0&&h!==startH){
       el.classList.add('date-start');
-      const base=new Date(targetDateEl.value+'T00:00:00');
-      const d=new Date(base.getTime()+h*3600000);
+      const d=new Date(getBaseDate().getTime()+h*3600000);
       el.textContent=(d.getMonth()+1)+'/'+(d.getDate())+'('+['일','월','화','수','목','금','토'][d.getDay()]+') 0시';
     } else {el.textContent=absH+'시';}
     ticks.appendChild(el);
   }
 
-  // summary cards
   document.getElementById('cards').innerHTML=active.map((b,bi)=>{
     const times=allTimes[bi];
     const st=times[0].startMin,en=times[times.length-1].endMin;
-    return `<div class="card"><div class="card-label"><span class="dot" style="background:${b.color}"></span>${b.name}</div><div class="card-val">${fmtTime(st)}</div><div class="card-sub">→ ${fmtTime(en)} (${fmtDur(en-st)})</div></div>`;
+    return `<div class="card">
+      <div class="card-label"><span class="dot" style="background:${b.color}"></span>${b.name}</div>
+      <div class="card-start">시작: ${fmtDateTime(st)}</div>
+      <div class="card-end">완료: ${fmtDateTime(en)}</div>
+      <div class="card-dur">${fmtDur(en-st)}</div>
+    </div>`;
   }).join('');
 
   const body=document.getElementById('tlBody');body.innerHTML='';
-  if(!active.length){body.innerHTML='<div class="no-sel">빵을 하나 이상 선택해 주세요</div>';return;}
+  if(!active.length){body.innerHTML='<div class="no-sel">프로젝트를 선택해 주세요</div>';updateDateInfo();return;}
 
   active.forEach((bread,bi)=>{
     const times=allTimes[bi];
     const row=document.createElement('div');row.className='bread-row';
     const inner=document.createElement('div');inner.className='row-inner';
-
-    const nameCol=document.createElement('div');nameCol.className='name-col';
-    nameCol.style.color=bread.color;
+    const nameCol=document.createElement('div');nameCol.className='name-col';nameCol.style.color=bread.color;
     const nameSpan=document.createElement('span');nameSpan.textContent=bread.name;
     const editBtn=document.createElement('button');
-    editBtn.style.cssText='background:transparent;border:none;cursor:pointer;font-size:11px;padding:1px 3px;border-radius:3px;color:#bbb;';
+    editBtn.style.cssText='background:transparent;border:none;cursor:pointer;font-size:11px;padding:1px 3px;border-radius:3px;color:#ccc;';
     editBtn.textContent='✏️';editBtn.title='편집';
     editBtn.addEventListener('click',()=>openBreadModal(bread.id));
-    nameCol.appendChild(nameSpan);nameCol.appendChild(editBtn);
-    inner.appendChild(nameCol);
+    nameCol.appendChild(nameSpan);nameCol.appendChild(editBtn);inner.appendChild(nameCol);
 
     const barArea=document.createElement('div');barArea.className='bar-area';barArea.style.minWidth='1400px';
-
     for(let gi=0;gi<=numTicks;gi++){
       const absH=((startH+gi)%24+24)%24;
       const gl=document.createElement('div');
       gl.className='grid-line'+(absH===0&&gi>0?' date-line':'');
-      gl.style.left=(gi/numTicks*100)+'%';
-      barArea.appendChild(gl);
+      gl.style.left=(gi/numTicks*100)+'%';barArea.appendChild(gl);
     }
 
     times.forEach(t=>{
       const lp=((t.startMin-gMin)/span)*100;
       const wp=(t.m/span)*100;
-      const gc=GC[t.g]||{bg:'#eee',fg:'#555'};
+      const gc=getGroupStyle(t.g);
       const seg=document.createElement('div');seg.className='seg';
       seg.style.cssText=`left:${lp}%;width:${wp}%;background:${gc.bg};color:${gc.fg};border:0.5px solid ${gc.fg}55;`;
       const sp=document.createElement('span');sp.textContent=t.n;seg.appendChild(sp);
 
       const tip=document.createElement('div');tip.className='tooltip-box';
-      tip.innerHTML=`<strong>${t.n}</strong><br>${fmtTime(t.startMin)} → ${fmtTime(t.endMin)}<br><span style="color:#888">${fmtDur(t.m)} · ${t.note||''}</span>`;
+      tip.innerHTML=`<strong>${t.n}</strong><br><span style="color:#888;font-size:10px">${fmtDateTime(t.startMin)} → ${fmtDateTime(t.endMin)}</span><br><span style="color:#aaa">${fmtDur(t.m)}${t.note?' · '+t.note:''}</span>`;
       seg.appendChild(tip);
       seg.addEventListener('mouseenter',()=>tip.style.display='block');
       seg.addEventListener('mouseleave',()=>tip.style.display='none');
 
-      // drag
       let dragStartX=null,dragStartOffset=null;
       seg.addEventListener('mousedown',e=>{
         if(e.button!==0)return;e.preventDefault();
@@ -644,7 +930,7 @@ function render(){
           const deltaMin=Math.round((ev.clientX-dragStartX)/(barW/span)/5)*5;
           offsets[bread.id]=dragStartOffset+deltaMin;
           LS.set('sched.offset.'+bread.id,offsets[bread.id]);
-          render();
+          render();updateDateInfo();
         };
         const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);};
         document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
@@ -656,7 +942,7 @@ function render(){
           const deltaMin=Math.round((ev.touches[0].clientX-dragStartX)/(barW/span)/5)*5;
           offsets[bread.id]=dragStartOffset+deltaMin;
           LS.set('sched.offset.'+bread.id,offsets[bread.id]);
-          render();
+          render();updateDateInfo();
         };
         const onUp=()=>{document.removeEventListener('touchmove',onMove);document.removeEventListener('touchend',onUp);};
         document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onUp);
@@ -664,24 +950,20 @@ function render(){
 
       barArea.appendChild(seg);
     });
-
     inner.appendChild(barArea);row.appendChild(inner);body.appendChild(row);
   });
 
-  // legend
-  document.getElementById('legend').innerHTML=Object.entries(GC).map(([k,v])=>
-    `<div class="leg-item"><div class="leg-sw" style="background:${v.bg};border:0.5px solid ${v.fg}44"></div>${k}</div>`
+  document.getElementById('legend').innerHTML=groups.map(g=>
+    `<div class="leg-item"><div class="leg-sw" style="background:${g.bg};border:0.5px solid ${g.fg}44"></div>${g.name}</div>`
   ).join('');
 
-  // save selected
   LS.set('sched.selected',[...selected]);
+  updateDateInfo();
 }
 
-// Reset
 document.getElementById('resetBtn').addEventListener('click',()=>{
   if(!confirm('모든 시간 조정을 초기화할까요?'))return;
-  breads.forEach(b=>{offsets[b.id]=0;LS.set('sched.offset.'+b.id,0);});
-  render();
+  breads.forEach(b=>{offsets[b.id]=0;LS.set('sched.offset.'+b.id,0);});render();
 });
 
 // ========================
@@ -689,6 +971,110 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
 // ========================
 buildToggles();
 render();
+
+// ========================
+// Calendar Mode
+// ========================
+let calYear=new Date().getFullYear();
+let calMonth=new Date().getMonth();
+let currentView="timeline";
+
+document.getElementById("viewTimeline").addEventListener("click",()=>{
+  currentView="timeline";
+  document.getElementById("viewTimeline").classList.add("active");
+  document.getElementById("viewCalendar").classList.remove("active");
+  document.querySelector(".tl-wrap").style.display="";
+  document.getElementById("cards").style.display="";
+  document.getElementById("legend").style.display="";
+  document.getElementById("calView").style.display="none";
+  document.getElementById("hintText").style.display="";
+});
+
+document.getElementById("viewCalendar").addEventListener("click",()=>{
+  currentView="calendar";
+  document.getElementById("viewCalendar").classList.add("active");
+  document.getElementById("viewTimeline").classList.remove("active");
+  document.querySelector(".tl-wrap").style.display="none";
+  document.getElementById("cards").style.display="none";
+  document.getElementById("legend").style.display="none";
+  document.getElementById("calView").style.display="block";
+  document.getElementById("hintText").style.display="none";
+  const base=getBaseDate();
+  calYear=base.getFullYear();
+  calMonth=base.getMonth();
+  renderCalendar();
+});
+
+document.getElementById("calPrev").addEventListener("click",()=>{
+  calMonth--;
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();
+});
+document.getElementById("calNext").addEventListener("click",()=>{
+  calMonth++;
+  if(calMonth>11){calMonth=0;calYear++;}
+  renderCalendar();
+});
+
+function renderCalendar(){
+  const monthNames=["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+  document.getElementById("calTitle").textContent=calYear+"년 "+monthNames[calMonth];
+  const grid=document.getElementById("calGrid");
+  grid.innerHTML="";
+  const dows=["일","월","화","수","목","금","토"];
+  dows.forEach(d=>{const el=document.createElement("div");el.className="cal-dow";el.textContent=d;grid.appendChild(el);});
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const daysInPrev=new Date(calYear,calMonth,0).getDate();
+  const today2=new Date();
+  const events=getCalendarEvents();
+  const totalCells=Math.ceil((firstDay+daysInMonth)/7)*7;
+  for(let i=0;i<totalCells;i++){
+    const cell=document.createElement("div");cell.className="cal-cell";
+    let day,isOther=false,year2=calYear,month2=calMonth;
+    if(i<firstDay){day=daysInPrev-firstDay+i+1;isOther=true;month2=calMonth-1;if(month2<0){month2=11;year2--;}} 
+    else if(i-firstDay>=daysInMonth){day=i-firstDay-daysInMonth+1;isOther=true;month2=calMonth+1;if(month2>11){month2=0;year2++;}}
+    else{day=i-firstDay+1;}
+    if(isOther)cell.classList.add("other-month");
+    if(!isOther&&day===today2.getDate()&&calMonth===today2.getMonth()&&calYear===today2.getFullYear())cell.classList.add("today");
+    const dayEl=document.createElement("div");dayEl.className="cal-day";dayEl.textContent=day;cell.appendChild(dayEl);
+    const dateStr=year2+"-"+String(month2+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+    const dayEvents=events.filter(e=>e.date===dateStr);
+    dayEvents.slice(0,3).forEach(ev=>{
+      const evEl=document.createElement("div");evEl.className="cal-event";
+      evEl.style.cssText="background:"+ev.color+"22;color:"+ev.color+";border-left:2px solid "+ev.color+";";
+      evEl.textContent=ev.label;evEl.title=ev.fullLabel;
+      cell.appendChild(evEl);
+    });
+    if(dayEvents.length>3){const more=document.createElement("div");more.style.cssText="font-size:9px;color:#aaa;padding:1px 4px";more.textContent="+"+(dayEvents.length-3)+"개 더";cell.appendChild(more);}
+    grid.appendChild(cell);
+  }
+  const legEl=document.getElementById("calLegend");legEl.innerHTML="";
+  breads.filter(b=>selected.has(b.id)).forEach(b=>{
+    const el=document.createElement("div");el.className="cal-leg-item";
+    el.innerHTML=`<span class="cal-leg-dot" style="background:${b.color}"></span>${b.name}`;
+    legEl.appendChild(el);
+  });
+}
+
+function getCalendarEvents(){
+  const events=[];
+  const active=breads.filter(b=>selected.has(b.id));
+  active.forEach(b=>{
+    const times=computeTimings(b);
+    times.forEach(t=>{
+      const startDate=new Date(getBaseDate().getTime()+t.startMin*60000);
+      const endDate=new Date(getBaseDate().getTime()+t.endMin*60000);
+      let cur=new Date(startDate);cur.setHours(0,0,0,0);
+      while(cur<=endDate){
+        const ds=cur.getFullYear()+"-"+String(cur.getMonth()+1).padStart(2,"0")+"-"+String(cur.getDate()).padStart(2,"0");
+        events.push({date:ds,label:t.n,fullLabel:b.name+" · "+t.n+" ("+fmtDur(t.m)+")",color:b.color});
+        cur.setDate(cur.getDate()+1);
+      }
+    });
+  });
+  return events;
+}
 </script>
 </body>
 </html>
