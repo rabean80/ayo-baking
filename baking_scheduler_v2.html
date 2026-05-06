@@ -619,7 +619,10 @@ function getGroupStyle(gName){
 }
 
 function computeTimings(bread){
-  const endMin=bread.defaultEnd+(offsets[bread.id]||0);
+  const timeVal=document.getElementById('targetTime').value||'10:00';
+  const [th,tm]=timeVal.split(':').map(Number);
+  const targetMin=th*60+tm;
+  const endMin=targetMin+(offsets[bread.id]||0);
   const stages=bread.stages,n=stages.length,times=[];
   let cur=endMin;
   for(let i=n-1;i>=0;i--){
