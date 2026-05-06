@@ -495,8 +495,12 @@ const today=new Date();
 const todayStr=today.toISOString().slice(0,10);
 const targetDateEl=document.getElementById('targetDate');
 targetDateEl.value=LS.get('sched.targetDate',todayStr);
+  document.getElementById('targetTime').value=LS.get('sched.targetTime','10:00');
 
-function getBaseDate(){return new Date(targetDateEl.value+'T00:00:00');}
+function getBaseDate(){
+  const time=document.getElementById('targetTime').value||'00:00';
+  return new Date(targetDateEl.value+'T'+time+':00');
+}
 
 function fmtDateTime(m){
   const base=getBaseDate();
@@ -529,6 +533,15 @@ function updateDateInfo(){
 }
 
 targetDateEl.addEventListener('change',()=>{
+  LS.set('sched.targetDate',targetDateEl.value);
+  updateDateInfo();
+  render();
+});
+
+document.getElementById('targetTime').addEventListener('change',()=>{
+  LS.set('sched.targetTime',document.getElementById('targetTime').value);
+  updateDateInfo();render();
+});
   LS.set('sched.targetDate',targetDateEl.value);
   updateDateInfo();
   render();
