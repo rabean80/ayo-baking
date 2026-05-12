@@ -350,7 +350,7 @@ const DEFAULT_BREADS=[
     {id:uid(),n:'저온 숙성',m:960,g:'발효',note:'냉장 16시간'},
     {id:uid(),n:'실온화',m:60,g:'성형',note:'실온화 1시간'},
     {id:uid(),n:'성형+발효',m:90,g:'성형',note:'발효시 230도 예열 시작'},
-    {id:uid(),n:'굽기',m:17,g:'굽기',note:'17분'},
+    {id:uid(),n:'예열 및 굽기',m:17,g:'굽기',note:'17분'},
     {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
   ]},
   {id:uid(),name:'식빵',color:'#EF9F27',targetDate:getTomorrowStr(),targetTime:DEFAULT_TIME,recipe:'',stages:[
@@ -358,9 +358,8 @@ const DEFAULT_BREADS=[
     {id:uid(),n:'실온 휴지',m:30,g:'성형',note:'30분 실온'},
     {id:uid(),n:'저온 숙성',m:840,g:'발효',note:'냉장 14시간'},
     {id:uid(),n:'실온화',m:60,g:'성형',note:'실온화+발효실 준비'},
-    {id:uid(),n:'성형+2차발효',m:90,g:'성형',note:'성형 및 2차 발효'},
-    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'30분 예열'},
-    {id:uid(),n:'굽기',m:30,g:'굽기',note:'30분 내외'},
+    {id:uid(),n:'성형+2차발효',m:90,g:'성형',note:'성형 및 2차 발효, 오븐 예열'},
+    {id:uid(),n:'예열 및 굽기',m:30,g:'굽기',note:'30분 내외'},
     {id:uid(),n:'식히기',m:60,g:'완성',note:'1시간 후 먹기'},
   ]},
   {id:uid(),name:'밤식빵',color:'#C49A6C',targetDate:getTomorrowStr(),targetTime:DEFAULT_TIME,recipe:'밤 필링: 삶은 밤 200g, 버터 20g, 설탕 30g',stages:[
@@ -369,8 +368,7 @@ const DEFAULT_BREADS=[
     {id:uid(),n:'저온 숙성',m:840,g:'발효',note:'냉장 14시간'},
     {id:uid(),n:'실온화',m:60,g:'성형',note:'실온화+발효실 준비'},
     {id:uid(),n:'성형+2차발효',m:90,g:'성형',note:'성형 및 2차 발효'},
-    {id:uid(),n:'오븐 예열',m:30,g:'굽기',note:'180°C 예열'},
-    {id:uid(),n:'굽기',m:30,g:'굽기',note:'180°C 30분'},
+    {id:uid(),n:'예열 및 굽기',m:30,g:'굽기',note:'180°C 30분'},
     {id:uid(),n:'식히기',m:60,g:'완성',note:'완전히 식힌 후 슬라이스'},
   ]},
   {id:uid(),name:'시나몬 모카 비스킷 식빵',color:'#85C1A0',targetDate:getTomorrowStr(),targetTime:DEFAULT_TIME,recipe:'모카 비스킷: 버터 45g, 설탕 50g, 달걀 20g, 에스프레소 12~15g, 박력분 90g, BP 1g\n아몬드 시나몬 필링: 무염버터 60g, 흑설탕 70g, 아몬드가루 50g, 시나몬가루 15~20g',stages:[
