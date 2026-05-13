@@ -170,6 +170,7 @@
     </div>
     <div class="spacer"></div>
     <div class="date-pill" id="todayPill">—</div>
+    <button onclick="document.getElementById('dataResetModal').classList.add('show')" style="padding:5px 10px;border-radius:100px;border:1px solid #f0c0c0;background:#fff;color:#d94040;font-size:11px;cursor:pointer;font-family:inherit">🗑 초기화</button>
   </header>
 
   <nav class="tabs">
@@ -368,6 +369,31 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" data-close>취소</button>
       <button class="btn btn-primary" id="fSave">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- Data Reset Modal -->
+<div class="modal-back" id="dataResetModal">
+  <div class="modal-box" style="max-width:380px">
+    <h3>🗑 데이터 초기화 (테스트용)</h3>
+    <p style="font-size:12.5px;color:#666;margin-bottom:14px;line-height:1.6">업데이트 후 이전 데이터가 남아있을 때 사용하세요.<br>초기화하면 저장된 데이터가 삭제됩니다.</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-ghost" id="resetFolders" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto;border-radius:8px">
+        <div style="font-weight:600;font-size:13px;margin-bottom:2px">폴더 & 팁 초기화</div>
+        <div style="font-size:11px;color:#888">Baking Tips 폴더/내용 변경 시. 레시피·히스토리 유지.</div>
+      </button>
+      <button class="btn btn-ghost" id="resetRecipes" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto">
+        <div style="font-weight:600;font-size:13px;margin-bottom:2px">레시피 초기화</div>
+        <div style="font-size:11px;color:#888">기본 레시피가 변경되었을 때. 기본값으로 리셋.</div>
+      </button>
+      <button class="btn btn-danger" id="resetAllIndex" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto">
+        <div style="font-weight:600;font-size:13px;margin-bottom:2px">전체 초기화</div>
+        <div style="font-size:11px;color:#b84431">모든 데이터 삭제 후 새로 시작.</div>
+      </button>
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn btn-ghost" onclick="document.getElementById('dataResetModal').classList.remove('show')">닫기</button>
     </div>
   </div>
 </div>
@@ -637,6 +663,25 @@ document.getElementById('fSave').addEventListener('click',()=>{
   const f={id:uid(),icon:document.getElementById('fIcon').value.trim()||'📁',name};
   folders.push(f);LS.set('baking.folders',folders);activeFolderId=f.id;closeModal('folderModal');renderFolders();renderTips();
 });
+
+// Data reset handlers
+document.getElementById('resetFolders').addEventListener('click',()=>{
+  if(!confirm('폴더와 팁 데이터를 초기화할까요? 레시피·히스토리는 유지됩니다.'))return;
+  localStorage.removeItem('baking.folders');localStorage.removeItem('baking.tips');
+  document.getElementById('dataResetModal').classList.remove('show');location.reload();
+});
+document.getElementById('resetRecipes').addEventListener('click',()=>{
+  if(!confirm('레시피를 기본값으로 초기화할까요?'))return;
+  localStorage.removeItem('baking.recipes');
+  document.getElementById('dataResetModal').classList.remove('show');location.reload();
+});
+document.getElementById('resetAllIndex').addEventListener('click',()=>{
+  if(!confirm('모든 데이터를 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;
+  Object.keys(localStorage).filter(k=>k.startsWith('baking.')).forEach(k=>localStorage.removeItem(k));
+  document.getElementById('dataResetModal').classList.remove('show');location.reload();
+});
+// Close modal on backdrop click
+document.getElementById('dataResetModal').addEventListener('click',e=>{if(e.target===document.getElementById('dataResetModal'))e.target.classList.remove('show');});
 
 // Init
 renderPlanList();renderRecipes();renderHistory();renderFolders();renderTips();
