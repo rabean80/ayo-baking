@@ -325,12 +325,13 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const DEFAULT_GROUPS=[
   {id:'g1',name:'사전 준비',bg:'#E6F1FB',fg:'#185FA5'},
   {id:'g2',name:'반죽',bg:'#EAF3DE',fg:'#3B6D11'},
+  {id:'g7',name:'휴지',bg:'#FFF3E0',fg:'#E65100'},
   {id:'g3',name:'성형',bg:'#FAEEDA',fg:'#854F0B'},
   {id:'g4',name:'발효',bg:'#EEEDFE',fg:'#534AB7'},
   {id:'g5',name:'굽기',bg:'#FCEBEB',fg:'#A32D2D'},
   {id:'g6',name:'완성',bg:'#E1F5EE',fg:'#0F6E56'},
 ];
-const GROUP_ORDER=['사전 준비','반죽','성형','발효','굽기','완성'];
+const GROUP_ORDER=['사전 준비','반죽','휴지','성형','발효','굽기','완성'];
 const DEFAULT_TIME='20:00';
 function getTodayStr(){return new Date().toISOString().slice(0,10);}
 function getTomorrowStr(){const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);}
@@ -401,6 +402,7 @@ const DEFAULT_BREADS=[
     {id:uid(),n:'모카 비스킷 반죽',m:20,g:'사전 준비',note:'버터크림화 후 냉장 휴지'},
     {id:uid(),n:'시나몬 필링 준비',m:15,g:'사전 준비',note:'재료 혼합'},
     {id:uid(),n:'본반죽',m:20,g:'반죽',note:'식빵 반죽'},
+    {id:uid(),n:'실온 휴지',m:30,g:'휴지',note:'30분 실온'},
     {id:uid(),n:'저온 숙성',m:720,g:'발효',note:'냉장 16시간'},
     {id:uid(),n:'실온화',m:60,g:'성형',note:'실온화 1시간'},
     {id:uid(),n:'성형+2차발효',m:90,g:'성형',note:'필링 넣어 성형, 2차 발효'},
@@ -658,13 +660,20 @@ function render(){
   const span=gMax-gMin;
   const startH=Math.floor(gMin/60),endH=Math.ceil(gMax/60),numTicks=endH-startH+1;
 
-  // Hour ticks
+  // Hour ticks — use local timezone offset to align ticks with local time
+  const tzOffsetMin=new Date().getTimezoneOffset(); // e.g. -540 for KST
   const ticks=document.getElementById('hourTicks');ticks.innerHTML='';
   for(let h=startH;h<=endH;h++){
     const el=document.createElement('div');el.className='tl-tick';
-    const d=new Date(h*3600000);const localH=d.getHours();
-    if(localH===0&&h!==startH){el.classList.add('date-start');el.textContent=(d.getMonth()+1)+'/'+(d.getDate())+'('+['일','월','화','수','목','금','토'][d.getDay()]+') 0시';}
-    else{el.textContent=localH+'시';}
+    // Convert absolute hour to local time
+    const localMin=h*60-tzOffsetMin;
+    const localH=((Math.floor(localMin/60))%24+24)%24;
+    const isNewDay=localH===0&&h!==startH;
+    if(isNewDay){
+      el.classList.add('date-start');
+      const d=new Date(h*3600000);
+      el.textContent=(d.getMonth()+1)+'/'+(d.getDate())+'('+['일','월','화','수','목','금','토'][d.getDay()]+') 0시';
+    } else {el.textContent=localH+'시';}
     ticks.appendChild(el);
   }
 
