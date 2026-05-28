@@ -876,12 +876,30 @@ function renderCalendar(){
     const dayEl=document.createElement('div');dayEl.className='cal-day';dayEl.textContent=day;cell.appendChild(dayEl);
     const dateStr=y2+'-'+String(m2+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
     const dayEvents=events.filter(e=>e.date===dateStr);
-    dayEvents.slice(0,3).forEach(ev=>{
-      const evEl=document.createElement('div');evEl.className='cal-event';
-      evEl.style.cssText=`background:${ev.color}22;color:${ev.color};border-left:2px solid ${ev.color};`;
-      evEl.textContent=ev.label;evEl.title=ev.fullLabel;cell.appendChild(evEl);
-    });
-    if(dayEvents.length>3){const more=document.createElement('div');more.style.cssText='font-size:9px;color:#aaa;padding:1px 4px';more.textContent='+'+(dayEvents.length-3)+'개 더';cell.appendChild(more);}
+    let expanded=false;
+    const eventContainer=document.createElement('div');
+    function renderEvents(){
+      eventContainer.innerHTML='';
+      const toShow=expanded?dayEvents:dayEvents.slice(0,3);
+      toShow.forEach(ev=>{
+        const evEl=document.createElement('div');evEl.className='cal-event';
+        evEl.style.cssText=`background:${ev.color}22;color:${ev.color};border-left:2px solid ${ev.color};`;
+        evEl.textContent=ev.label;evEl.title=ev.fullLabel;eventContainer.appendChild(evEl);
+      });
+      if(dayEvents.length>3){
+        const more=document.createElement('div');
+        more.style.cssText='font-size:9px;color:#b8704a;padding:1px 4px;cursor:pointer;font-weight:500;';
+        more.textContent=expanded?'▲ 접기':('+'+(dayEvents.length-3)+'개 더 보기');
+        more.addEventListener('click',e=>{e.stopPropagation();expanded=!expanded;renderEvents();});
+        eventContainer.appendChild(more);
+      }
+    }
+    renderEvents();
+    cell.appendChild(eventContainer);
+    if(dayEvents.length>3){
+      dayEl.style.cursor='pointer';
+      dayEl.addEventListener('click',e=>{e.stopPropagation();expanded=!expanded;renderEvents();});
+    }
     grid.appendChild(cell);
   }
   const legEl=document.getElementById('calLegend');legEl.innerHTML='';
