@@ -24,6 +24,12 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 .btn-newproj:hover{background:#5f3d24}
 .project-name-input{padding:5px 9px;border:1.5px solid #b8704a;border-radius:8px;font-size:12.5px;font-family:inherit;color:#7a4f30;background:#fff;font-weight:600;max-width:160px}
 .project-name-input:focus{outline:none}
+.np-form{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.project-date-input{padding:5px 8px;border:1.5px solid #b8704a;border-radius:8px;font-size:12px;font-family:inherit;color:#7a4f30;background:#fff;font-weight:500}
+.project-date-input:focus{outline:none}
+.np-create-btn{background:#5DCAA5;color:#fff;border-color:#4ab893;font-weight:600}
+.np-create-btn:hover{background:#4ab893}
+.np-cancel-btn{background:transparent;color:#888;border-color:#ddd}
 .toggles{display:flex;gap:6px;flex-wrap:wrap;flex:1}
 .toggle-btn{padding:5px 11px;border-radius:20px;border:1.5px solid;font-size:12px;font-weight:500;cursor:pointer;background:transparent;transition:all .15s;color:#1a1a1a;display:inline-flex;align-items:center;gap:4px}
 .toggle-btn.active{color:#fff}
@@ -199,6 +205,12 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
   <div class="project-chips" id="projectChips"></div>
   <div class="project-actions">
     <button class="btn btn-newproj" id="newProjectBtn">＋ New Project</button>
+    <div class="np-form" id="npForm" style="display:none">
+      <input type="text" id="npName" class="project-name-input" placeholder="프로젝트 이름">
+      <input type="date" id="npDate" class="project-date-input">
+      <button class="btn np-create-btn" id="npCreate">생성</button>
+      <button class="btn np-cancel-btn" id="npCancel">취소</button>
+    </div>
   </div>
 </div>
 
@@ -459,9 +471,9 @@ const LIBRARY=DEFAULT_BREADS;
 
 // Build a fresh empty project. groups always seeded from defaults.
 let projSeq=LS.get('sched.projSeq',0);
-function makeProject(name){
+function makeProject(name,date){
   projSeq++;LS.set('sched.projSeq',projSeq);
-  return {id:uid(),name:name||('Project '+projSeq),breads:[],groups:DEFAULT_GROUPS.map(g=>({...g})),selected:[]};
+  return {id:uid(),name:name||('Project '+projSeq),defaultDate:date||getTodayStr(),breads:[],groups:DEFAULT_GROUPS.map(g=>({...g})),selected:[]};
 }
 
 // Load or migrate projects
@@ -632,7 +644,7 @@ function renderProjPanel(){
     const el=document.createElement('div');el.className='proj-item';
     el.innerHTML=`<span class="p-dot" style="background:${lib.color}"></span><span class="p-name">${lib.name}</span><span style="font-size:13px;color:#5DCAA5;font-weight:700">＋</span>`;
     el.addEventListener('click',()=>{
-      const nb={...lib,id:uid(),targetDate:getTodayStr(),targetTime:DEFAULT_TIME,stages:lib.stages.map(s=>({...s,id:uid()}))};
+      const nb={...lib,id:uid(),targetDate:(activeProject().defaultDate||getTodayStr()),targetTime:DEFAULT_TIME,stages:lib.stages.map(s=>({...s,id:uid()}))};
       breads.push(nb);selected.add(nb.id);
       saveActiveProject();renderProjPanel();buildToggles();render();
     });
@@ -682,10 +694,10 @@ function switchProject(id){
   loadActiveProject();
   renderProjectBar();buildToggles();render();
 }
-function newProject(){
+function newProject(name,date){
   saveActiveProject();
-  const p=makeProject();
-  // seed with the same default library selection? No — start empty per spec.
+  const p=makeProject(name,date);
+  // start empty per spec — breads added via Select Bread inherit p.defaultDate
   projects.push(p);
   activeProjectId=p.id;localStorage.setItem('sched.activeProject',p.id);
   localStorage.setItem('sched.projects',JSON.stringify(projects));
@@ -694,7 +706,34 @@ function newProject(){
   // open Select Bread so the user can pick breads right away
   renderProjPanel();document.getElementById('projBackdrop').classList.add('show');document.getElementById('projPanel').classList.add('show');
 }
-document.getElementById('newProjectBtn').addEventListener('click',newProject);
+// New Project: show inline name/date form first
+const npBtn=document.getElementById('newProjectBtn');
+const npForm=document.getElementById('npForm');
+const npName=document.getElementById('npName');
+const npDate=document.getElementById('npDate');
+function openNewProjectForm(){
+  npName.value='';
+  npName.placeholder='Project '+(projSeq+1);
+  npDate.value=getTodayStr();
+  npBtn.style.display='none';
+  npForm.style.display='flex';
+  setTimeout(()=>npName.focus(),0);
+}
+function closeNewProjectForm(){
+  npForm.style.display='none';
+  npBtn.style.display='';
+}
+function submitNewProject(){
+  const name=npName.value.trim();
+  const date=npDate.value||getTodayStr();
+  closeNewProjectForm();
+  newProject(name,date);
+}
+npBtn.addEventListener('click',openNewProjectForm);
+document.getElementById('npCreate').addEventListener('click',submitNewProject);
+document.getElementById('npCancel').addEventListener('click',closeNewProjectForm);
+npName.addEventListener('keydown',e=>{if(e.key==='Enter')submitNewProject();if(e.key==='Escape')closeNewProjectForm();});
+npDate.addEventListener('keydown',e=>{if(e.key==='Enter')submitNewProject();if(e.key==='Escape')closeNewProjectForm();});
 function deleteProject(id){
   if(projects.length<=1){alert('최소 한 개의 프로젝트는 있어야 해요.');editingProjectNameId=null;renderProjectBar();return;}
   const p=projects.find(x=>x.id===id);
