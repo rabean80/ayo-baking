@@ -98,6 +98,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 .seg-inner{width:100%;height:100%;display:flex;align-items:center;overflow:hidden;border-radius:4px}
 .seg span{font-size:10.5px;font-weight:500;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .tooltip-box{position:absolute;background:#fff;border:0.5px solid #ccc;border-radius:8px;padding:8px 12px;font-size:11px;color:#1a1a1a;pointer-events:none;z-index:30;display:none;white-space:nowrap;bottom:38px;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.tooltip-box.below{bottom:auto;top:38px}
 .seg:hover .tooltip-box{display:block}
 
 /* Project panel */
@@ -914,7 +915,7 @@ function render(){
   const body=document.getElementById('tlBody');body.innerHTML='';
   if(!active.length){body.innerHTML='<div class="no-sel">프로젝트를 선택해 주세요</div>';return;}
 
-  active.forEach((bread)=>{
+  active.forEach((bread,rowIdx)=>{
     const times=computeTimings(bread);
     const row=document.createElement('div');row.className='bread-row';
     const inner=document.createElement('div');inner.className='row-inner';
@@ -963,7 +964,7 @@ function render(){
       const inner2=document.createElement('div');inner2.className='seg-inner';
       inner2.style.cssText=`background:${gc.bg};color:${gc.fg};border:0.5px solid ${gc.fg}55;`;
       const sp=document.createElement('span');sp.textContent=t.n;inner2.appendChild(sp);
-      const tip=document.createElement('div');tip.className='tooltip-box';
+      const tip=document.createElement('div');tip.className='tooltip-box'+(rowIdx===0?' below':'');
       tip.innerHTML=`<strong>${t.n}</strong><br><span style="color:#888;font-size:10px">${fmtDateTime(t.startMin)} → ${fmtDateTime(t.endMin)}</span><br><span style="color:#aaa">${fmtDur(t.m)}${t.note?' · '+t.note:''}</span>`;
       seg.appendChild(inner2);seg.appendChild(tip);
 
