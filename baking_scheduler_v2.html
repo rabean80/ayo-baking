@@ -10,6 +10,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 
 .top-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:.75rem;align-items:center}
+
+/* Project bar */
+.project-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;background:#f3e8d8;border:1px solid #e6d5bd;border-radius:12px;margin-bottom:14px}
+.project-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1;align-items:center}
+.proj-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;border:1.5px solid #d8b78c;background:#fff;color:#7a4f30;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+.proj-chip:hover{background:#fff8f0}
+.proj-chip.active{background:#7a4f30;color:#fff;border-color:#7a4f30}
+.proj-chip .pc-edit{font-size:10px;opacity:.65;padding:1px 3px;border-radius:3px}
+.proj-chip .pc-edit:hover{opacity:1;background:rgba(255,255,255,.25)}
+.proj-chip-empty{font-size:12px;color:#a8906f}
+.btn-newproj{background:#7a4f30;color:#fff;border-color:#7a4f30;font-weight:600}
+.btn-newproj:hover{background:#5f3d24}
+.project-name-input{padding:5px 9px;border:1.5px solid #b8704a;border-radius:8px;font-size:12.5px;font-family:inherit;color:#7a4f30;background:#fff;font-weight:600;max-width:160px}
+.project-name-input:focus{outline:none}
 .toggles{display:flex;gap:6px;flex-wrap:wrap;flex:1}
 .toggle-btn{padding:5px 11px;border-radius:20px;border:1.5px solid;font-size:12px;font-weight:500;cursor:pointer;background:transparent;transition:all .15s;color:#1a1a1a;display:inline-flex;align-items:center;gap:4px}
 .toggle-btn.active{color:#fff}
@@ -180,11 +194,19 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 <h1>Baking Scheduler</h1>
 <p style="font-size:13px;color:#8a7253;margin-bottom:1rem">오늘은 어떤 빵을 만들까요?</p>
 
+<!-- Project bar (top-level work sessions) -->
+<div class="project-bar">
+  <div class="project-chips" id="projectChips"></div>
+  <div class="project-actions">
+    <button class="btn btn-newproj" id="newProjectBtn">＋ New Project</button>
+  </div>
+</div>
+
 <div class="top-row">
   <div class="toggles" id="toggles"></div>
   <div class="action-btns">
-    <button class="btn btn-proj" id="projSelectorBtn">프로젝트 선택</button>
-    <button class="btn btn-add" id="addBreadBtn">＋ 새 프로젝트 (복사)</button>
+    <button class="btn btn-proj" id="projSelectorBtn">Select Bread</button>
+    <button class="btn btn-add" id="addBreadBtn">＋ Add New Bread</button>
     <button class="btn btn-total" id="totalTimeBtn">총 작업시간 보기</button>
     <button class="btn btn-reset" id="resetBtn">초기화</button>
     <button class="btn btn-reset" id="dataResetBtn" style="color:#d94040;border-color:#f0c0c0">🗑 데이터 초기화</button>
@@ -235,7 +257,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 <div class="backdrop" id="projBackdrop"></div>
 <div class="proj-panel" id="projPanel">
   <button class="proj-panel-close" id="projPanelClose">✕</button>
-  <h4>프로젝트 선택</h4>
+  <h4>Select Bread</h4>
   <div class="proj-list" id="projList"></div>
 </div>
 
@@ -430,12 +452,72 @@ const LS={
   get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 };
-let breads=LS.get('sched.breads',null);
-if(!breads){breads=DEFAULT_BREADS;LS.set('sched.breads',breads);}
-breads=breads.map(b=>({targetDate:getTodayStr(),targetTime:DEFAULT_TIME,...b}));
-let groups=LS.get('sched.groups',null);
-if(!groups){groups=DEFAULT_GROUPS;LS.set('sched.groups',groups);}
-let selected=new Set(LS.get('sched.selected',[breads[0]?.id].filter(Boolean)));
+
+// LIBRARY = master bread catalog. Select Bread copies from here.
+// Editing a project's bread never touches the library.
+const LIBRARY=DEFAULT_BREADS;
+
+// Build a fresh empty project. groups always seeded from defaults.
+let projSeq=LS.get('sched.projSeq',0);
+function makeProject(name){
+  projSeq++;LS.set('sched.projSeq',projSeq);
+  return {id:uid(),name:name||('Project '+projSeq),breads:[],groups:DEFAULT_GROUPS.map(g=>({...g})),selected:[]};
+}
+
+// Load or migrate projects
+let projects=LS.get('sched.projects',null);
+let activeProjectId=LS.get('sched.activeProject',null);
+
+if(!projects){
+  // Migration: if old flat data exists, wrap it as "Project 1". Otherwise start with one project pre-filled from the library.
+  const oldBreads=LS.get('sched.breads',null);
+  const oldGroups=LS.get('sched.groups',null);
+  const oldSelected=LS.get('sched.selected',null);
+  let first;
+  if(oldBreads){
+    first={id:uid(),name:'Project 1',breads:oldBreads,groups:oldGroups||DEFAULT_GROUPS.map(g=>({...g})),selected:oldSelected||[oldBreads[0]?.id].filter(Boolean)};
+    projSeq=1;LS.set('sched.projSeq',1);
+  } else {
+    first={id:uid(),name:'Project 1',breads:LIBRARY.map(b=>({...b,id:uid(),stages:b.stages.map(s=>({...s,id:uid()}))})),groups:DEFAULT_GROUPS.map(g=>({...g})),selected:[]};
+    first.selected=[first.breads[0]?.id].filter(Boolean);
+    projSeq=1;LS.set('sched.projSeq',1);
+  }
+  projects=[first];
+  activeProjectId=first.id;
+  LS.set('sched.projects',projects);
+  LS.set('sched.activeProject',activeProjectId);
+}
+if(!activeProjectId||!projects.find(p=>p.id===activeProjectId)){activeProjectId=projects[0].id;LS.set('sched.activeProject',activeProjectId);}
+
+// Active project's data is exposed via the same variable names the rest of the code uses.
+function activeProject(){return projects.find(p=>p.id===activeProjectId)||projects[0];}
+let breads,groups,selected;
+function loadActiveProject(){
+  const p=activeProject();
+  breads=p.breads.map(b=>({targetDate:getTodayStr(),targetTime:DEFAULT_TIME,...b}));
+  groups=p.groups&&p.groups.length?p.groups:DEFAULT_GROUPS.map(g=>({...g}));
+  selected=new Set(p.selected||[]);
+}
+loadActiveProject();
+
+// Persist the active project's current state back into the projects array.
+function saveActiveProject(){
+  const p=activeProject();
+  p.breads=breads;
+  p.groups=groups;
+  p.selected=[...selected];
+  LS.set('sched.projects',projects);
+}
+
+// Back-compat shim: old code calls LS.set('sched.breads'/'sched.groups'/'sched.selected').
+// Reroute those writes into the active project instead of flat keys.
+const _origSet=LS.set;
+LS.set=function(k,v){
+  if(k==='sched.breads'){const p=activeProject();p.breads=v;return _origSet('sched.projects',projects);}
+  if(k==='sched.groups'){const p=activeProject();p.groups=v;return _origSet('sched.projects',projects);}
+  if(k==='sched.selected'){const p=activeProject();p.selected=v;return _origSet('sched.projects',projects);}
+  return _origSet(k,v);
+};
 
 // ========================
 // Core: unified time system
@@ -519,17 +601,40 @@ document.getElementById('totalClose').addEventListener('click',()=>{document.get
 document.getElementById('totalBackdrop').addEventListener('click',()=>{document.getElementById('totalBackdrop').classList.remove('show');document.getElementById('totalPopup').classList.remove('show');});
 
 // ========================
-// Project selector
+// Select Bread panel (pick breads from LIBRARY into this project)
 // ========================
 function renderProjPanel(){
   const list=document.getElementById('projList');list.innerHTML='';
-  breads.forEach(b=>{
-    const el=document.createElement('div');
-    el.className='proj-item'+(selected.has(b.id)?' active-proj':'');
-    el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span>${selected.has(b.id)?'<span class="p-check">✓</span>':''}`;
+  // Section 1: breads already in this project (toggle visibility / remove)
+  if(breads.length){
+    const hd=document.createElement('div');hd.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px';hd.textContent='이 프로젝트의 빵 (탭하여 타임라인 표시/숨김)';
+    list.appendChild(hd);
+    breads.forEach(b=>{
+      const el=document.createElement('div');
+      el.className='proj-item'+(selected.has(b.id)?' active-proj':'');
+      el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span>${selected.has(b.id)?'<span class="p-check">✓</span>':''}<span class="p-remove" title="프로젝트에서 제거" style="font-size:13px;color:#c9a;cursor:pointer;padding:0 4px">✕</span>`;
+      el.addEventListener('click',e=>{
+        if(e.target.classList.contains('p-remove')){
+          e.stopPropagation();
+          breads=breads.filter(x=>x.id!==b.id);selected.delete(b.id);
+          saveActiveProject();renderProjPanel();buildToggles();render();return;
+        }
+        if(selected.has(b.id)){selected.delete(b.id);}else{selected.add(b.id);}
+        saveActiveProject();renderProjPanel();buildToggles();render();
+      });
+      list.appendChild(el);
+    });
+  }
+  // Section 2: library — add a copy into this project
+  const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:12px 0 4px;padding-top:10px;border-top:1px dashed #e0d2b4';hd2.textContent='빵 라이브러리 (탭하여 프로젝트에 추가)';
+  list.appendChild(hd2);
+  LIBRARY.forEach(lib=>{
+    const el=document.createElement('div');el.className='proj-item';
+    el.innerHTML=`<span class="p-dot" style="background:${lib.color}"></span><span class="p-name">${lib.name}</span><span style="font-size:13px;color:#5DCAA5;font-weight:700">＋</span>`;
     el.addEventListener('click',()=>{
-      if(selected.has(b.id)){selected.delete(b.id);}else{selected.add(b.id);}
-      LS.set('sched.selected',[...selected]);renderProjPanel();buildToggles();render();
+      const nb={...lib,id:uid(),targetDate:getTodayStr(),targetTime:DEFAULT_TIME,stages:lib.stages.map(s=>({...s,id:uid()}))};
+      breads.push(nb);selected.add(nb.id);
+      saveActiveProject();renderProjPanel();buildToggles();render();
     });
     list.appendChild(el);
   });
@@ -537,6 +642,69 @@ function renderProjPanel(){
 document.getElementById('projSelectorBtn').addEventListener('click',()=>{renderProjPanel();document.getElementById('projBackdrop').classList.add('show');document.getElementById('projPanel').classList.add('show');});
 document.getElementById('projPanelClose').addEventListener('click',()=>{document.getElementById('projBackdrop').classList.remove('show');document.getElementById('projPanel').classList.remove('show');});
 document.getElementById('projBackdrop').addEventListener('click',()=>{document.getElementById('projBackdrop').classList.remove('show');document.getElementById('projPanel').classList.remove('show');});
+
+// ========================
+// Project bar (top-level work sessions)
+// ========================
+let editingProjectNameId=null;
+function renderProjectBar(){
+  const chips=document.getElementById('projectChips');chips.innerHTML='';
+  if(!projects.length){const e=document.createElement('span');e.className='proj-chip-empty';e.textContent='프로젝트가 없습니다';chips.appendChild(e);return;}
+  projects.forEach(p=>{
+    if(editingProjectNameId===p.id){
+      const wrap=document.createElement('span');wrap.style.cssText='display:inline-flex;align-items:center;gap:4px';
+      const inp=document.createElement('input');inp.className='project-name-input';inp.value=p.name;
+      const commit=()=>{const v=inp.value.trim();if(v)p.name=v;editingProjectNameId=null;LS_setProjects();renderProjectBar();};
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){editingProjectNameId=null;renderProjectBar();}});
+      inp.addEventListener('blur',()=>{setTimeout(commit,120);});
+      const del=document.createElement('button');del.className='btn';del.style.cssText='padding:4px 8px;font-size:11px;color:#d94040;border-color:#f0c0c0;background:#fff';del.textContent='🗑';del.title='프로젝트 삭제';
+      del.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();deleteProject(p.id);});
+      wrap.appendChild(inp);wrap.appendChild(del);
+      chips.appendChild(wrap);
+      setTimeout(()=>{inp.focus();inp.select();},0);
+      return;
+    }
+    const chip=document.createElement('div');
+    chip.className='proj-chip'+(p.id===activeProjectId?' active':'');
+    const nm=document.createElement('span');nm.textContent=p.name;
+    const edit=document.createElement('span');edit.className='pc-edit';edit.textContent='✏️';edit.title='이름 변경';
+    chip.appendChild(nm);chip.appendChild(edit);
+    nm.addEventListener('click',()=>{switchProject(p.id);});
+    edit.addEventListener('click',e=>{e.stopPropagation();editingProjectNameId=p.id;renderProjectBar();});
+    chips.appendChild(chip);
+  });
+}
+function LS_setProjects(){localStorage.setItem('sched.projects',JSON.stringify(projects));}
+function switchProject(id){
+  if(id===activeProjectId)return;
+  saveActiveProject();
+  activeProjectId=id;localStorage.setItem('sched.activeProject',id);
+  loadActiveProject();
+  renderProjectBar();buildToggles();render();
+}
+function newProject(){
+  saveActiveProject();
+  const p=makeProject();
+  // seed with the same default library selection? No — start empty per spec.
+  projects.push(p);
+  activeProjectId=p.id;localStorage.setItem('sched.activeProject',p.id);
+  localStorage.setItem('sched.projects',JSON.stringify(projects));
+  loadActiveProject();
+  renderProjectBar();buildToggles();render();
+  // open Select Bread so the user can pick breads right away
+  renderProjPanel();document.getElementById('projBackdrop').classList.add('show');document.getElementById('projPanel').classList.add('show');
+}
+document.getElementById('newProjectBtn').addEventListener('click',newProject);
+function deleteProject(id){
+  if(projects.length<=1){alert('최소 한 개의 프로젝트는 있어야 해요.');editingProjectNameId=null;renderProjectBar();return;}
+  const p=projects.find(x=>x.id===id);
+  if(!confirm(`'${p.name}' 프로젝트를 삭제할까요?`)){editingProjectNameId=null;renderProjectBar();return;}
+  projects=projects.filter(x=>x.id!==id);
+  editingProjectNameId=null;
+  if(activeProjectId===id){activeProjectId=projects[0].id;localStorage.setItem('sched.activeProject',activeProjectId);loadActiveProject();}
+  localStorage.setItem('sched.projects',JSON.stringify(projects));
+  renderProjectBar();buildToggles();render();
+}
 
 // ========================
 // Bread Modal
@@ -816,15 +984,17 @@ function render(){
 // Data reset button
 document.getElementById('dataResetBtn').addEventListener('click',()=>openModal('dataResetModal'));
 document.getElementById('resetGroups').addEventListener('click',()=>{
-  if(!confirm('그룹 데이터를 초기화할까요? 프로젝트는 유지됩니다.'))return;
-  localStorage.removeItem('sched.groups');closeModal('dataResetModal');location.reload();
+  if(!confirm('현재 프로젝트의 그룹을 기본값으로 초기화할까요? 빵 데이터는 유지됩니다.'))return;
+  groups=DEFAULT_GROUPS.map(g=>({...g}));saveActiveProject();closeModal('dataResetModal');location.reload();
 });
 document.getElementById('resetBreads').addEventListener('click',()=>{
-  if(!confirm('프로젝트를 기본값으로 초기화할까요?'))return;
-  localStorage.removeItem('sched.breads');localStorage.removeItem('sched.selected');closeModal('dataResetModal');location.reload();
+  if(!confirm('현재 프로젝트의 빵을 라이브러리 기본값으로 초기화할까요?'))return;
+  breads=LIBRARY.map(b=>({...b,id:uid(),targetDate:getTodayStr(),targetTime:DEFAULT_TIME,stages:b.stages.map(s=>({...s,id:uid()}))}));
+  selected=new Set([breads[0]?.id].filter(Boolean));
+  saveActiveProject();closeModal('dataResetModal');location.reload();
 });
 document.getElementById('resetAll').addEventListener('click',()=>{
-  if(!confirm('모든 데이터를 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;
+  if(!confirm('모든 프로젝트와 데이터를 삭제하고 새로 시작할까요? 이 작업은 되돌릴 수 없습니다.'))return;
   Object.keys(localStorage).filter(k=>k.startsWith('sched.')).forEach(k=>localStorage.removeItem(k));
   closeModal('dataResetModal');location.reload();
 });
@@ -927,6 +1097,7 @@ function getCalendarEvents(){
 // ========================
 // Init
 // ========================
+renderProjectBar();
 buildToggles();
 render();
 </script>
