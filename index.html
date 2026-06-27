@@ -155,6 +155,61 @@
     .tip-layout{grid-template-columns:1fr}
     .history-item{flex-wrap:wrap}
     .field-row{grid-template-columns:1fr}
+  }
+
+  /* Calculator */
+  .calc-flourbox{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;background:var(--paper-2);border:1px solid #ece1c9;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px}
+  .calc-inwrap{position:relative;display:flex;align-items:center}
+  .calc-inwrap input{width:100%;padding:9px 30px 9px 11px;border:1px solid #e0d2b4;border-radius:8px;background:#fff;font-family:inherit;font-size:14px;color:var(--ink);font-weight:600}
+  .calc-inwrap input:focus{outline:none;border-color:var(--accent)}
+  .calc-unit{position:absolute;right:11px;font-size:12px;color:var(--ink-3);pointer-events:none}
+  .calc-rev{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+  .calc-rev .field{min-width:150px}
+  .calc-rev .btn{white-space:nowrap;height:38px}
+  .calc-table{width:100%;border-collapse:collapse;font-size:13px}
+  .calc-table th{text-align:left;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;border-bottom:1.5px solid #ece1c9}
+  .calc-table td{padding:5px 8px;border-bottom:1px solid #f2e9d6;vertical-align:middle}
+  .calc-table input,.calc-table select{width:100%;padding:7px 8px;border:1px solid #e0d2b4;border-radius:7px;background:var(--paper-2);font-family:inherit;font-size:13px;color:var(--ink)}
+  .calc-table input:focus,.calc-table select:focus{outline:none;border-color:var(--accent);background:#fff}
+  .calc-table .calc-w{font-weight:700;color:var(--crust-dark);font-size:14px;white-space:nowrap}
+  .calc-table .calc-del{border:none;background:transparent;color:var(--ink-4);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:6px}
+  .calc-table .calc-del:hover{background:#fdefec;color:#b84431}
+  .calc-table tr.calc-total td{border-bottom:none;border-top:2px solid #ece1c9;font-weight:600;color:var(--ink-2);padding-top:10px}
+  .calc-table tr.calc-total #calcTotalWeight{font-weight:800;color:var(--crust-dark);font-size:15px}
+  .calc-addrow{margin-top:12px}
+
+  .biga-ratio{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+  .biga-ratio-lb{font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.3}
+  .biga-ratio-lb small{color:var(--ink-4);font-weight:400;font-size:10.5px}
+  .biga-presets{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .biga-preset{padding:8px 16px;border:1px solid #d8c9a8;background:#fff;border-radius:100px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:all .15s ease}
+  .biga-preset:hover{background:var(--paper-2)}
+  .biga-preset.active{background:linear-gradient(135deg,var(--accent),var(--crust-dark));color:#fff5dd;border-color:transparent;box-shadow:0 2px 6px rgba(184,112,74,.3)}
+  .biga-custom{position:relative;display:flex;align-items:center;width:90px}
+  .biga-custom input{width:100%;padding:8px 26px 8px 11px;border:1px solid #e0d2b4;border-radius:100px;background:var(--paper-2);font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:center}
+  .biga-custom input:focus{outline:none;border-color:var(--accent);background:#fff}
+  .biga-custom .calc-unit{right:12px}
+  .biga-adv{margin:14px 0 6px;font-size:12.5px}
+  .biga-adv summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:12.5px;list-style:none;padding:4px 0}
+  .biga-adv summary::-webkit-details-marker{display:none}
+  .biga-adv summary::before{content:'▸ ';color:var(--ink-4)}
+  .biga-adv[open] summary::before{content:'▾ '}
+  .biga-note{font-size:11.5px;color:var(--ink-3);line-height:1.6;margin-top:8px;background:var(--paper-2);padding:10px 12px;border-radius:8px}
+  .biga-result{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media(max-width:680px){.biga-result{grid-template-columns:1fr}}
+  .biga-col{background:var(--paper-2);border:1px solid #ece1c9;border-radius:var(--radius-sm);padding:16px 18px}
+  .biga-col.is-biga{background:linear-gradient(180deg,#fbeeda,#fbf5e8);border-color:#eed8b6}
+  .biga-col h4{font-family:'Playfair Display',Georgia,serif;font-size:15px;color:var(--crust-dark);margin-bottom:2px;display:flex;align-items:center;gap:7px}
+  .biga-col .sub{font-size:11px;color:var(--ink-3);margin-bottom:12px}
+  .biga-line{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px dashed #ece1c9;font-size:13px}
+  .biga-line:last-child{border-bottom:none}
+  .biga-line .nm{color:var(--ink-2)}
+  .biga-line .vl{font-weight:700;color:var(--crust-dark);font-size:14px}
+  .biga-line.sum{border-bottom:none;border-top:2px solid #ece1c9;margin-top:4px;padding-top:9px;font-weight:600}
+  .biga-line.sum .vl{font-size:15px;font-weight:800}
+  .biga-warn{grid-column:1/-1;background:#fdefec;border:1px solid #f2cbc2;color:#b84431;font-size:12px;padding:10px 14px;border-radius:8px;line-height:1.5}
+  @media(max-width:900px){
+    .calc-rev{width:100%}
     .iframe-wrap iframe{min-height:600px}
   }
 </style>
@@ -177,6 +232,7 @@
     <button class="tab-btn active" data-tab="plan"><span class="ico">📋</span> Baking Plan</button>
     <button class="tab-btn" data-tab="scheduler"><span class="ico">🥖</span> Scheduler</button>
     <button class="tab-btn" data-tab="recipes"><span class="ico">📖</span> Recipe</button>
+    <button class="tab-btn" data-tab="calc"><span class="ico">🧮</span> Calculator</button>
     <button class="tab-btn" data-tab="history"><span class="ico">📅</span> History</button>
     <button class="tab-btn" data-tab="tips"><span class="ico">💡</span> Baking Tips</button>
   </nav>
@@ -226,6 +282,85 @@
         <button class="btn btn-primary" id="addRecipeBtn">＋ 레시피 추가</button>
       </div>
       <div class="recipe-grid" id="recipeGrid"></div>
+    </div>
+  </section>
+
+  <!-- CALCULATOR -->
+  <section class="panel" id="panel-calc">
+    <!-- 베이커스 퍼센티지 -->
+    <div class="surface" style="margin-bottom:18px">
+      <div class="section-head">
+        <div>
+          <div class="section-title">베이커스 퍼센티지 계산기</div>
+          <div class="section-sub">밀가루를 100% 기준으로, 분량만 넣으면 나머지 재료가 자동 계산돼요.</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" id="calcLoadPreset">📂 프리셋</button>
+          <button class="btn btn-ghost" id="calcSavePreset">💾 저장</button>
+        </div>
+      </div>
+
+      <div class="calc-flourbox">
+        <div class="field" style="margin-bottom:0;flex:1">
+          <label>밀가루 총량 (100% 기준)</label>
+          <div class="calc-inwrap"><input type="number" id="calcFlour" min="0" step="1" placeholder="예: 500"><span class="calc-unit">g</span></div>
+        </div>
+        <div class="calc-rev">
+          <div class="field" style="margin-bottom:0">
+            <label>목표 완성 반죽량으로 역산</label>
+            <div class="calc-inwrap"><input type="number" id="calcTarget" min="0" step="1" placeholder="예: 900"><span class="calc-unit">g</span></div>
+          </div>
+          <button class="btn btn-ghost" id="calcRevBtn" title="완성량 → 필요 밀가루">← 밀가루 계산</button>
+        </div>
+      </div>
+
+      <table class="calc-table" id="calcTable">
+        <thead>
+          <tr><th style="width:34%">재료</th><th style="width:18%">역할</th><th style="width:18%">%</th><th style="width:22%">분량</th><th style="width:8%"></th></tr>
+        </thead>
+        <tbody id="calcRows"></tbody>
+        <tfoot>
+          <tr class="calc-total">
+            <td colspan="3">총 완성 반죽 무게</td>
+            <td id="calcTotalWeight">—</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+      <button class="btn btn-ghost calc-addrow" id="calcAddRow">＋ 재료 추가</button>
+    </div>
+
+    <!-- 비가 계산기 -->
+    <div class="surface">
+      <div class="section-head">
+        <div>
+          <div class="section-title">비가 (Biga) 사전반죽 계산기</div>
+          <div class="section-sub">위 배합을 기준으로, 전체 밀가루 중 일부를 비가로 미리 발효시킬 때의 분배량입니다.</div>
+        </div>
+      </div>
+
+      <div class="biga-ratio">
+        <span class="biga-ratio-lb">비가 비율<br><small>(전체 밀가루 중)</small></span>
+        <div class="biga-presets">
+          <button class="biga-preset" data-ratio="40">40%</button>
+          <button class="biga-preset" data-ratio="60">60%</button>
+          <button class="biga-preset" data-ratio="100">100%</button>
+          <div class="biga-custom">
+            <input type="number" id="bigaRatio" min="0" max="100" step="1" value="40"><span class="calc-unit">%</span>
+          </div>
+        </div>
+      </div>
+
+      <details class="biga-adv">
+        <summary>고급 설정 (비가 수화율 · 이스트)</summary>
+        <div class="field-row" style="margin-top:10px">
+          <div class="field"><label>비가 수화율 (비가 밀가루 대비)</label><div class="calc-inwrap"><input type="number" id="bigaHydration" min="0" step="1" value="50"><span class="calc-unit">%</span></div></div>
+          <div class="field"><label>비가 이스트 (비가 밀가루 대비)</label><div class="calc-inwrap"><input type="number" id="bigaYeast" min="0" step="0.05" value="0.3"><span class="calc-unit">%</span></div></div>
+        </div>
+        <p class="biga-note">스티프 비가는 보통 수화율 45~50%, 장시간(12~16h) 발효 시 이스트 0.1~0.5%를 사용해요. 비가의 물·이스트는 전체 배합에서 가져와 본반죽에 남는 양으로 분배됩니다.</p>
+      </details>
+
+      <div class="biga-result" id="bigaResult"></div>
     </div>
   </section>
 
@@ -386,6 +521,10 @@
       <button class="btn btn-ghost" id="resetRecipes" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto">
         <div style="font-weight:600;font-size:13px;margin-bottom:2px">레시피 초기화</div>
         <div style="font-size:11px;color:#888">기본 레시피가 변경되었을 때. 기본값으로 리셋.</div>
+      </button>
+      <button class="btn btn-ghost" id="resetCalc" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto">
+        <div style="font-weight:600;font-size:13px;margin-bottom:2px">계산기 초기화</div>
+        <div style="font-size:11px;color:#888">베이커스 % 배합·프리셋을 기본값으로 리셋.</div>
       </button>
       <button class="btn btn-danger" id="resetAllIndex" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto">
         <div style="font-weight:600;font-size:13px;margin-bottom:2px">전체 초기화</div>
@@ -675,6 +814,11 @@ document.getElementById('resetRecipes').addEventListener('click',()=>{
   localStorage.removeItem('baking.recipes');
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
 });
+document.getElementById('resetCalc').addEventListener('click',()=>{
+  if(!confirm('계산기 배합과 프리셋을 기본값으로 초기화할까요?'))return;
+  localStorage.removeItem('baking.calc');localStorage.removeItem('baking.calcPresets');
+  document.getElementById('dataResetModal').classList.remove('show');location.reload();
+});
 document.getElementById('resetAllIndex').addEventListener('click',()=>{
   if(!confirm('모든 데이터를 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;
   Object.keys(localStorage).filter(k=>k.startsWith('baking.')).forEach(k=>localStorage.removeItem(k));
@@ -683,8 +827,168 @@ document.getElementById('resetAllIndex').addEventListener('click',()=>{
 // Close modal on backdrop click
 document.getElementById('dataResetModal').addEventListener('click',e=>{if(e.target===document.getElementById('dataResetModal'))e.target.classList.remove('show');});
 
+// ===== Calculator (Baker's % + Biga) =====
+const CALC_DEFAULT={
+  flour:500,
+  ingredients:[
+    {id:'w',  name:'물',   role:'water', pct:68},
+    {id:'s',  name:'소금', role:'salt',  pct:2},
+    {id:'y',  name:'이스트(드라이)', role:'yeast', pct:1},
+  ],
+  biga:{ratio:40,hydration:50,yeast:0.3}
+};
+const CALC_PRESETS_DEFAULT=[
+  {id:'p_basic', name:'기본 식빵', data:{flour:500,ingredients:[
+    {id:uid(),name:'물',role:'water',pct:65},{id:uid(),name:'설탕',role:'other',pct:6},
+    {id:uid(),name:'소금',role:'salt',pct:2},{id:uid(),name:'버터',role:'other',pct:6},
+    {id:uid(),name:'이스트(드라이)',role:'yeast',pct:1}],biga:{ratio:40,hydration:50,yeast:0.3}}},
+  {id:'p_biga', name:'비가 깜빠뉴 (예시·수정용)', data:{flour:500,ingredients:[
+    {id:uid(),name:'물',role:'water',pct:75},{id:uid(),name:'소금',role:'salt',pct:2},
+    {id:uid(),name:'이스트(드라이)',role:'yeast',pct:0.6}],biga:{ratio:100,hydration:50,yeast:0.2}}},
+];
+let calc = LS.get('baking.calc', JSON.parse(JSON.stringify(CALC_DEFAULT)));
+let calcPresets = LS.get('baking.calcPresets', CALC_PRESETS_DEFAULT);
+const ROLE_LABELS={water:'물',yeast:'이스트',salt:'소금',other:'기타'};
+const saveCalc=()=>LS.set('baking.calc',calc);
+const fmt=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; return (r%1===0?r.toFixed(0):r.toFixed(1))+'g'; };
+
+function calcTotalPct(){return 100 + calc.ingredients.reduce((s,i)=>s+(parseFloat(i.pct)||0),0);}
+
+// 표를 다시 그리지 않고 무게 숫자만 갱신 (입력 포커스 유지용)
+function refreshCalcWeights(){
+  const F=calc.flour||0;
+  const fw=document.getElementById('calcFlourW'); if(fw) fw.textContent=fmt(F);
+  const tw=document.getElementById('calcTotalWeight'); if(tw) tw.textContent=fmt(F*calcTotalPct()/100);
+  document.querySelectorAll('#calcRows tr[data-idx]').forEach(tr=>{
+    const i=+tr.dataset.idx;
+    const cell=tr.querySelector('.calc-w');
+    if(cell) cell.textContent=fmt(F*(parseFloat(calc.ingredients[i].pct)||0)/100);
+  });
+  renderBiga();
+}
+
+function renderCalc(){
+  document.getElementById('calcFlour').value = calc.flour||'';
+  const tb=document.getElementById('calcRows');
+  // flour base row + ingredient rows
+  let html = `<tr>
+    <td><input value="강력분" disabled style="opacity:.7"></td>
+    <td><span style="font-size:12px;color:var(--ink-3)">밀가루</span></td>
+    <td><span style="font-weight:700;color:var(--crust-dark)">100%</span></td>
+    <td class="calc-w" id="calcFlourW">${fmt(calc.flour)}</td>
+    <td></td></tr>`;
+  calc.ingredients.forEach((ing,idx)=>{
+    const w=(calc.flour||0)*(parseFloat(ing.pct)||0)/100;
+    html += `<tr data-idx="${idx}">
+      <td><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명"></td>
+      <td><select class="ci-role">
+        ${Object.keys(ROLE_LABELS).map(r=>`<option value="${r}"${ing.role===r?' selected':''}>${ROLE_LABELS[r]}</option>`).join('')}
+      </select></td>
+      <td><input class="ci-pct" type="number" step="0.1" min="0" value="${ing.pct}"></td>
+      <td class="calc-w">${fmt(w)}</td>
+      <td><button class="calc-del" title="삭제">✕</button></td></tr>`;
+  });
+  tb.innerHTML=html;
+  document.getElementById('calcTotalWeight').textContent = fmt((calc.flour||0)*calcTotalPct()/100);
+  // bind ingredient row events
+  tb.querySelectorAll('tr[data-idx]').forEach(tr=>{
+    const idx=+tr.dataset.idx;
+    tr.querySelector('.ci-name').addEventListener('input',e=>{calc.ingredients[idx].name=e.target.value;saveCalc();renderBiga();});
+    tr.querySelector('.ci-role').addEventListener('change',e=>{calc.ingredients[idx].role=e.target.value;saveCalc();renderBiga();});
+    const pctEl=tr.querySelector('.ci-pct');
+    const commitPct=()=>{calc.ingredients[idx].pct=pctEl.value;saveCalc();refreshCalcWeights();};
+    pctEl.addEventListener('change',commitPct); // 다른 곳 클릭(blur) 시에도 확정
+    pctEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();pctEl.blur();}}); // 엔터로 확정
+    tr.querySelector('.calc-del').addEventListener('click',()=>{calc.ingredients.splice(idx,1);saveCalc();renderCalc();});
+  });
+  renderBiga();
+}
+
+function renderBiga(){
+  const F=calc.flour||0;
+  const ratio=Math.max(0,Math.min(100,parseFloat(calc.biga.ratio)||0));
+  const hyd=parseFloat(calc.biga.hydration)||0;
+  const byeast=parseFloat(calc.biga.yeast)||0;
+  // totals by role
+  const totalWater=calc.ingredients.filter(i=>i.role==='water').reduce((s,i)=>s+F*(parseFloat(i.pct)||0)/100,0);
+  const totalYeast=calc.ingredients.filter(i=>i.role==='yeast').reduce((s,i)=>s+F*(parseFloat(i.pct)||0)/100,0);
+  const others=calc.ingredients.filter(i=>i.role!=='water'&&i.role!=='yeast');
+  const bigaFlour=F*ratio/100;
+  const bigaWater=bigaFlour*hyd/100;
+  const bigaYeast=bigaFlour*byeast/100;
+  const mainFlour=F-bigaFlour;
+  const mainWater=totalWater-bigaWater;
+  const mainYeast=totalYeast-bigaYeast;
+  const bigaTotal=bigaFlour+bigaWater+bigaYeast;
+
+  // sync preset button active state
+  document.querySelectorAll('.biga-preset').forEach(b=>b.classList.toggle('active', +b.dataset.ratio===Math.round(ratio)));
+  const ri=document.getElementById('bigaRatio'); if(document.activeElement!==ri) ri.value=ratio;
+
+  let warn='';
+  if(mainWater<-0.05) warn+=`본반죽 물이 부족합니다 (${fmt(mainWater)}). 비가 비율 또는 수화율을 낮춰주세요.<br>`;
+  if(mainYeast<-0.05) warn+=`본반죽 이스트가 부족합니다. 비가 이스트 비율을 낮춰주세요.`;
+
+  const bigaLines=`
+    <div class="biga-line"><span class="nm">밀가루</span><span class="vl">${fmt(bigaFlour)}</span></div>
+    <div class="biga-line"><span class="nm">물 (수화율 ${hyd}%)</span><span class="vl">${fmt(bigaWater)}</span></div>
+    <div class="biga-line"><span class="nm">이스트</span><span class="vl">${fmt(bigaYeast)}</span></div>
+    <div class="biga-line sum"><span class="nm">비가 합계</span><span class="vl">${fmt(bigaTotal)}</span></div>`;
+
+  let mainLines=`<div class="biga-line"><span class="nm">밀가루</span><span class="vl">${fmt(mainFlour)}</span></div>`;
+  if(totalWater>0) mainLines+=`<div class="biga-line"><span class="nm">물</span><span class="vl">${fmt(Math.max(0,mainWater))}</span></div>`;
+  if(totalYeast>0) mainLines+=`<div class="biga-line"><span class="nm">이스트</span><span class="vl">${fmt(Math.max(0,mainYeast))}</span></div>`;
+  others.forEach(i=>{ mainLines+=`<div class="biga-line"><span class="nm">${(i.name||ROLE_LABELS[i.role])}</span><span class="vl">${fmt(F*(parseFloat(i.pct)||0)/100)}</span></div>`; });
+  mainLines+=`<div class="biga-line"><span class="nm">＋ 비가 전량</span><span class="vl">${fmt(bigaTotal)}</span></div>`;
+  mainLines+=`<div class="biga-line sum"><span class="nm">본반죽 합계</span><span class="vl">${fmt((calc.flour||0)*calcTotalPct()/100)}</span></div>`;
+
+  document.getElementById('bigaResult').innerHTML=`
+    ${warn?`<div class="biga-warn">⚠️ ${warn}</div>`:''}
+    <div class="biga-col is-biga"><h4>🫧 비가 (사전발효)</h4><div class="sub">전체 밀가루의 ${ratio}% · 미리 발효</div>${bigaLines}</div>
+    <div class="biga-col"><h4>🥖 본반죽</h4><div class="sub">비가를 넣고 최종 반죽</div>${mainLines}</div>`;
+}
+
+// flour & target inputs
+document.getElementById('calcFlour').addEventListener('input',e=>{calc.flour=parseFloat(e.target.value)||0;saveCalc();
+  document.getElementById('calcFlourW').textContent=fmt(calc.flour);
+  document.getElementById('calcTotalWeight').textContent=fmt(calc.flour*calcTotalPct()/100);
+  document.querySelectorAll('#calcRows tr[data-idx]').forEach(tr=>{const i=+tr.dataset.idx;tr.querySelector('.calc-w').textContent=fmt(calc.flour*(parseFloat(calc.ingredients[i].pct)||0)/100);});
+  renderBiga();
+});
+document.getElementById('calcRevBtn').addEventListener('click',()=>{
+  const target=parseFloat(document.getElementById('calcTarget').value)||0;
+  if(target<=0){alert('목표 완성량을 입력하세요');return;}
+  calc.flour=Math.round(target/(calcTotalPct()/100));saveCalc();renderCalc();
+});
+document.getElementById('calcAddRow').addEventListener('click',()=>{calc.ingredients.push({id:uid(),name:'',role:'other',pct:0});saveCalc();renderCalc();});
+
+// biga controls
+document.querySelectorAll('.biga-preset').forEach(b=>b.addEventListener('click',()=>{calc.biga.ratio=+b.dataset.ratio;saveCalc();renderBiga();}));
+document.getElementById('bigaRatio').addEventListener('input',e=>{calc.biga.ratio=parseFloat(e.target.value)||0;saveCalc();renderBiga();});
+document.getElementById('bigaHydration').addEventListener('input',e=>{calc.biga.hydration=parseFloat(e.target.value)||0;saveCalc();renderBiga();});
+document.getElementById('bigaYeast').addEventListener('input',e=>{calc.biga.yeast=parseFloat(e.target.value)||0;saveCalc();renderBiga();});
+
+// presets save/load
+document.getElementById('calcSavePreset').addEventListener('click',()=>{
+  const name=prompt('이 배합을 어떤 이름으로 저장할까요?','내 배합');
+  if(!name)return;
+  calcPresets.push({id:uid(),name:name.trim(),data:JSON.parse(JSON.stringify(calc))});
+  LS.set('baking.calcPresets',calcPresets);
+  alert(`"${name.trim()}" 저장 완료`);
+});
+document.getElementById('calcLoadPreset').addEventListener('click',()=>{
+  if(!calcPresets.length){alert('저장된 프리셋이 없습니다. 먼저 💾 저장을 눌러보세요.');return;}
+  const list=calcPresets.map((p,i)=>`${i+1}. ${p.name}`).join('\n');
+  const pick=prompt(`불러올 프리셋 번호를 입력하세요:\n\n${list}\n\n(삭제하려면 "d" + 번호, 예: d2)`);
+  if(!pick)return;
+  const dm=pick.trim().match(/^d\s*(\d+)$/i);
+  if(dm){const di=+dm[1]-1; if(calcPresets[di]&&confirm(`"${calcPresets[di].name}" 프리셋을 삭제할까요?`)){calcPresets.splice(di,1);LS.set('baking.calcPresets',calcPresets);} return;}
+  const idx=parseInt(pick,10)-1;
+  if(calcPresets[idx]){calc=JSON.parse(JSON.stringify(calcPresets[idx].data));saveCalc();renderCalc();}
+});
+
 // Init
-renderPlanList();renderRecipes();renderHistory();renderFolders();renderTips();
+renderPlanList();renderRecipes();renderHistory();renderFolders();renderTips();renderCalc();
 
 // Service Worker
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/ayo-baking/sw.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW error:',e));});}
