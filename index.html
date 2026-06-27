@@ -71,15 +71,7 @@
   .plan-item .p-date-sub{font-size:10.5px;color:var(--ink-4);margin-bottom:6px}
   .plan-item .p-content{font-size:13px;color:var(--ink-2);line-height:1.6;white-space:pre-wrap}
 
-  /* Recipe */
-  .recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-  .recipe-card{background:var(--paper-2);border-radius:var(--radius);border:1px solid #ecddbe;padding:16px;cursor:pointer;transition:all .2s ease;display:flex;flex-direction:column;min-height:150px}
-  .recipe-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(90,60,30,.1);border-color:var(--accent-2)}
-  .recipe-card .emoji{font-size:28px;margin-bottom:6px;line-height:1}
-  .recipe-card .r-name{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:600;color:var(--crust-dark);margin-bottom:4px}
-  .recipe-card .r-tag{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:100px;background:var(--accent-soft);color:var(--crust-dark);margin-right:4px;margin-bottom:6px}
-  .recipe-card .r-note{font-size:12px;color:var(--ink-3);flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-  .recipe-card .r-meta{font-size:11px;color:var(--ink-4);margin-top:10px;padding-top:8px;border-top:1px dashed #e0d2b4;display:flex;justify-content:space-between}
+  /* Recipe (removed) */
   .add-card{background:transparent;border:2px dashed #d8c9a8;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:14px;cursor:pointer;min-height:150px;border-radius:var(--radius)}
   .add-card:hover{border-color:var(--accent);color:var(--accent);background:rgba(184,112,74,.04)}
 
@@ -208,6 +200,11 @@
   .biga-line.sum{border-bottom:none;border-top:2px solid #ece1c9;margin-top:4px;padding-top:9px;font-weight:600}
   .biga-line.sum .vl{font-size:15px;font-weight:800}
   .biga-warn{grid-column:1/-1;background:#fdefec;border:1px solid #f2cbc2;color:#b84431;font-size:12px;padding:10px 14px;border-radius:8px;line-height:1.5}
+  .preset-item{display:flex;gap:8px;align-items:stretch}
+  .preset-load{flex:1;text-align:left;padding:11px 14px;border:1px solid #d8c9a8;background:var(--paper-2);border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;transition:all .15s ease}
+  .preset-load:hover{background:#fff;border-color:var(--accent);transform:translateX(2px)}
+  .preset-del{border:1px solid #f2cbc2;background:#fff;color:#b84431;border-radius:8px;padding:0 13px;cursor:pointer;font-size:14px;line-height:1}
+  .preset-del:hover{background:#fdefec}
   @media(max-width:900px){
     .calc-rev{width:100%}
     .iframe-wrap iframe{min-height:600px}
@@ -221,7 +218,7 @@
     <div class="logo">🥖</div>
     <div class="brand">
       <h1>Ayo's Baking</h1>
-      <div class="tag">Schedule · Recipes · Notes</div>
+      <div class="tag">Schedule · Calc · Journal</div>
     </div>
     <div class="spacer"></div>
     <div class="date-pill" id="todayPill">—</div>
@@ -231,9 +228,8 @@
   <nav class="tabs">
     <button class="tab-btn active" data-tab="plan"><span class="ico">📋</span> Baking Plan</button>
     <button class="tab-btn" data-tab="scheduler"><span class="ico">🥖</span> Scheduler</button>
-    <button class="tab-btn" data-tab="recipes"><span class="ico">📖</span> Recipe</button>
     <button class="tab-btn" data-tab="calc"><span class="ico">🧮</span> Calculator</button>
-    <button class="tab-btn" data-tab="history"><span class="ico">📅</span> History</button>
+    <button class="tab-btn" data-tab="history"><span class="ico">📅</span> Journal</button>
     <button class="tab-btn" data-tab="tips"><span class="ico">💡</span> Baking Tips</button>
   </nav>
 
@@ -268,20 +264,6 @@
         <div class="iframe-toolbar"><span class="dot"></span><span>Ayo's Baking Plan</span></div>
         <iframe src="baking_scheduler_v2.html" id="schedIframe" title="Baking Scheduler"></iframe>
       </div>
-    </div>
-  </section>
-
-  <!-- RECIPE -->
-  <section class="panel" id="panel-recipes">
-    <div class="surface">
-      <div class="section-head">
-        <div>
-          <div class="section-title">저장된 레시피</div>
-          <div class="section-sub">나만의 레시피 창고</div>
-        </div>
-        <button class="btn btn-primary" id="addRecipeBtn">＋ 레시피 추가</button>
-      </div>
-      <div class="recipe-grid" id="recipeGrid"></div>
     </div>
   </section>
 
@@ -369,7 +351,7 @@
     <div class="surface">
       <div class="section-head">
         <div>
-          <div class="section-title">베이킹 히스토리</div>
+          <div class="section-title">Journal</div>
           <div class="section-sub">오늘 구운 빵, 변수, 다음번을 위한 한 줄 메모.</div>
         </div>
         <button class="btn btn-primary" id="addHistoryBtn">＋ 기록 추가</button>
@@ -412,33 +394,6 @@
       <button class="btn btn-danger left" id="pDelete" style="display:none">삭제</button>
       <button class="btn btn-ghost" data-close>취소</button>
       <button class="btn btn-primary" id="pSave">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- RECIPE MODAL -->
-<div class="modal-back" id="recipeModal">
-  <div class="modal-box">
-    <h3 id="recipeModalTitle">레시피 추가</h3>
-    <div class="field-row">
-      <div class="field"><label>이모지</label><input type="text" id="rEmoji" maxlength="2" placeholder="🍞"></div>
-      <div class="field"><label>카테고리 태그</label><input type="text" id="rTag" placeholder="예: 식빵"></div>
-    </div>
-    <div class="field"><label>레시피 이름</label><input type="text" id="rName" placeholder="예: 기본 식빵"></div>
-    <div class="field"><label>재료</label><textarea id="rIngredients" placeholder="재료와 분량을 입력하세요..." style="min-height:90px"></textarea></div>
-    <div class="field-row">
-      <div class="field"><label>사전 준비</label><textarea id="rPrep" placeholder="탕종, 비가, 르방 준비 등..." style="min-height:80px"></textarea></div>
-      <div class="field"><label>본반죽</label><textarea id="rDough" placeholder="본반죽 과정, 발효, 성형 등..." style="min-height:80px"></textarea></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>굽는 온도</label><input type="text" id="rTemp" placeholder="예: 180°C"></div>
-      <div class="field"><label>굽는 시간</label><input type="text" id="rTime" placeholder="예: 28분"></div>
-    </div>
-    <div class="field"><label>메모</label><textarea id="rMemo" placeholder="개선사항, 변형 아이디어 등..." style="min-height:60px"></textarea></div>
-    <div class="modal-actions">
-      <button class="btn btn-danger left" id="rDelete" style="display:none">삭제</button>
-      <button class="btn btn-ghost" data-close>취소</button>
-      <button class="btn btn-primary" id="rSave">저장</button>
     </div>
   </div>
 </div>
@@ -508,6 +463,18 @@
   </div>
 </div>
 
+<!-- Preset Modal -->
+<div class="modal-back" id="presetModal">
+  <div class="modal-box" style="max-width:380px">
+    <h3>📂 저장된 배합 프리셋</h3>
+    <p style="font-size:12.5px;color:#888;margin-bottom:6px;line-height:1.6">이름을 누르면 불러오고, 🗑 으로 삭제합니다.</p>
+    <div id="presetList" style="display:flex;flex-direction:column;gap:8px;margin:12px 0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('presetModal').classList.remove('show')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- Data Reset Modal -->
 <div class="modal-back" id="dataResetModal">
   <div class="modal-box" style="max-width:380px">
@@ -516,11 +483,7 @@
     <div style="display:flex;flex-direction:column;gap:8px">
       <button class="btn btn-ghost" id="resetFolders" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto;border-radius:8px">
         <div style="font-weight:600;font-size:13px;margin-bottom:2px">폴더 & 팁 초기화</div>
-        <div style="font-size:11px;color:#888">Baking Tips 폴더/내용 변경 시. 레시피·히스토리 유지.</div>
-      </button>
-      <button class="btn btn-ghost" id="resetRecipes" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto">
-        <div style="font-weight:600;font-size:13px;margin-bottom:2px">레시피 초기화</div>
-        <div style="font-size:11px;color:#888">기본 레시피가 변경되었을 때. 기본값으로 리셋.</div>
+        <div style="font-size:11px;color:#888">Baking Tips 폴더/내용만 초기화. 다른 데이터는 유지.</div>
       </button>
       <button class="btn btn-ghost" id="resetCalc" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto">
         <div style="font-weight:600;font-size:13px;margin-bottom:2px">계산기 초기화</div>
@@ -542,14 +505,6 @@ const LS={get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f;
 const uid=()=>Math.random().toString(36).slice(2,10);
 
 // Default data
-const DEFAULT_RECIPES=[
-  {id:uid(),emoji:'🍞',tag:'식빵',name:'기본 식빵',ingredients:'• T45/액션: 450g\n• T55: 50g\n• 설탕: 45g\n• 소금: 9.5g\n• 분유: 10g\n• 드라이이스트: 7.5g\n• 우유: 125g\n• 물: 200g\n• 계란: 1/2개 (약 25-30g)\n• 요거트: 15g\n• 르방: 30g\n• 버터: 45g\n• 전반죽: 50g(없으면 패스)',prep:'탕종: 50g~100g',dough:'1. 탕종+재료 믹싱\n2. 1차 발효 27°C 60분\n3. 분할+벤치타임 15분\n4. 성형 후 냉장 발효 10시간\n5. 실온화+2차 발효 90분',temp:'175°C',time:'28분',memo:'',updated:Date.now()},
-  {id:uid(),emoji:'🌿',tag:'치아바타',name:'비가&탕종 시금치 치아바타(통밀)(300g)',ingredients:'• 비가(50%): 통밀가루 150g, 물 100, 이스트 한꼬집 (르방 사용시 30g)\n• 탕종(10%): 강력분 30g, 끓는물 30g\n• 본반죽: 강력분 120g, 물 120~130g, 소금 6g, 드라이이스트 2g, 올리브유 20g\n• 부재료: 볶은 시금치 60g, 파르미지아노 치즈 50g',prep:'[전날 오후 9:00]\n1. 탕종: 강력분 30g + 끓는물 30g\n2. 비가: 통밀가루 150g + 물 100g + 이스트 → 16도 발효 12~14시간\n3. 시금치 볶기',dough:'[당일 오전 8:30]\n1. 물에 탕종+비가 풀기\n2. 나머지 재료 믹싱\n3. 볶은 시금치+치즈 투입\n\n[9:00~10:00] 1차발효+폴딩 (30분 간격 2회)\n[10:00~11:00] 성형+2차발효',temp:'230°C',time:'20-25분',memo:'스팀 필수',updated:Date.now()},
-  {id:uid(),emoji:'☕',tag:'비스킷',name:'모카 비스킷',ingredients:'• 버터 45g\n• 설탕 50g\n• 달걀 20g\n• 에스프레소 12~15g\n• 박력분 90g\n• BP 1g',prep:'',dough:'1. 버터 크림화, 설탕, 달걀 두 번에 나눠 넣기\n2. 박력분+BP 체 침, 에스프레소 → 냉장 휴지',temp:'',time:'',memo:'',updated:Date.now()},
-  {id:uid(),emoji:'🌰',tag:'필링',name:'아몬드 시나몬 필링',ingredients:'[식빵 2개 분량]\n• 실온 무염 버터: 60g\n• 흑설탕(또는 머스코바도): 70g\n• 아몬드 가루: 50g\n• 시나몬 가루: 15~20g\n• 꿀 또는 올리고당: 10g\n• 소금: 한 꼬집',prep:'',dough:'1. 버터 가볍게 풀기\n2. 흑설탕+꿀+소금 넣고 섞기\n3. 아몬드가루+시나몬가루 체 쳐 넣고 섞기\n4. 마요네즈 질감이 되면 사용',temp:'',time:'',memo:'다진 호두나 피칸 섞으면 식감 ↑',updated:Date.now()},
-  {id:uid(),emoji:'🍮',tag:'크림',name:'아몬드 크림',ingredients:'[식빵 2개 분량]\n• 실온 버터: 50g\n• 설탕: 40~50g\n• 달걀: 1개 (약 50g)\n• 아몬드 가루: 100g\n• 바닐라 익스트랙: 2~3방울 (선택)',prep:'',dough:'1. 버터 크림화\n2. 설탕 혼합\n3. 달걀 2~3번에 나눠 투입\n4. 아몬드가루 체 쳐 넣고 섞기',temp:'',time:'',memo:'냉장 1시간~하루 숙성하면 풍미 ↑',updated:Date.now()},
-];
-
 const DEFAULT_FOLDERS=[
   {id:uid(),icon:'🔥',name:'오븐 관리'},
   {id:uid(),icon:'🥄',name:'재료 믹싱'},
@@ -567,7 +522,6 @@ const DEFAULT_TIPS=(folders)=>[
 
 // State
 let plans=LS.get('baking.plans',null);if(!plans){plans=[];LS.set('baking.plans',plans);}
-let recipes=LS.get('baking.recipes',null);if(!recipes){recipes=DEFAULT_RECIPES;LS.set('baking.recipes',recipes);}
 let histories=LS.get('baking.history',null);if(!histories){histories=[];LS.set('baking.history',histories);}
 let folders=LS.get('baking.folders',null);
 let tips=LS.get('baking.tips',null);
@@ -622,46 +576,6 @@ document.getElementById('pSave').addEventListener('click',()=>{
 document.getElementById('pDelete').addEventListener('click',()=>{
   if(!editingPlanId)return;if(!confirm('이 계획을 삭제할까요?'))return;
   plans=plans.filter(p=>p.id!==editingPlanId);LS.set('baking.plans',plans);closeModal('planModal');renderPlanList();
-});
-
-// ── Recipes ──
-let editingRecipeId=null;
-function renderRecipes(){
-  const g=document.getElementById('recipeGrid');g.innerHTML='';
-  recipes.slice().sort((a,b)=>(b.updated||0)-(a.updated||0)).forEach(r=>{
-    const card=document.createElement('div');card.className='recipe-card';
-    const notePreview=[r.ingredients,r.prep,r.dough].filter(Boolean).join('\n').slice(0,120);
-    card.innerHTML=`<div class="emoji">${escapeHtml(r.emoji||'🍞')}</div>${r.tag?`<span class="r-tag">${escapeHtml(r.tag)}</span>`:''}<div class="r-name">${escapeHtml(r.name)}</div><div class="r-note">${escapeHtml(notePreview)}</div><div class="r-meta"><span>${r.temp?'🔥 '+escapeHtml(r.temp):''}</span><span>${r.time?'⏱ '+escapeHtml(r.time):''}</span></div>`;
-    card.addEventListener('click',()=>openRecipe(r.id));g.appendChild(card);
-  });
-  const add=document.createElement('div');add.className='recipe-card add-card';add.innerHTML='＋ 새 레시피';
-  add.addEventListener('click',()=>openRecipe(null));g.appendChild(add);
-}
-function openRecipe(id){
-  editingRecipeId=id;const r=id?recipes.find(x=>x.id===id):null;
-  document.getElementById('recipeModalTitle').textContent=r?'레시피 수정':'레시피 추가';
-  document.getElementById('rEmoji').value=r?(r.emoji||''):'🍞';
-  document.getElementById('rTag').value=r?(r.tag||''):'';  
-  document.getElementById('rName').value=r?(r.name||''):'';
-  document.getElementById('rIngredients').value=r?(r.ingredients||''):'';
-  document.getElementById('rPrep').value=r?(r.prep||''):'';
-  document.getElementById('rDough').value=r?(r.dough||''):'';
-  document.getElementById('rTemp').value=r?(r.temp||''):'';
-  document.getElementById('rTime').value=r?(r.time||''):'';
-  document.getElementById('rMemo').value=r?(r.memo||''):'';
-  document.getElementById('rDelete').style.display=r?'':'none';
-  openModal('recipeModal');
-}
-document.getElementById('addRecipeBtn').addEventListener('click',()=>openRecipe(null));
-document.getElementById('rSave').addEventListener('click',()=>{
-  const name=document.getElementById('rName').value.trim();if(!name){alert('레시피 이름을 입력하세요');return;}
-  const data={emoji:document.getElementById('rEmoji').value.trim()||'🍞',tag:document.getElementById('rTag').value.trim(),name,ingredients:document.getElementById('rIngredients').value,prep:document.getElementById('rPrep').value,dough:document.getElementById('rDough').value,temp:document.getElementById('rTemp').value.trim(),time:document.getElementById('rTime').value.trim(),memo:document.getElementById('rMemo').value,updated:Date.now()};
-  if(editingRecipeId){recipes=recipes.map(r=>r.id===editingRecipeId?{...r,...data}:r);}else{recipes.push({id:uid(),...data});}
-  LS.set('baking.recipes',recipes);closeModal('recipeModal');renderRecipes();
-});
-document.getElementById('rDelete').addEventListener('click',()=>{
-  if(!editingRecipeId)return;if(!confirm('이 레시피를 삭제할까요?'))return;
-  recipes=recipes.filter(r=>r.id!==editingRecipeId);LS.set('baking.recipes',recipes);closeModal('recipeModal');renderRecipes();
 });
 
 // ── History ──
@@ -805,13 +719,8 @@ document.getElementById('fSave').addEventListener('click',()=>{
 
 // Data reset handlers
 document.getElementById('resetFolders').addEventListener('click',()=>{
-  if(!confirm('폴더와 팁 데이터를 초기화할까요? 레시피·히스토리는 유지됩니다.'))return;
+  if(!confirm('폴더와 팁 데이터를 초기화할까요? 다른 데이터는 유지됩니다.'))return;
   localStorage.removeItem('baking.folders');localStorage.removeItem('baking.tips');
-  document.getElementById('dataResetModal').classList.remove('show');location.reload();
-});
-document.getElementById('resetRecipes').addEventListener('click',()=>{
-  if(!confirm('레시피를 기본값으로 초기화할까요?'))return;
-  localStorage.removeItem('baking.recipes');
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
 });
 document.getElementById('resetCalc').addEventListener('click',()=>{
@@ -830,6 +739,7 @@ document.getElementById('dataResetModal').addEventListener('click',e=>{if(e.targ
 // ===== Calculator (Baker's % + Biga) =====
 const CALC_DEFAULT={
   flour:500,
+  flourName:'강력분',
   ingredients:[
     {id:'w',  name:'물',   role:'water', pct:68},
     {id:'s',  name:'소금', role:'salt',  pct:2},
@@ -838,17 +748,18 @@ const CALC_DEFAULT={
   biga:{ratio:40,hydration:50,yeast:0.3}
 };
 const CALC_PRESETS_DEFAULT=[
-  {id:'p_basic', name:'기본 식빵', data:{flour:500,ingredients:[
-    {id:uid(),name:'물',role:'water',pct:65},{id:uid(),name:'설탕',role:'other',pct:6},
-    {id:uid(),name:'소금',role:'salt',pct:2},{id:uid(),name:'버터',role:'other',pct:6},
+  {id:'p_basic', name:'기본 식빵', data:{flour:500,flourName:'강력분',ingredients:[
+    {id:uid(),name:'물',role:'water',pct:65},{id:uid(),name:'설탕',role:'sugar',pct:6},
+    {id:uid(),name:'소금',role:'salt',pct:2},{id:uid(),name:'버터',role:'fat',pct:6},
     {id:uid(),name:'이스트(드라이)',role:'yeast',pct:1}],biga:{ratio:40,hydration:50,yeast:0.3}}},
-  {id:'p_biga', name:'비가 깜빠뉴 (예시·수정용)', data:{flour:500,ingredients:[
+  {id:'p_biga', name:'비가 깜빠뉴 (예시·수정용)', data:{flour:500,flourName:'강력분',ingredients:[
     {id:uid(),name:'물',role:'water',pct:75},{id:uid(),name:'소금',role:'salt',pct:2},
     {id:uid(),name:'이스트(드라이)',role:'yeast',pct:0.6}],biga:{ratio:100,hydration:50,yeast:0.2}}},
 ];
 let calc = LS.get('baking.calc', JSON.parse(JSON.stringify(CALC_DEFAULT)));
+if(!calc.flourName) calc.flourName='강력분';
 let calcPresets = LS.get('baking.calcPresets', CALC_PRESETS_DEFAULT);
-const ROLE_LABELS={water:'물',yeast:'이스트',salt:'소금',other:'기타'};
+const ROLE_LABELS={water:'물',levain:'르방',yeast:'이스트',salt:'소금',sugar:'당',fat:'지방',egg:'계란',sub:'부재료',other:'기타'};
 const saveCalc=()=>LS.set('baking.calc',calc);
 const fmt=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; return (r%1===0?r.toFixed(0):r.toFixed(1))+'g'; };
 
@@ -872,7 +783,7 @@ function renderCalc(){
   const tb=document.getElementById('calcRows');
   // flour base row + ingredient rows
   let html = `<tr>
-    <td><input value="강력분" disabled style="opacity:.7"></td>
+    <td><input class="ci-flourname" value="${(calc.flourName||'강력분').replace(/"/g,'&quot;')}" placeholder="밀가루명 (예: 강력분)"></td>
     <td><span style="font-size:12px;color:var(--ink-3)">밀가루</span></td>
     <td><span style="font-weight:700;color:var(--crust-dark)">100%</span></td>
     <td class="calc-w" id="calcFlourW">${fmt(calc.flour)}</td>
@@ -890,6 +801,9 @@ function renderCalc(){
   });
   tb.innerHTML=html;
   document.getElementById('calcTotalWeight').textContent = fmt((calc.flour||0)*calcTotalPct()/100);
+  // 밀가루 이름 (입력 즉시 저장, 표 다시 그리지 않음)
+  const fnEl=tb.querySelector('.ci-flourname');
+  if(fnEl) fnEl.addEventListener('input',e=>{calc.flourName=e.target.value;saveCalc();});
   // bind ingredient row events
   tb.querySelectorAll('tr[data-idx]').forEach(tr=>{
     const idx=+tr.dataset.idx;
@@ -960,7 +874,11 @@ document.getElementById('calcRevBtn').addEventListener('click',()=>{
   if(target<=0){alert('목표 완성량을 입력하세요');return;}
   calc.flour=Math.round(target/(calcTotalPct()/100));saveCalc();renderCalc();
 });
-document.getElementById('calcAddRow').addEventListener('click',()=>{calc.ingredients.push({id:uid(),name:'',role:'other',pct:0});saveCalc();renderCalc();});
+document.getElementById('calcAddRow').addEventListener('click',()=>{
+  calc.ingredients.push({id:uid(),name:'',role:'other',pct:0});saveCalc();renderCalc();
+  const names=document.querySelectorAll('#calcRows tr[data-idx] .ci-name');
+  if(names.length) names[names.length-1].focus(); // 추가 즉시 입력 가능
+});
 
 // biga controls
 document.querySelectorAll('.biga-preset').forEach(b=>b.addEventListener('click',()=>{calc.biga.ratio=+b.dataset.ratio;saveCalc();renderBiga();}));
@@ -968,27 +886,44 @@ document.getElementById('bigaRatio').addEventListener('input',e=>{calc.biga.rati
 document.getElementById('bigaHydration').addEventListener('input',e=>{calc.biga.hydration=parseFloat(e.target.value)||0;saveCalc();renderBiga();});
 document.getElementById('bigaYeast').addEventListener('input',e=>{calc.biga.yeast=parseFloat(e.target.value)||0;saveCalc();renderBiga();});
 
-// presets save/load
+// presets save/load (클릭형 메뉴)
 document.getElementById('calcSavePreset').addEventListener('click',()=>{
   const name=prompt('이 배합을 어떤 이름으로 저장할까요?','내 배합');
-  if(!name)return;
+  if(!name||!name.trim())return;
   calcPresets.push({id:uid(),name:name.trim(),data:JSON.parse(JSON.stringify(calc))});
   LS.set('baking.calcPresets',calcPresets);
   alert(`"${name.trim()}" 저장 완료`);
 });
+function renderPresetList(){
+  const wrap=document.getElementById('presetList');
+  if(!calcPresets.length){wrap.innerHTML='<div style="font-size:12.5px;color:#999;text-align:center;padding:18px 0">저장된 프리셋이 없습니다.<br>배합을 만든 뒤 💾 저장을 눌러보세요.</div>';return;}
+  wrap.innerHTML=calcPresets.map((p,i)=>`
+    <div class="preset-item">
+      <button class="preset-load" data-i="${i}">${escapeHtml(p.name)}</button>
+      <button class="preset-del" data-i="${i}" title="삭제">🗑</button>
+    </div>`).join('');
+  wrap.querySelectorAll('.preset-load').forEach(b=>b.addEventListener('click',()=>{
+    const p=calcPresets[+b.dataset.i];if(!p)return;
+    calc=JSON.parse(JSON.stringify(p.data));
+    if(!calc.flourName) calc.flourName='강력분';
+    saveCalc();renderCalc();
+    document.getElementById('presetModal').classList.remove('show');
+  }));
+  wrap.querySelectorAll('.preset-del').forEach(b=>b.addEventListener('click',()=>{
+    const i=+b.dataset.i;if(!calcPresets[i])return;
+    if(confirm(`"${calcPresets[i].name}" 프리셋을 삭제할까요?`)){
+      calcPresets.splice(i,1);LS.set('baking.calcPresets',calcPresets);renderPresetList();
+    }
+  }));
+}
 document.getElementById('calcLoadPreset').addEventListener('click',()=>{
-  if(!calcPresets.length){alert('저장된 프리셋이 없습니다. 먼저 💾 저장을 눌러보세요.');return;}
-  const list=calcPresets.map((p,i)=>`${i+1}. ${p.name}`).join('\n');
-  const pick=prompt(`불러올 프리셋 번호를 입력하세요:\n\n${list}\n\n(삭제하려면 "d" + 번호, 예: d2)`);
-  if(!pick)return;
-  const dm=pick.trim().match(/^d\s*(\d+)$/i);
-  if(dm){const di=+dm[1]-1; if(calcPresets[di]&&confirm(`"${calcPresets[di].name}" 프리셋을 삭제할까요?`)){calcPresets.splice(di,1);LS.set('baking.calcPresets',calcPresets);} return;}
-  const idx=parseInt(pick,10)-1;
-  if(calcPresets[idx]){calc=JSON.parse(JSON.stringify(calcPresets[idx].data));saveCalc();renderCalc();}
+  renderPresetList();
+  document.getElementById('presetModal').classList.add('show');
 });
+document.getElementById('presetModal').addEventListener('click',e=>{if(e.target.id==='presetModal')e.target.classList.remove('show');});
 
 // Init
-renderPlanList();renderRecipes();renderHistory();renderFolders();renderTips();renderCalc();
+renderPlanList();renderHistory();renderFolders();renderTips();renderCalc();
 
 // Service Worker
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/ayo-baking/sw.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW error:',e));});}
