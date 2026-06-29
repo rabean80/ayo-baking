@@ -194,6 +194,27 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 /* Recipe */
 .recipe-section{border:1px solid #eee;border-radius:8px;padding:10px;background:#fafafa;margin-top:4px}
 .recipe-section textarea{width:100%;border:none;background:transparent;font-size:12.5px;font-family:inherit;color:#444;resize:vertical;min-height:70px;line-height:1.7;outline:none}
+/* 프린트 */
+#printArea{display:none}
+#printArea .sp-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #333;padding-bottom:8px;margin-bottom:16px}
+#printArea .sp-head h1{font-size:20px;margin:0;font-weight:800}
+#printArea .sp-date{font-size:12px;color:#555}
+#printArea .sp-bread{margin-bottom:18px;page-break-inside:avoid}
+#printArea .sp-bread-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+#printArea .sp-bread-name{font-size:15px;font-weight:800}
+#printArea .sp-bread-time{font-size:11.5px;color:#555}
+#printArea table{width:100%;border-collapse:collapse;font-size:12.5px}
+#printArea th{text-align:left;padding:5px 8px;border-bottom:1.5px solid #333;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:#555}
+#printArea td{padding:5px 8px;border-bottom:1px solid #ddd}
+#printArea .sp-num{text-align:right;white-space:nowrap}
+#printArea .sp-empty{font-size:13px;color:#888;padding:20px 0}
+#printArea .sp-foot{margin-top:18px;font-size:11px;color:#888;border-top:1px solid #ddd;padding-top:8px}
+@media print{
+  body *{visibility:hidden !important}
+  #printArea,#printArea *{visibility:visible !important}
+  #printArea{display:block !important;position:absolute;left:0;top:0;width:100%}
+  @page{margin:14mm}
+}
 </style>
 </head>
 <body>
@@ -231,6 +252,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 <div class="view-toggle">
   <button class="view-btn active" id="viewTimeline">📊 타임라인</button>
   <button class="view-btn" id="viewCalendar">📅 캘린더</button>
+  <button class="view-btn" id="schedPrint">🖨 프린트</button>
 </div>
 
 <div class="cards" id="cards"></div>
@@ -350,6 +372,8 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
     </div>
   </div>
 </div>
+
+<div id="printArea"></div>
 
 <script>
 // ========================
@@ -1133,6 +1157,39 @@ function getCalendarEvents(){
   });
   return events;
 }
+
+// ========================
+// 프린트 (텍스트 일정표)
+// ========================
+function _esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function buildSchedulePrint(){
+  const active=breads.filter(b=>selected.has(b.id));
+  const proj=activeProject();
+  const d=new Date();
+  const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  let body='';
+  if(!active.length){
+    body='<div class="sp-empty">선택된 빵이 없습니다. Select Bread에서 빵을 추가해 주세요.</div>';
+  } else {
+    const list=active.map(b=>({b,times:computeTimings(b)})).sort((x,y)=>x.times[0].startMin-y.times[0].startMin);
+    list.forEach(({b,times})=>{
+      const st=times[0].startMin, en=times[times.length-1].endMin;
+      let rows='';
+      times.forEach(t=>{
+        rows+=`<tr><td>${_esc(t.n)}</td><td>${_esc(t.g)}</td><td class="sp-num">${fmtDateTime(t.startMin)}</td><td class="sp-num">${fmtDateTime(t.endMin)}</td><td class="sp-num">${fmtDur(t.m)}</td></tr>`;
+      });
+      body+=`<div class="sp-bread">
+        <div class="sp-bread-head"><span class="sp-bread-name">${_esc(b.name)}</span><span class="sp-bread-time">${fmtDateTime(st)} → ${fmtDateTime(en)} · 총 ${fmtDur(en-st)}</span></div>
+        <table><thead><tr><th>공정</th><th>그룹</th><th class="sp-num">시작</th><th class="sp-num">완료</th><th class="sp-num">소요</th></tr></thead><tbody>${rows}</tbody></table>
+      </div>`;
+    });
+  }
+  document.getElementById('printArea').innerHTML=`
+    <div class="sp-head"><h1>🥖 ${_esc(proj?proj.name:'베이킹 일정')}</h1><span class="sp-date">${ds}</span></div>
+    ${body}
+    <div class="sp-foot">Ayo's Baking · 베이킹 스케줄</div>`;
+}
+document.getElementById('schedPrint').addEventListener('click',()=>{ buildSchedulePrint(); window.print(); });
 
 // ========================
 // Init
