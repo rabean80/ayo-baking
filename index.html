@@ -169,6 +169,22 @@
   .calc-table tr.calc-total td{border-bottom:none;border-top:2px solid #ece1c9;font-weight:600;color:var(--ink-2);padding-top:10px}
   .calc-table tr.calc-total #calcTotalWeight{font-weight:800;color:var(--crust-dark);font-size:15px}
   .calc-addrow{margin-top:12px}
+  /* 밀가루 블렌드 */
+  .calc-table tr.calc-flourhead td{font-weight:700;color:var(--ink-2);background:var(--paper-2);border-bottom:1px solid #ece1c9;padding-top:8px;padding-bottom:8px}
+  .calc-table tr.calc-flourhead .fh-pct{color:var(--crust-dark)}
+  .calc-table tr.calc-flourrow td{padding-left:18px}
+  .calc-table tr.calc-flourrow td:first-child{position:relative}
+  .calc-table tr.calc-flourrow td:first-child::before{content:"";position:absolute;left:7px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:var(--accent-2)}
+  .calc-table .cf-w,.calc-table .ci-w{font-weight:600;color:var(--crust-dark)}
+  .calc-table .cf-del{border:none;background:transparent;color:var(--ink-4);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px}
+  .calc-table .cf-del:hover{background:#fdefec;color:#b84431}
+  .calc-table tr.calc-flourfoot td{border-bottom:1.5px solid #ece1c9;padding-top:7px;padding-bottom:9px}
+  .calc-table .cf-add{border:1px dashed #d8c9a8;background:#fff;border-radius:7px;font-family:inherit;font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;padding:6px 10px}
+  .calc-table .cf-add:hover{background:var(--paper-2);border-color:var(--accent)}
+  .calc-table .cf-sum{font-weight:700;color:var(--ink-3);font-size:13px}
+  .calc-table .cf-sum.bad{color:#b84431}
+  .calc-table .cf-fit{border:1px solid #f2cbc2;background:#fff;color:#b84431;border-radius:7px;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;padding:5px 9px;white-space:nowrap}
+  .calc-table .cf-fit:hover{background:#fdefec}
 
   .biga-ratio{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
   .biga-ratio-lb{font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.3}
@@ -747,6 +763,7 @@ document.getElementById('dataResetModal').addEventListener('click',e=>{if(e.targ
 const CALC_DEFAULT={
   flour:500,
   flourName:'강력분',
+  flours:[{id:'f0', name:'강력분', pct:100}],
   ingredients:[
     {id:'w', name:'물', pct:75},
     {id:'s', name:'소금', pct:2},
@@ -778,6 +795,15 @@ const CALC_PRESETS_DEFAULT=[
 ];
 let calc = LS.get('baking.calc', JSON.parse(JSON.stringify(CALC_DEFAULT)));
 if(!calc.flourName) calc.flourName='강력분';
+// 밀가루 블렌드 마이그레이션: flours 없으면 기존 flourName으로 1종 블렌드 구성
+function ensureFlours(o){
+  if(!Array.isArray(o.flours) || !o.flours.length){
+    o.flours=[{id:uid(), name:o.flourName||'강력분', pct:100}];
+  }
+  return o;
+}
+function syncFlourName(){ calc.flourName = (calc.flours.length===1 ? (calc.flours[0].name||'강력분') : '블렌드'); }
+ensureFlours(calc);
 // 기본 프리셋 버전 마이그레이션 (구 예시 프리셋 → 새 기본 프리셋으로 1회 교체)
 let calcPresets = LS.get('baking.calcPresets', null);
 if(calcPresets===null || (LS.get('baking.calcPresetsVer',1) < CALC_PRESETS_VER)){
@@ -793,18 +819,37 @@ function renderPresetName(){
   else { el.style.display='none'; el.textContent=''; }
 }
 const fmt=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; return (r%1===0?r.toFixed(0):r.toFixed(1))+'g'; };
+const fmtP=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; return (r%1===0?r.toFixed(0):r.toFixed(1))+'%'; };
 
 function calcTotalPct(){return 100 + calc.ingredients.reduce((s,i)=>s+(parseFloat(i.pct)||0),0);}
+function flourPctSum(){return calc.flours.reduce((s,f)=>s+(parseFloat(f.pct)||0),0);}
+
+// 밀가루 블렌드 행의 분량/합계 셀만 갱신 (포커스 유지용)
+function updateFlourCells(){
+  const F=calc.flour||0;
+  document.querySelectorAll('#calcRows tr.calc-flourrow').forEach(tr=>{
+    const fi=+tr.dataset.fidx; const wEl=tr.querySelector('.cf-w');
+    if(wEl && document.activeElement!==wEl){ const g=F*(parseFloat(calc.flours[fi].pct)||0)/100; wEl.value = g? Math.round(g*10)/10 : ''; }
+  });
+  const ps=flourPctSum(), okPs=Math.abs(ps-100)<0.05;
+  const sumRow=document.querySelector('#calcRows tr.calc-flourfoot');
+  if(sumRow){
+    const cells=sumRow.querySelectorAll('.cf-sum');
+    if(cells[0]) cells[0].textContent=fmtP(ps);
+    if(cells[1]) cells[1].textContent=fmt(F*ps/100);
+    cells.forEach(c=>c.classList.toggle('bad',!okPs));
+  }
+}
 
 // 표를 다시 그리지 않고 무게 숫자만 갱신 (입력 포커스 유지용)
 function refreshCalcWeights(){
   const F=calc.flour||0;
-  const fw=document.getElementById('calcFlourW'); if(fw) fw.textContent=fmt(F);
+  updateFlourCells();
   const tw=document.getElementById('calcTotalWeight'); if(tw) tw.textContent=fmt(F*calcTotalPct()/100);
   document.querySelectorAll('#calcRows tr[data-idx]').forEach(tr=>{
     const i=+tr.dataset.idx;
-    const cell=tr.querySelector('.calc-w');
-    if(cell) cell.textContent=fmt(F*(parseFloat(calc.ingredients[i].pct)||0)/100);
+    const cell=tr.querySelector('.ci-w');
+    if(cell && document.activeElement!==cell){ const g=F*(parseFloat(calc.ingredients[i].pct)||0)/100; cell.value = g? Math.round(g*10)/10 : ''; }
   });
   renderBiga();
 }
@@ -812,25 +857,60 @@ function refreshCalcWeights(){
 function renderCalc(){
   document.getElementById('calcFlour').value = calc.flour||'';
   const tb=document.getElementById('calcRows');
-  // flour base row + ingredient rows
-  let html = `<tr>
-    <td><input class="ci-flourname" value="${(calc.flourName||'강력분').replace(/"/g,'&quot;')}" placeholder="밀가루명 (예: 강력분)"></td>
-    <td><span style="font-weight:700;color:var(--crust-dark)">100%</span></td>
-    <td class="calc-w" id="calcFlourW">${fmt(calc.flour)}</td>
-    <td></td></tr>`;
+  // flour blend group + ingredient rows
+  const ps=flourPctSum(), okPs=Math.abs(ps-100)<0.05;
+  let html = `<tr class="calc-flourhead"><td>밀가루</td><td><span class="fh-pct">100%</span></td><td class="calc-w" id="calcFlourW">${fmt(calc.flour)}</td><td></td></tr>`;
+  calc.flours.forEach((f,fi)=>{
+    const fw=(calc.flour||0)*(parseFloat(f.pct)||0)/100;
+    const canDel = calc.flours.length>1;
+    html += `<tr class="calc-flourrow" data-fidx="${fi}">
+      <td><input class="cf-name" value="${(f.name||'').replace(/"/g,'&quot;')}" placeholder="밀가루명 (예: 강력분)"></td>
+      <td><input class="cf-pct" type="number" step="0.1" min="0" value="${f.pct}"></td>
+      <td><input class="cf-w" type="number" step="1" min="0" value="${fw?Math.round(fw*10)/10:''}" placeholder="g"></td>
+      <td>${canDel?'<button class="cf-del" title="삭제">✕</button>':''}</td></tr>`;
+  });
+  html += `<tr class="calc-flourfoot">
+    <td><button class="cf-add" type="button">＋ 밀가루 추가</button></td>
+    <td class="cf-sum${okPs?'':' bad'}">${fmtP(ps)}</td>
+    <td class="cf-sum${okPs?'':' bad'}">${fmt((calc.flour||0)*ps/100)}</td>
+    <td>${okPs?'':'<button class="cf-fit" title="총량을 밀가루 합계에 맞춥니다">맞춤</button>'}</td></tr>`;
   calc.ingredients.forEach((ing,idx)=>{
     const w=(calc.flour||0)*(parseFloat(ing.pct)||0)/100;
     html += `<tr data-idx="${idx}">
       <td><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명"></td>
       <td><input class="ci-pct" type="number" step="0.1" min="0" value="${ing.pct}"></td>
-      <td class="calc-w">${fmt(w)}</td>
+      <td><input class="ci-w" type="number" step="1" min="0" value="${w?Math.round(w*10)/10:''}" placeholder="g"></td>
       <td><button class="calc-del" title="삭제">✕</button></td></tr>`;
   });
   tb.innerHTML=html;
   document.getElementById('calcTotalWeight').textContent = fmt((calc.flour||0)*calcTotalPct()/100);
-  // 밀가루 이름 (입력 즉시 저장, 표 다시 그리지 않음)
-  const fnEl=tb.querySelector('.ci-flourname');
-  if(fnEl) fnEl.addEventListener('input',e=>{calc.flourName=e.target.value;saveCalc();});
+  // 밀가루 블렌드 행 이벤트
+  tb.querySelectorAll('tr.calc-flourrow').forEach(tr=>{
+    const fi=+tr.dataset.fidx;
+    const nameEl=tr.querySelector('.cf-name');
+    nameEl.addEventListener('input',e=>{calc.flours[fi].name=e.target.value;syncFlourName();saveCalc();});
+    const fpEl=tr.querySelector('.cf-pct');
+    const commitFP=()=>{calc.flours[fi].pct=parseFloat(fpEl.value)||0;saveCalc();renderCalc();};
+    fpEl.addEventListener('change',commitFP);
+    fpEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fpEl.blur();}});
+    const fwEl=tr.querySelector('.cf-w');
+    const commitFW=()=>{const g=parseFloat(fwEl.value)||0; const F=calc.flour||0; if(F>0){calc.flours[fi].pct=Math.round((g/F*100)*100)/100;} saveCalc();renderCalc();};
+    fwEl.addEventListener('change',commitFW);
+    fwEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fwEl.blur();}});
+    const delB=tr.querySelector('.cf-del');
+    if(delB) delB.addEventListener('click',()=>{calc.flours.splice(fi,1);syncFlourName();saveCalc();renderCalc();});
+  });
+  const addF=tb.querySelector('.cf-add');
+  if(addF) addF.addEventListener('click',()=>{calc.flours.push({id:uid(),name:'',pct:0});syncFlourName();saveCalc();renderCalc();
+    const ns=document.querySelectorAll('#calcRows tr.calc-flourrow .cf-name');
+    if(ns.length) ns[ns.length-1].focus();
+  });
+  const fitF=tb.querySelector('.cf-fit');
+  if(fitF) fitF.addEventListener('click',()=>{
+    const sp=flourPctSum();
+    if(sp>0){ calc.flour=Math.round((calc.flour||0)*sp/100); calc.flours.forEach(f=>{f.pct=Math.round(((parseFloat(f.pct)||0)*100/sp)*100)/100;}); }
+    saveCalc();renderCalc();
+  });
   // bind ingredient row events
   tb.querySelectorAll('tr[data-idx]').forEach(tr=>{
     const idx=+tr.dataset.idx;
@@ -839,6 +919,10 @@ function renderCalc(){
     const commitPct=()=>{calc.ingredients[idx].pct=pctEl.value;saveCalc();refreshCalcWeights();};
     pctEl.addEventListener('change',commitPct); // 다른 곳 클릭(blur) 시에도 확정
     pctEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();pctEl.blur();}}); // 엔터로 확정
+    const wEl=tr.querySelector('.ci-w');
+    const commitW=()=>{const g=parseFloat(wEl.value)||0; const F=calc.flour||0; if(F>0){calc.ingredients[idx].pct=Math.round((g/F*100)*100)/100;} saveCalc();renderCalc();};
+    wEl.addEventListener('change',commitW); // 분량(g) 입력 → % 역산
+    wEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();wEl.blur();}});
     tr.querySelector('.calc-del').addEventListener('click',()=>{calc.ingredients.splice(idx,1);saveCalc();renderCalc();});
   });
   renderPresetName();
@@ -897,9 +981,10 @@ function renderBiga(){
 
 // flour & target inputs
 document.getElementById('calcFlour').addEventListener('input',e=>{calc.flour=parseFloat(e.target.value)||0;saveCalc();
-  document.getElementById('calcFlourW').textContent=fmt(calc.flour);
+  const fw=document.getElementById('calcFlourW'); if(fw) fw.textContent=fmt(calc.flour);
+  updateFlourCells();
   document.getElementById('calcTotalWeight').textContent=fmt(calc.flour*calcTotalPct()/100);
-  document.querySelectorAll('#calcRows tr[data-idx]').forEach(tr=>{const i=+tr.dataset.idx;tr.querySelector('.calc-w').textContent=fmt(calc.flour*(parseFloat(calc.ingredients[i].pct)||0)/100);});
+  document.querySelectorAll('#calcRows tr[data-idx]').forEach(tr=>{const i=+tr.dataset.idx;const cell=tr.querySelector('.ci-w');if(cell&&document.activeElement!==cell){const g=calc.flour*(parseFloat(calc.ingredients[i].pct)||0)/100;cell.value=g?Math.round(g*10)/10:'';}});
   renderBiga();
 });
 document.getElementById('calcRevBtn').addEventListener('click',()=>{
@@ -941,6 +1026,7 @@ function renderPresetList(){
     const p=calcPresets[+b.dataset.i];if(!p)return;
     calc=JSON.parse(JSON.stringify(p.data));
     if(!calc.flourName) calc.flourName='강력분';
+    ensureFlours(calc);
     calc.loadedName=p.name; // 불러온 프리셋 이름 표시
     saveCalc();renderCalc();
     document.getElementById('presetModal').classList.remove('show');
