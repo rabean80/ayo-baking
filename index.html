@@ -206,9 +206,10 @@
   #printArea .pc-biga .biga-warn{font-size:11px;color:#b84431;margin-bottom:6px}
   #printArea .pc-foot{margin-top:18px;font-size:11px;color:#888;border-top:1px solid #ddd;padding-top:8px}
   @media print{
+    html,body{background:#fff !important}
     body *{visibility:hidden !important}
     #printArea,#printArea *{visibility:visible !important}
-    #printArea{display:block !important;position:absolute;left:0;top:0;width:100%}
+    #printArea{display:block !important;position:absolute;left:0;top:0;width:100%;background:#fff !important}
     @page{margin:14mm}
   }
 
