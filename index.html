@@ -158,6 +158,13 @@
   .calc-rev{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
   .calc-rev .field{min-width:150px}
   .calc-rev .btn{white-space:nowrap;height:38px}
+  .calc-split{display:flex;align-items:center;gap:6px;margin-top:6px}
+  .calc-split-label{font-size:11px;color:var(--ink-3);white-space:nowrap}
+  .calc-split-in{width:58px}
+  .calc-split-in input{width:100%;padding:6px 8px;border:1px solid #e0d2b4;border-radius:7px;background:#fff;font-family:inherit;font-size:13px;color:var(--ink);font-weight:500}
+  .calc-split-in input:focus{outline:none;border-color:var(--accent)}
+  .calc-split-x{font-size:12px;color:var(--ink-3)}
+  .calc-split-eq{font-size:12px;color:var(--accent);font-weight:700;white-space:nowrap}
   .calc-table{width:100%;border-collapse:collapse;font-size:13px}
   .calc-table th{text-align:left;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;border-bottom:1.5px solid #ece1c9}
   .calc-table td{padding:5px 8px;border-bottom:1px solid #f2e9d6;vertical-align:middle}
@@ -341,6 +348,13 @@
           <div class="field" style="margin-bottom:0">
             <label>목표 완성 반죽량으로 역산</label>
             <div class="calc-inwrap"><input type="number" id="calcTarget" min="0" step="1" placeholder="예: 900"><span class="calc-unit">g</span></div>
+            <div class="calc-split">
+              <span class="calc-split-label">분할로 계산</span>
+              <div class="calc-split-in"><input type="number" id="calcSplitWeight" min="0" step="1" placeholder="개당g"></div>
+              <span class="calc-split-x">×</span>
+              <div class="calc-split-in"><input type="number" id="calcSplitCount" min="0" step="1" placeholder="개수"></div>
+              <span class="calc-split-eq" id="calcSplitEq"></span>
+            </div>
           </div>
           <button class="btn btn-ghost" id="calcRevBtn" title="완성량 → 필요 밀가루">← 밀가루 계산</button>
         </div>
@@ -1020,6 +1034,21 @@ document.getElementById('calcRevBtn').addEventListener('click',()=>{
   if(target<=0){alert('목표 완성량을 입력하세요');return;}
   calc.flour=Math.round(target/(calcTotalPct()/100));saveCalc();renderCalc();
 });
+// 분할무게 × 개수 → 목표 완성 반죽량 자동 채움
+function updateSplitEq(){
+  const w=parseFloat(document.getElementById('calcSplitWeight').value)||0;
+  const c=parseFloat(document.getElementById('calcSplitCount').value)||0;
+  const eqEl=document.getElementById('calcSplitEq');
+  if(w>0&&c>0){
+    const total=w*c;
+    eqEl.textContent=`= ${fmt(total)}`;
+    document.getElementById('calcTarget').value=Math.round(total*10)/10;
+  }else{
+    eqEl.textContent='';
+  }
+}
+document.getElementById('calcSplitWeight').addEventListener('input',updateSplitEq);
+document.getElementById('calcSplitCount').addEventListener('input',updateSplitEq);
 document.getElementById('calcAddRow').addEventListener('click',()=>{
   calc.ingredients.push({id:uid(),name:'',role:'other',pct:0});saveCalc();renderCalc();
   const names=document.querySelectorAll('#calcRows tr[data-idx] .ci-name');
