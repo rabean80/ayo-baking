@@ -331,9 +331,9 @@
           <div class="section-sub">밀가루를 100% 기준으로, 분량만 넣으면 나머지 재료가 자동 계산돼요.</div>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost" id="calcPrint">🖨 프린트</button>
           <button class="btn btn-ghost" id="calcLoadPreset">📂 프리셋</button>
           <button class="btn btn-ghost" id="calcSavePreset">💾 저장</button>
+          <button class="btn btn-ghost" id="calcPrint">🖨 프린트</button>
         </div>
       </div>
 
@@ -357,6 +357,7 @@
             </div>
           </div>
           <button class="btn btn-ghost" id="calcRevBtn" title="완성량 → 필요 밀가루">← 밀가루 계산</button>
+          <button class="btn btn-ghost" id="calcSubBtn" title="버터가 부족할 때 오일로 치환 계산">🔄 오일 치환</button>
         </div>
       </div>
 
@@ -536,6 +537,50 @@
     <div id="presetList" style="display:flex;flex-direction:column;gap:8px;margin:12px 0"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('presetModal').classList.remove('show')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 버터→오일 치환 계산 모달 -->
+<div class="modal-back" id="subModal">
+  <div class="modal-box" style="max-width:420px">
+    <h3>🔄 버터 → 오일 치환 계산</h3>
+    <p style="font-size:12.5px;color:#888;margin-bottom:12px;line-height:1.6">버터가 부족할 때, 부족한 만큼을 오일로 치환할 양을 계산해요. 버터와 오일은 1:1이 아니라 비율을 적용해요.</p>
+
+    <div style="display:flex;gap:10px">
+      <div class="field" style="flex:1">
+        <label>필요한 버터량 (레시피 기준)</label>
+        <div class="calc-inwrap"><input type="text" id="subTarget" disabled><span class="calc-unit">g</span></div>
+      </div>
+      <div class="field" style="flex:1">
+        <label>집에 있는 버터량</label>
+        <div class="calc-inwrap"><input type="number" id="subHave" min="0" step="1" placeholder="예: 15"><span class="calc-unit">g</span></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>치환 비율</label>
+      <select id="subRatio">
+        <option value="0.75" selected>일반 비율 (0.75) — 추천</option>
+        <option value="0.82">정밀 비율 (0.82)</option>
+        <option value="custom">직접 입력</option>
+      </select>
+    </div>
+    <div class="field" id="subCustomWrap" style="display:none">
+      <label>직접 입력한 비율</label>
+      <div class="calc-inwrap"><input type="number" id="subRatioCustom" min="0" max="2" step="0.01" value="0.75"></div>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-2);margin:10px 0 4px;cursor:pointer">
+      <input type="checkbox" id="subWaterComp" checked style="width:auto">
+      버터의 수분(약 17%)만큼 물 보정 반영
+    </label>
+
+    <div id="subResult" style="background:var(--paper-2);border:1px solid #e0d2b4;border-radius:10px;padding:12px 14px;margin-top:12px;font-size:13px;line-height:1.8;color:var(--ink)"></div>
+
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn btn-ghost" data-close>닫기</button>
+      <button class="btn btn-ghost" id="subApply">배합에 적용</button>
     </div>
   </div>
 </div>
@@ -1053,6 +1098,86 @@ document.getElementById('calcAddRow').addEventListener('click',()=>{
   calc.ingredients.push({id:uid(),name:'',role:'other',pct:0});saveCalc();renderCalc();
   const names=document.querySelectorAll('#calcRows tr[data-idx] .ci-name');
   if(names.length) names[names.length-1].focus(); // 추가 즉시 입력 가능
+});
+
+// 버터 → 오일 치환 계산기 (버터 재료 자동 감지)
+function findButterIdx(){
+  return calc.ingredients.findIndex(i=>(i.name||'').includes('버터'));
+}
+function subTargetG(idx){
+  const F=calc.flour||0;
+  const ing=idx>-1 ? calc.ingredients[idx] : null;
+  return ing? F*(parseFloat(ing.pct)||0)/100 : 0;
+}
+function currentSubRatio(){
+  const r=document.getElementById('subRatio').value;
+  if(r==='custom') return parseFloat(document.getElementById('subRatioCustom').value)||0;
+  return parseFloat(r);
+}
+function computeSub(){
+  const idx=findButterIdx();
+  const target=subTargetG(idx);
+  document.getElementById('subTarget').value = fmt(target);
+  const have=parseFloat(document.getElementById('subHave').value)||0;
+  const shortfall=Math.max(0,target-have);
+  const ratio=currentSubRatio();
+  const oilG=shortfall*ratio;
+  const waterOn=document.getElementById('subWaterComp').checked;
+  const waterG=waterOn? shortfall*0.17 : 0;
+  const box=document.getElementById('subResult');
+  const haveInput=document.getElementById('subHave');
+  if(idx<0){
+    box.innerHTML='재료 목록에서 이름에 "버터"가 들어간 재료를 찾을 수 없어요. 먼저 계산기에 버터를 추가해주세요.';
+    haveInput.disabled=true;
+  } else {
+    haveInput.disabled=false;
+    if(target<=0){
+      box.innerHTML='밀가루 총량을 먼저 입력해주세요.';
+    } else if(shortfall<=0){
+      box.innerHTML=`보유량(${fmt(have)})이 필요한 양(${fmt(target)}) 이상이라 오일 치환이 필요 없어요.`;
+    } else {
+      box.innerHTML=`버터 <b>${fmt(have)}</b> + 오일 <b>${fmt(oilG)}</b>${waterOn?` + 물 <b>+${fmt(waterG)}</b> 보정`:''}`;
+    }
+  }
+  return {idx,target,have,shortfall,oilG,waterG,waterOn};
+}
+document.getElementById('calcSubBtn').addEventListener('click',()=>{
+  document.getElementById('subHave').value='';
+  document.getElementById('subRatio').value='0.75';
+  document.getElementById('subCustomWrap').style.display='none';
+  document.getElementById('subWaterComp').checked=true;
+  computeSub();
+  openModal('subModal');
+});
+document.getElementById('subHave').addEventListener('input',computeSub);
+document.getElementById('subRatio').addEventListener('change',()=>{
+  document.getElementById('subCustomWrap').style.display = document.getElementById('subRatio').value==='custom' ? '' : 'none';
+  computeSub();
+});
+document.getElementById('subRatioCustom').addEventListener('input',computeSub);
+document.getElementById('subWaterComp').addEventListener('change',computeSub);
+document.getElementById('subApply').addEventListener('click',()=>{
+  const r=computeSub();
+  if(r.idx<0){ return; }
+  if(r.target<=0){ alert('밀가루 총량을 먼저 입력해주세요.'); return; }
+  if(r.shortfall<=0){ alert('오일로 치환할 부족량이 없어요.'); document.getElementById('subModal').classList.remove('show'); return; }
+  const F=calc.flour||0;
+  // 1) 버터를 보유량 기준으로 축소
+  calc.ingredients[r.idx].pct = r.have>0 ? Math.round((r.have/F*100)*100)/100 : 0;
+  // 2) 오일 추가 (기존 '오일' 재료가 있으면 합산, 없으면 새 행 추가)
+  const oilPct = Math.round((r.oilG/F*100)*100)/100;
+  const oilIdx = calc.ingredients.findIndex(i=>(i.name||'').includes('오일'));
+  if(oilIdx>-1){ calc.ingredients[oilIdx].pct = Math.round(((parseFloat(calc.ingredients[oilIdx].pct)||0)+oilPct)*100)/100; }
+  else { calc.ingredients.push({id:uid(),name:'오일(버터 치환)',pct:oilPct}); }
+  // 3) 수분 보정 (이름에 '물'이 들어간 재료가 있으면 합산, 없으면 새 행 추가)
+  if(r.waterOn && r.waterG>0){
+    const waterPct = Math.round((r.waterG/F*100)*100)/100;
+    const waterIdx = calc.ingredients.findIndex(i=>(i.name||'').includes('물'));
+    if(waterIdx>-1){ calc.ingredients[waterIdx].pct = Math.round(((parseFloat(calc.ingredients[waterIdx].pct)||0)+waterPct)*100)/100; }
+    else { calc.ingredients.push({id:uid(),name:'물(수분 보정)',pct:waterPct}); }
+  }
+  saveCalc();renderCalc();
+  document.getElementById('subModal').classList.remove('show');
 });
 
 // biga controls
