@@ -22,17 +22,23 @@
     }
   };
 
-  // 로드(pull): 페이지 열릴 때마다 서버 데이터가 로컬과 다르면 반영 후 새로고침
-  // (반영 후에는 값이 같아지므로 재실행 시 자연스럽게 재새로고침이 일어나지 않음)
-  fetch(`${API_BASE}/data/${SYNC_KEY}`, { headers: { 'X-API-Key': API_KEY } })
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
-      if(data && typeof data.value === 'string' && data.value !== localStorage.getItem(SYNC_KEY)){
+  // 로드(pull): 페이지의 다른 스크립트가 실행되기 전에, 동기 요청으로 서버 값을 먼저 반영
+  // (동기 요청이라 페이지 로드가 아주 짧게(보통 100ms 이내) 지연될 수 있지만,
+  //  이 방식이라야 앱 초기화 코드와의 경쟁 상태(race condition) 없이 안전하게 반영됨)
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `${API_BASE}/data/${SYNC_KEY}`, false);
+    xhr.setRequestHeader('X-API-Key', API_KEY);
+    xhr.send(null);
+    if(xhr.status === 200){
+      const data = JSON.parse(xhr.responseText);
+      if(data && typeof data.value === 'string'){
         _setItem.call(localStorage, SYNC_KEY, data.value);
-        location.reload();
       }
-    })
-    .catch(e => console.warn('[sync] 프리셋 서버 조회 실패 (오프라인일 수 있음):', e));
+    }
+  } catch(e){
+    console.warn('[sync] 프리셋 초기 동기화 실패 (오프라인일 수 있음):', e);
+  }
 })();
 </script>
 <meta charset="UTF-8">
