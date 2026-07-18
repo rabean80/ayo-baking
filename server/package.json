@@ -1,0 +1,13 @@
+{
+  "name": "bakerflow-server",
+  "version": "3.0.0",
+  "description": "BakerFlow V3.0 온라인 버전 백엔드 API 서버",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "better-sqlite3": "^11.3.0"
+  }
+}
