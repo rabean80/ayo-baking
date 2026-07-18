@@ -1,6 +1,43 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script>
+// ===== BakerFlow V3.0 서버 동기화 (baker's percentage 프리셋) =====
+(function(){
+  const API_BASE = '/api'; // 같은 도메인(ayobaking.studiomiw.com)에서 서빙되므로 상대경로 사용
+  const API_KEY = '02782f74015166e8372400dfe2b759979a22c92ab169b017549f6a0a70ca3d71';
+  const SYNC_KEY = 'baking.calcPresets';
+  const RELOAD_FLAG = 'baking.calcPresets.__justSynced';
+
+  const _setItem = Storage.prototype.setItem;
+
+  // 저장(push): 이 key로 저장될 때마다 서버에도 함께 저장
+  Storage.prototype.setItem = function(key, value){
+    _setItem.call(this, key, value);
+    if(key === SYNC_KEY){
+      fetch(`${API_BASE}/data/${SYNC_KEY}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+        body: JSON.stringify({ value })
+      }).catch(e => console.warn('[sync] 프리셋 서버 저장 실패 (오프라인일 수 있음):', e));
+    }
+  };
+
+  // 로드(pull): 페이지 열릴 때 서버 데이터가 로컬과 다르면 반영 후 1회 새로고침
+  if(!sessionStorage.getItem(RELOAD_FLAG)){
+    fetch(`${API_BASE}/data/${SYNC_KEY}`, { headers: { 'X-API-Key': API_KEY } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if(data && typeof data.value === 'string' && data.value !== localStorage.getItem(SYNC_KEY)){
+          sessionStorage.setItem(RELOAD_FLAG, '1');
+          _setItem.call(localStorage, SYNC_KEY, data.value);
+          location.reload();
+        }
+      })
+      .catch(e => console.warn('[sync] 프리셋 서버 조회 실패 (오프라인일 수 있음):', e));
+  }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ayo's Baking</title>
@@ -1276,7 +1313,7 @@ document.getElementById('presetModal').addEventListener('click',e=>{if(e.target.
 renderPlanList();renderHistory();renderFolders();renderTips();renderCalc();
 
 // Service Worker
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/ayo-baking/sw.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW error:',e));});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW error:',e));});}
 </script>
 <div id="printArea"></div>
 </body>
