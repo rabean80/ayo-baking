@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ayo-baking-v3'; // V3.0 온라인 버전 - 루트 도메인 이전으로 캐시 버전 갱신
+const CACHE_NAME = 'ayo-baking-v4'; // GETC774C678 C694Ccad Ce90C2f1 Bc84Adf8 C218C815
 const ASSETS = [
   '/',
   '/index.html',
@@ -24,15 +24,17 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// 네트워크 우선, 실패 시 캐시 사용
+// 네트워크 우선, 실패 시 캐시 사용 (GET 요청만 캐싱 - PUT/POST 등은 그대로 통과)
 self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET' || !req.url.startsWith('http')) return;
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then(res => {
         const clone = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        caches.open(CACHE_NAME).then(cache => cache.put(req, clone)).catch(() => {});
         return res;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() => caches.match(req))
   );
 });
