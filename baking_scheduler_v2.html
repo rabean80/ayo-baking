@@ -9,16 +9,23 @@
   const SYNC_KEY = 'sched.projects';
 
   const _setItem = Storage.prototype.setItem;
+  let lastPushedValue = null;
+  let pushTimer = null;
 
-  // 저장(push): 이 key로 저장될 때마다 서버에도 함께 저장
+  // 저장(push): 값이 실제로 바뀌었을 때만, 짧은 디바운스 후 서버에 전송
+  // (같은 값이 반복 저장되거나 아주 짧은 시간에 연속 저장되는 경우 네트워크 스팸 방지)
   Storage.prototype.setItem = function(key, value){
     _setItem.call(this, key, value);
-    if(key === SYNC_KEY){
-      fetch(`${API_BASE}/data/${SYNC_KEY}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
-        body: JSON.stringify({ value })
-      }).catch(e => console.warn('[sync] 스케줄러 서버 저장 실패 (오프라인일 수 있음):', e));
+    if(key === SYNC_KEY && value !== lastPushedValue){
+      clearTimeout(pushTimer);
+      pushTimer = setTimeout(() => {
+        lastPushedValue = value;
+        fetch(`${API_BASE}/data/${SYNC_KEY}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+          body: JSON.stringify({ value })
+        }).catch(e => console.warn('[sync] 스케줄러 서버 저장 실패 (오프라인일 수 있음):', e));
+      }, 400);
     }
   };
 
@@ -34,6 +41,7 @@
       const data = JSON.parse(xhr.responseText);
       if(data && typeof data.value === 'string'){
         _setItem.call(localStorage, SYNC_KEY, data.value);
+        lastPushedValue = data.value;
       }
     }
   } catch(e){
