@@ -1,9 +1,9 @@
-const CACHE_NAME = 'ayo-baking-v1';
+const CACHE_NAME = 'ayo-baking-v3'; // V3.0 온라인 버전 - 루트 도메인 이전으로 캐시 버전 갱신
 const ASSETS = [
-  '/ayo-baking/',
-  '/ayo-baking/index.html',
-  '/ayo-baking/baking_scheduler_v2.html',
-  '/ayo-baking/manifest.json'
+  '/',
+  '/index.html',
+  '/baking_scheduler_v2.html',
+  '/manifest.json'
 ];
 
 // 설치: 핵심 파일 캐시
