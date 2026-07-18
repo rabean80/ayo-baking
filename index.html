@@ -1,53 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<script>
-// ===== BakerFlow V3.0 서버 동기화 (baker's percentage 프리셋) =====
-(function(){
-  const API_BASE = '/api'; // 같은 도메인(ayobaking.studiomiw.com)에서 서빙되므로 상대경로 사용
-  const API_KEY = '02782f74015166e8372400dfe2b759979a22c92ab169b017549f6a0a70ca3d71';
-  const SYNC_KEY = 'baking.calcPresets';
-
-  const _setItem = Storage.prototype.setItem;
-  let lastPushedValue = null;
-  let pushTimer = null;
-
-  // 저장(push): 값이 실제로 바뀌었을 때만, 짧은 디바운스 후 서버에 전송
-  Storage.prototype.setItem = function(key, value){
-    _setItem.call(this, key, value);
-    if(key === SYNC_KEY && value !== lastPushedValue){
-      clearTimeout(pushTimer);
-      pushTimer = setTimeout(() => {
-        lastPushedValue = value;
-        fetch(`${API_BASE}/data/${SYNC_KEY}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
-          body: JSON.stringify({ value })
-        }).catch(e => console.warn('[sync] 프리셋 서버 저장 실패 (오프라인일 수 있음):', e));
-      }, 400);
-    }
-  };
-
-  // 로드(pull): 페이지의 다른 스크립트가 실행되기 전에, 동기 요청으로 서버 값을 먼저 반영
-  // (동기 요청이라 페이지 로드가 아주 짧게(보통 100ms 이내) 지연될 수 있지만,
-  //  이 방식이라야 앱 초기화 코드와의 경쟁 상태(race condition) 없이 안전하게 반영됨)
-  try {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', `${API_BASE}/data/${SYNC_KEY}`, false);
-    xhr.setRequestHeader('X-API-Key', API_KEY);
-    xhr.send(null);
-    if(xhr.status === 200){
-      const data = JSON.parse(xhr.responseText);
-      if(data && typeof data.value === 'string'){
-        _setItem.call(localStorage, SYNC_KEY, data.value);
-        lastPushedValue = data.value;
-      }
-    }
-  } catch(e){
-    console.warn('[sync] 프리셋 초기 동기화 실패 (오프라인일 수 있음):', e);
-  }
-})();
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ayo's Baking</title>
@@ -658,7 +611,46 @@
 </div>
 
 <script>
-const LS={get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+// ===== BakerFlow V3.0: 서버 전용 데이터 저장 (localStorage 사용 안 함) =====
+const LS = (function(){
+  const API_BASE = '/api';
+  const API_KEY = '02782f74015166e8372400dfe2b759979a22c92ab169b017549f6a0a70ca3d71';
+  let cache = {};
+
+  // 동기 부트스트랩: 이 아래의 앱 코드가 실행되기 전에 서버의 모든 데이터를 한 번에 가져옴
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `${API_BASE}/bootstrap`, false);
+    xhr.setRequestHeader('X-API-Key', API_KEY);
+    xhr.send(null);
+    if(xhr.status === 200) cache = JSON.parse(xhr.responseText);
+  } catch(e){
+    console.warn('[server] 초기 데이터 로드 실패 (서버 연결을 확인하세요):', e);
+  }
+
+  const pushTimers = {};
+  function push(key){
+    clearTimeout(pushTimers[key]);
+    pushTimers[key] = setTimeout(() => {
+      fetch(`${API_BASE}/data/${key}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+        body: JSON.stringify({ value: cache[key] })
+      }).catch(e => console.warn(`[server] ${key} 저장 실패 (오프라인일 수 있음):`, e));
+    }, 400);
+  }
+
+  return {
+    get(k, f){ try { return (k in cache) ? JSON.parse(cache[k]) : f; } catch(e){ return f; } },
+    set(k, v){ cache[k] = JSON.stringify(v); push(k); },
+    remove(k){
+      delete cache[k];
+      clearTimeout(pushTimers[k]);
+      fetch(`${API_BASE}/data/${k}`, { method: 'DELETE', headers: { 'X-API-Key': API_KEY } })
+        .catch(e => console.warn(`[server] ${k} 삭제 실패:`, e));
+    }
+  };
+})();
 const uid=()=>Math.random().toString(36).slice(2,10);
 
 // Default data
@@ -877,17 +869,17 @@ document.getElementById('fSave').addEventListener('click',()=>{
 // Data reset handlers
 document.getElementById('resetFolders').addEventListener('click',()=>{
   if(!confirm('폴더와 팁 데이터를 초기화할까요? 다른 데이터는 유지됩니다.'))return;
-  localStorage.removeItem('baking.folders');localStorage.removeItem('baking.tips');
+  LS.remove('baking.folders');LS.remove('baking.tips');
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
 });
 document.getElementById('resetCalc').addEventListener('click',()=>{
   if(!confirm('계산기 배합과 프리셋을 기본값으로 초기화할까요?'))return;
-  localStorage.removeItem('baking.calc');localStorage.removeItem('baking.calcPresets');localStorage.removeItem('baking.calcPresetsVer');
+  LS.remove('baking.calc');LS.remove('baking.calcPresets');LS.remove('baking.calcPresetsVer');
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
 });
 document.getElementById('resetAllIndex').addEventListener('click',()=>{
   if(!confirm('모든 데이터를 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;
-  Object.keys(localStorage).filter(k=>k.startsWith('baking.')).forEach(k=>localStorage.removeItem(k));
+  ['baking.plans','baking.recipes','baking.history','baking.folders','baking.tips','baking.calc','baking.calcPresets','baking.calcPresetsVer'].forEach(k=>LS.remove(k));
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
 });
 // Close modal on backdrop click
