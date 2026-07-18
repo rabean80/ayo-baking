@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ayo-baking-v4'; // GETC774C678 C694Ccad Ce90C2f1 Bc84Adf8 C218C815
+const CACHE_NAME = 'ayo-baking-v4'; // GET 이외 요청 캐싱 버그 수정
 const ASSETS = [
   '/',
   '/index.html',
