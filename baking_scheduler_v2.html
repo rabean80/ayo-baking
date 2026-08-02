@@ -531,6 +531,20 @@ const LS = (function(){
 // Editing a project's bread never touches the library.
 const LIBRARY=DEFAULT_BREADS;
 
+// 사용자가 개별로 추가한 커스텀 빵 (어떤 프로젝트에도 속하지 않고, Select Bread 패널에서만 노출됨)
+function getCustomBreads(){ return LS.get('sched.customBreads', []); }
+function saveCustomBreads(arr){ LS.set('sched.customBreads', arr); }
+function getFullLibrary(){ return [...DEFAULT_BREADS, ...getCustomBreads()]; }
+
+// 외부(Calculator 등)에서 이름/메모만으로 커스텀 빵을 라이브러리에 추가
+window.addLibraryBreadFromExternal = function(name, recipeNotes){
+  const customBreads = getCustomBreads();
+  const nb = { id: uid(), name: name, recipe: recipeNotes||'', color: COLORS[customBreads.length % COLORS.length], stages: [] };
+  customBreads.push(nb);
+  saveCustomBreads(customBreads);
+  return nb;
+};
+
 // Build a fresh empty project. groups always seeded from defaults.
 let projSeq=LS.get('sched.projSeq',0);
 function makeProject(name,date){
@@ -702,7 +716,7 @@ function renderProjPanel(){
   // Section 2: library — add a copy into this project
   const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:12px 0 4px;padding-top:10px;border-top:1px dashed #e0d2b4';hd2.textContent='빵 라이브러리 (탭하여 프로젝트에 추가)';
   list.appendChild(hd2);
-  LIBRARY.forEach(lib=>{
+  getFullLibrary().forEach(lib=>{
     const el=document.createElement('div');el.className='proj-item';
     el.innerHTML=`<span class="p-dot" style="background:${lib.color}"></span><span class="p-name">${lib.name}</span><span style="font-size:13px;color:#5DCAA5;font-weight:700">＋</span>`;
     el.addEventListener('click',()=>{
