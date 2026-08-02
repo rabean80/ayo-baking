@@ -410,6 +410,17 @@
 
       <div class="biga-result" id="bigaResult"></div>
     </div>
+
+    <!-- 공정 메모 -->
+    <div class="surface">
+      <div class="section-head">
+        <div>
+          <div class="section-title">공정 메모</div>
+          <div class="section-sub">이 배합의 오토리즈·믹싱·발효·굽기 등 공정 관련 메모를 자유롭게 남겨두세요. 프리셋 저장 시 함께 저장됩니다.</div>
+        </div>
+      </div>
+      <textarea id="calcNotes" rows="8" style="width:100%;font-family:inherit;font-size:13.5px;line-height:1.6;padding:12px;border:1px solid #e6d5bd;border-radius:10px;background:#fffdf8;resize:vertical" placeholder="예) 1. 제한적 오토리즈 - 통밀 280g, 백밀가루 120g, 물 260g만 먼저 섞어 30분 오토리즈..."></textarea>
+    </div>
   </section>
 
   <!-- HISTORY -->
@@ -982,6 +993,8 @@ function refreshCalcWeights(){
 
 function renderCalc(){
   document.getElementById('calcFlour').value = calc.flour||'';
+  const notesEl=document.getElementById('calcNotes');
+  if(notesEl && document.activeElement!==notesEl){ notesEl.value = calc.notes||''; }
   const tb=document.getElementById('calcRows');
   // flour blend group + ingredient rows
   const ps=flourPctSum(), okPs=Math.abs(ps-100)<0.05;
@@ -1227,6 +1240,8 @@ document.getElementById('bigaYeast').addEventListener('input',e=>{calc.biga.yeas
 
 
 
+document.getElementById('calcNotes').addEventListener('input',e=>{calc.notes=e.target.value;saveCalc();});
+
 // presets save/load (클릭형 메뉴)
 document.getElementById('calcSavePreset').addEventListener('click',()=>{
   const name=prompt('이 배합을 어떤 이름으로 저장할까요?', calc.loadedName||'내 배합');
@@ -1236,6 +1251,21 @@ document.getElementById('calcSavePreset').addEventListener('click',()=>{
   calcPresets.push({id:uid(),name:nm,data:JSON.parse(JSON.stringify(calc))});
   LS.set('baking.calcPresets',calcPresets);
   alert(`"${nm}" 저장 완료`);
+
+  if(confirm(`Select Bread 라이브러리에도 "${nm}" 이름으로 개별 빵을 추가할까요?\n(어떤 프로젝트에도 속하지 않고, 나중에 원하는 프로젝트에 골라서 추가할 수 있어요.)`)){
+    try{
+      const iframe=document.getElementById('schedIframe');
+      if(iframe && iframe.contentWindow && typeof iframe.contentWindow.addLibraryBreadFromExternal==='function'){
+        iframe.contentWindow.addLibraryBreadFromExternal(nm, calc.notes||'');
+        alert(`"${nm}" 빵이 Select Bread 라이브러리에 추가됐어요. 스케줄러 탭 → Select Bread에서 확인해보세요.`);
+      } else {
+        alert('스케줄러가 아직 준비되지 않았어요. 스케줄러 탭을 한 번 열어보신 후 다시 시도해주세요.');
+      }
+    }catch(e){
+      console.warn('[server] 라이브러리 빵 추가 실패:', e);
+      alert('빵 추가 중 문제가 발생했어요. 스케줄러 탭을 열어보신 후 다시 시도해주세요.');
+    }
+  }
 });
 function renderPresetList(){
   const wrap=document.getElementById('presetList');
