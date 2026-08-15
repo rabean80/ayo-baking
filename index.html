@@ -1469,6 +1469,7 @@ function switchCalcMode(mode){
   document.getElementById('calcModeCost').classList.toggle('active', calcMode==='cost');
   document.getElementById('bigaSurface').style.display = calcMode==='cost' ? 'none' : '';
   document.getElementById('priceBookLoadBtn').style.display = calcMode==='cost' ? '' : 'none';
+  document.getElementById('calcSubBtn').style.display = calcMode==='cost' ? 'none' : '';
   renderCalc();
 }
 document.getElementById('calcModeNormal').addEventListener('click',()=>switchCalcMode('normal'));
@@ -1478,6 +1479,7 @@ document.getElementById('calcModeNormal').classList.toggle('active', calcMode===
 document.getElementById('calcModeCost').classList.toggle('active', calcMode==='cost');
 document.getElementById('bigaSurface').style.display = calcMode==='cost' ? 'none' : '';
 document.getElementById('priceBookLoadBtn').style.display = calcMode==='cost' ? '' : 'none';
+  document.getElementById('calcSubBtn').style.display = calcMode==='cost' ? 'none' : '';
 // ===== 단가계산 끝: 서브탭 전환 =====
 
 // presets save/load (클릭형 메뉴)
@@ -1488,11 +1490,17 @@ document.getElementById('calcSavePreset').addEventListener('click',()=>{
   calc.loadedName=nm;
 
   // ===== 덮어쓰기 지원 시작: 불러온 프리셋을 수정한 경우, 덮어쓸지 새로 저장할지 확인 =====
-  const existingIdx = calc.loadedPresetId ? calcPresets.findIndex(p=>p.id===calc.loadedPresetId) : -1;
+  // loadedPresetId로 못 찾으면(예: 이 기능 추가 전에 저장된 프리셋), 이름이 완전히 같은 프리셋도 덮어쓰기 후보로 인정
+  let existingIdx = calc.loadedPresetId ? calcPresets.findIndex(p=>p.id===calc.loadedPresetId) : -1;
+  if(existingIdx===-1){
+    existingIdx = calcPresets.findIndex(p=>p.name===nm);
+  }
   if(existingIdx>-1){
-    const overwrite = confirm(`불러온 프리셋 "${calcPresets[existingIdx].name}"에 덮어쓸까요?\n(취소를 누르면 "${nm}" 이름으로 새 프리셋이 저장됩니다)`);
+    const overwrite = confirm(`기존 프리셋 "${calcPresets[existingIdx].name}"에 덮어쓸까요?\n(취소를 누르면 "${nm}" 이름으로 새 프리셋이 저장됩니다)`);
     if(overwrite){
-      calcPresets[existingIdx] = {id:calc.loadedPresetId, name:nm, data:JSON.parse(JSON.stringify(calc))};
+      const keepId = calcPresets[existingIdx].id;
+      calcPresets[existingIdx] = {id:keepId, name:nm, data:JSON.parse(JSON.stringify(calc))};
+      calc.loadedPresetId=keepId;
     } else {
       const np={id:uid(),name:nm,data:JSON.parse(JSON.stringify(calc))};
       calcPresets.push(np);
