@@ -188,9 +188,9 @@
   .calc-table .cf-add:hover{background:var(--paper-2);border-color:var(--accent)}
   .calc-table .cf-sum{font-weight:700;color:var(--ink-3);font-size:13px}
   /* ===== 드래그 정렬(재료 순서 변경) 시작 ===== */
-  .calc-table .ci-drag{cursor:grab;color:#ccc;font-size:14px;padding:0 2px;user-select:none;flex-shrink:0}
+  .calc-table .ci-drag,.calc-table .cf-drag{cursor:grab;color:#ccc;font-size:14px;padding:0 2px;user-select:none;flex-shrink:0}
   .calc-table .ci-namecell{display:flex;align-items:center;gap:6px}
-  .calc-table tr[data-idx].drag-over{background:var(--paper-2);box-shadow:inset 0 2px 0 var(--accent)}
+  .calc-table tr[data-idx].drag-over,.calc-table tr.calc-flourrow.drag-over{background:var(--paper-2);box-shadow:inset 0 2px 0 var(--accent)}
   /* ===== 드래그 정렬 끝 ===== */
   .calc-table .cf-sum.bad{color:#b84431}
   .calc-table .cf-fit{border:1px solid #f2cbc2;background:#fff;color:#b84431;border-radius:7px;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;padding:5px 9px;white-space:nowrap}
@@ -947,6 +947,7 @@ const CALC_PRESETS_DEFAULT=[
 // ===== 단가계산 시작: 모드 상태 =====
 let calcMode = LS.get('baking.calcMode', 'normal'); // 'normal' | 'cost'
 let ingDragSrcIdx = null; // ===== 드래그 정렬: 재료 순서 변경 시 드래그 시작 인덱스 =====
+let flourDragSrcIdx = null; // ===== 드래그 정렬: 밀가루 순서 변경 시 드래그 시작 인덱스 =====
 function presetsKey(){ return calcMode==='cost' ? 'baking.costPresets' : 'baking.calcPresets'; }
 function calcStorageKey(){ return calcMode==='cost' ? 'baking.costCalc' : 'baking.calc'; }
 // ===== 단가계산 끝: 모드 상태 =====
@@ -1044,7 +1045,7 @@ function renderCalc(){
     const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(fw/1000*(f.price||0)))}원</td>` : '';
     // ===== 단가계산 끝 =====
     html += `<tr class="calc-flourrow" data-fidx="${fi}">
-      <td><input class="cf-name" value="${(f.name||'').replace(/"/g,'&quot;')}" placeholder="밀가루명 (예: 강력분)"></td>
+      <td class="ci-namecell"><span class="cf-drag" draggable="true" title="드래그하여 순서 변경">≡</span><input class="cf-name" value="${(f.name||'').replace(/"/g,'&quot;')}" placeholder="밀가루명 (예: 강력분)"></td>
       <td><input class="cf-pct" type="number" step="0.1" min="0" value="${roundPctDisplay(f.pct)}"></td>
       <td><input class="cf-w" type="number" step="1" min="0" value="${fw?Math.round(fw*10)/10:''}" placeholder="g"></td>
       ${priceCell}${costCell}
@@ -1109,6 +1110,22 @@ function renderCalc(){
     const fi=+tr.dataset.fidx;
     const nameEl=tr.querySelector('.cf-name');
     nameEl.addEventListener('input',e=>{calc.flours[fi].name=e.target.value;syncFlourName();saveCalc();});
+    // ===== 드래그 정렬 시작: 밀가루 행 순서 변경 =====
+    const fDragHandle=tr.querySelector('.cf-drag');
+    if(fDragHandle){
+      fDragHandle.addEventListener('dragstart',e=>{flourDragSrcIdx=fi;e.dataTransfer.effectAllowed='move';tr.style.opacity='.5';});
+      fDragHandle.addEventListener('dragend',()=>{tr.style.opacity='1';tb.querySelectorAll('tr.calc-flourrow').forEach(x=>x.classList.remove('drag-over'));});
+    }
+    tr.addEventListener('dragover',e=>{if(flourDragSrcIdx===null)return;e.preventDefault();tb.querySelectorAll('tr.calc-flourrow').forEach(x=>x.classList.remove('drag-over'));tr.classList.add('drag-over');});
+    tr.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(flourDragSrcIdx===null||flourDragSrcIdx===fi){flourDragSrcIdx=null;return;}
+      const moved=calc.flours.splice(flourDragSrcIdx,1)[0];
+      calc.flours.splice(fi,0,moved);
+      flourDragSrcIdx=null;
+      syncFlourName();saveCalc();renderCalc();
+    });
+    // ===== 드래그 정렬 끝 =====
     const fpEl=tr.querySelector('.cf-pct');
     const commitFP=()=>{calc.flours[fi].pct=parseFloat(fpEl.value)||0;saveCalc();renderCalc();};
     fpEl.addEventListener('change',commitFP);
@@ -1382,12 +1399,31 @@ document.getElementById('calcSavePreset').addEventListener('click',()=>{
   const name=prompt('이 배합을 어떤 이름으로 저장할까요?', calc.loadedName||'내 배합');
   if(!name||!name.trim())return;
   const nm=name.trim();
-  calc.loadedName=nm; saveCalc(); renderPresetName();
-  calcPresets.push({id:uid(),name:nm,data:JSON.parse(JSON.stringify(calc))});
+  calc.loadedName=nm;
+
+  // ===== 덮어쓰기 지원 시작: 불러온 프리셋을 수정한 경우, 덮어쓸지 새로 저장할지 확인 =====
+  const existingIdx = calc.loadedPresetId ? calcPresets.findIndex(p=>p.id===calc.loadedPresetId) : -1;
+  if(existingIdx>-1){
+    const overwrite = confirm(`불러온 프리셋 "${calcPresets[existingIdx].name}"에 덮어쓸까요?\n(취소를 누르면 "${nm}" 이름으로 새 프리셋이 저장됩니다)`);
+    if(overwrite){
+      calcPresets[existingIdx] = {id:calc.loadedPresetId, name:nm, data:JSON.parse(JSON.stringify(calc))};
+    } else {
+      const np={id:uid(),name:nm,data:JSON.parse(JSON.stringify(calc))};
+      calcPresets.push(np);
+      calc.loadedPresetId=np.id;
+    }
+  } else {
+    const np={id:uid(),name:nm,data:JSON.parse(JSON.stringify(calc))};
+    calcPresets.push(np);
+    calc.loadedPresetId=np.id;
+  }
+  // ===== 덮어쓰기 지원 끝 =====
+  saveCalc(); renderPresetName();
   LS.set(presetsKey(),calcPresets);
   alert(`"${nm}" 저장 완료`);
 
-  if(confirm(`Select Bread 라이브러리에도 "${nm}" 이름으로 개별 빵을 추가할까요?\n(어떤 프로젝트에도 속하지 않고, 나중에 원하는 프로젝트에 골라서 추가할 수 있어요.)`)){
+  // ===== 단가계산: 스케줄러 연계 질문은 일반 배합 모드에서만 =====
+  if(calcMode==='normal' && confirm(`Select Bread 라이브러리에도 "${nm}" 이름으로 개별 빵을 추가할까요?\n(어떤 프로젝트에도 속하지 않고, 나중에 원하는 프로젝트에 골라서 추가할 수 있어요.)`)){
     try{
       const iframe=document.getElementById('schedIframe');
       if(iframe && iframe.contentWindow && typeof iframe.contentWindow.addLibraryBreadFromExternal==='function'){
@@ -1416,6 +1452,7 @@ function renderPresetList(){
     if(!calc.flourName) calc.flourName='강력분';
     ensureFlours(calc);
     calc.loadedName=p.name; // 불러온 프리셋 이름 표시
+    calc.loadedPresetId=p.id; // ===== 덮어쓰기 판별용: 어느 프리셋에서 불러왔는지 기록 =====
     saveCalc();renderCalc();
     document.getElementById('presetModal').classList.remove('show');
   }));
