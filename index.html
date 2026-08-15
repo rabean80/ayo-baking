@@ -323,6 +323,12 @@
 
   <!-- CALCULATOR -->
   <section class="panel" id="panel-calc">
+    <!-- ===== 단가계산 시작: 서브탭 ===== -->
+    <div class="calc-modetabs" style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn btn-ghost calc-modetab active" id="calcModeNormal">일반 배합</button>
+      <button class="btn btn-ghost calc-modetab" id="calcModeCost">💰 단가 계산</button>
+    </div>
+    <!-- ===== 단가계산 끝: 서브탭 ===== -->
     <!-- 베이커스 퍼센티지 -->
     <div class="surface" style="margin-bottom:18px">
       <div class="section-head">
@@ -362,11 +368,11 @@
       </div>
 
       <table class="calc-table" id="calcTable">
-        <thead>
+        <thead id="calcThead">
           <tr><th style="width:48%">재료</th><th style="width:20%">%</th><th style="width:24%">분량</th><th style="width:8%"></th></tr>
         </thead>
         <tbody id="calcRows"></tbody>
-        <tfoot>
+        <tfoot id="calcTfoot">
           <tr class="calc-total">
             <td colspan="2">총 완성 반죽 무게</td>
             <td id="calcTotalWeight">—</td>
@@ -378,7 +384,7 @@
     </div>
 
     <!-- 비가 계산기 -->
-    <div class="surface">
+    <div class="surface" id="bigaSurface">
       <div class="section-head">
         <div>
           <div class="section-title">비가 (Biga) 사전반죽 계산기</div>
@@ -884,13 +890,16 @@ document.getElementById('resetFolders').addEventListener('click',()=>{
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
 });
 document.getElementById('resetCalc').addEventListener('click',()=>{
-  if(!confirm('계산기 배합과 프리셋을 기본값으로 초기화할까요?'))return;
+  if(!confirm('계산기 배합과 프리셋을 기본값으로 초기화할까요? (단가 계산 배합도 함께 초기화됩니다)'))return;
   LS.remove('baking.calc');LS.remove('baking.calcPresets');LS.remove('baking.calcPresetsVer');
+  LS.remove('baking.costCalc');LS.remove('baking.costPresets'); // ===== 단가계산: 초기화 대상 =====
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
 });
 document.getElementById('resetAllIndex').addEventListener('click',()=>{
   if(!confirm('모든 데이터를 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;
-  ['baking.plans','baking.recipes','baking.history','baking.folders','baking.tips','baking.calc','baking.calcPresets','baking.calcPresetsVer'].forEach(k=>LS.remove(k));
+  ['baking.plans','baking.recipes','baking.history','baking.folders','baking.tips','baking.calc','baking.calcPresets','baking.calcPresetsVer',
+   'baking.costCalc','baking.costPresets','baking.calcMode' // ===== 단가계산: 초기화 대상 =====
+  ].forEach(k=>LS.remove(k));
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
 });
 // Close modal on backdrop click
@@ -930,7 +939,12 @@ const CALC_PRESETS_DEFAULT=[
     {id:uid(),name:'분유',pct:3},{id:uid(),name:'설탕',pct:3},{id:uid(),name:'우유',pct:20},
     {id:uid(),name:'버터',pct:5},{id:uid(),name:'르방',pct:5},{id:uid(),name:'바시나쥬',pct:5}]}},
 ];
-let calc = LS.get('baking.calc', JSON.parse(JSON.stringify(CALC_DEFAULT)));
+// ===== 단가계산 시작: 모드 상태 =====
+let calcMode = LS.get('baking.calcMode', 'normal'); // 'normal' | 'cost'
+function presetsKey(){ return calcMode==='cost' ? 'baking.costPresets' : 'baking.calcPresets'; }
+function calcStorageKey(){ return calcMode==='cost' ? 'baking.costCalc' : 'baking.calc'; }
+// ===== 단가계산 끝: 모드 상태 =====
+let calc = LS.get(calcStorageKey(), JSON.parse(JSON.stringify(CALC_DEFAULT)));
 if(!calc.flourName) calc.flourName='강력분';
 // 밀가루 블렌드 마이그레이션: flours 없으면 기존 flourName으로 1종 블렌드 구성
 function ensureFlours(o){
@@ -941,14 +955,17 @@ function ensureFlours(o){
 }
 function syncFlourName(){ calc.flourName = (calc.flours.length===1 ? (calc.flours[0].name||'강력분') : '블렌드'); }
 ensureFlours(calc);
-// 기본 프리셋 버전 마이그레이션 (구 예시 프리셋 → 새 기본 프리셋으로 1회 교체)
+// 기본 프리셋 버전 마이그레이션 (구 예시 프리셋 → 새 기본 프리셋으로 1회 교체) - 일반 배합 프리셋에만 적용
 let calcPresets = LS.get('baking.calcPresets', null);
 if(calcPresets===null || (LS.get('baking.calcPresetsVer',1) < CALC_PRESETS_VER)){
   calcPresets = JSON.parse(JSON.stringify(CALC_PRESETS_DEFAULT));
   LS.set('baking.calcPresets', calcPresets);
   LS.set('baking.calcPresetsVer', CALC_PRESETS_VER);
 }
-const saveCalc=()=>LS.set('baking.calc',calc);
+// ===== 단가계산 시작: 단가 계산 프리셋 목록(별도, 기본값 없음) =====
+if(calcMode==='cost'){ calcPresets = LS.get('baking.costPresets', []); }
+// ===== 단가계산 끝 =====
+const saveCalc=()=>LS.set(calcStorageKey(),calc);
 function renderPresetName(){
   const el=document.getElementById('calcPresetName');
   if(!el) return;
@@ -956,6 +973,9 @@ function renderPresetName(){
   else { el.style.display='none'; el.textContent=''; }
 }
 const fmt=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; return (r%1===0?r.toFixed(0):r.toFixed(1))+'g'; };
+// ===== 단가계산 시작: 원(₩) 단위 포맷 (fmt는 g 단위 전용이라 별도 필요) =====
+const fmtWon=n=>{ if(!isFinite(n)) return '—'; return Math.round(n).toLocaleString('ko-KR'); };
+// ===== 단가계산 끝 =====
 const fmtP=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; return (r%1===0?r.toFixed(0):r.toFixed(1))+'%'; };
 
 function calcTotalPct(){return 100 + calc.ingredients.reduce((s,i)=>s+(parseFloat(i.pct)||0),0);}
@@ -996,33 +1016,86 @@ function renderCalc(){
   const notesEl=document.getElementById('calcNotes');
   if(notesEl && document.activeElement!==notesEl){ notesEl.value = calc.notes||''; }
   const tb=document.getElementById('calcRows');
+  // ===== 단가계산 시작: 모드별 헤더/합계 영역 =====
+  const isCost = calcMode==='cost';
+  const thead=document.getElementById('calcThead');
+  thead.innerHTML = isCost
+    ? `<tr><th style="width:32%">재료</th><th style="width:12%">%</th><th style="width:16%">분량</th><th style="width:16%">단가(원/kg)</th><th style="width:16%">비용</th><th style="width:8%"></th></tr>`
+    : `<tr><th style="width:48%">재료</th><th style="width:20%">%</th><th style="width:24%">분량</th><th style="width:8%"></th></tr>`;
+  // ===== 단가계산 끝 =====
   // flour blend group + ingredient rows
   const ps=flourPctSum(), okPs=Math.abs(ps-100)<0.05;
-  let html = `<tr class="calc-flourhead"><td>밀가루</td><td><span class="fh-pct">100%</span></td><td class="calc-w" id="calcFlourW">${fmt(calc.flour)}</td><td></td></tr>`;
+  let html = isCost
+    ? `<tr class="calc-flourhead"><td>밀가루</td><td><span class="fh-pct">100%</span></td><td class="calc-w" id="calcFlourW">${fmt(calc.flour)}</td><td></td><td></td><td></td></tr>`
+    : `<tr class="calc-flourhead"><td>밀가루</td><td><span class="fh-pct">100%</span></td><td class="calc-w" id="calcFlourW">${fmt(calc.flour)}</td><td></td></tr>`;
   calc.flours.forEach((f,fi)=>{
     const fw=(calc.flour||0)*(parseFloat(f.pct)||0)/100;
     const canDel = calc.flours.length>1;
+    // ===== 단가계산 시작: 밀가루 행 단가/비용 셀 =====
+    const priceCell = isCost ? `<td><input class="cf-price" type="number" step="1" min="0" value="${f.price||''}" placeholder="원/kg"></td>` : '';
+    const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(fw/1000*(f.price||0)))}원</td>` : '';
+    // ===== 단가계산 끝 =====
     html += `<tr class="calc-flourrow" data-fidx="${fi}">
       <td><input class="cf-name" value="${(f.name||'').replace(/"/g,'&quot;')}" placeholder="밀가루명 (예: 강력분)"></td>
       <td><input class="cf-pct" type="number" step="0.1" min="0" value="${f.pct}"></td>
       <td><input class="cf-w" type="number" step="1" min="0" value="${fw?Math.round(fw*10)/10:''}" placeholder="g"></td>
+      ${priceCell}${costCell}
       <td>${canDel?'<button class="cf-del" title="삭제">✕</button>':''}</td></tr>`;
   });
-  html += `<tr class="calc-flourfoot">
+  html += isCost
+    ? `<tr class="calc-flourfoot">
+    <td><button class="cf-add" type="button">＋ 밀가루 추가</button></td>
+    <td class="cf-sum${okPs?'':' bad'}">${fmtP(ps)}</td>
+    <td class="cf-sum${okPs?'':' bad'}">${fmt((calc.flour||0)*ps/100)}</td>
+    <td></td><td></td>
+    <td>${okPs?'':'<button class="cf-fit" title="총량을 밀가루 합계에 맞춥니다">맞춤</button>'}</td></tr>`
+    : `<tr class="calc-flourfoot">
     <td><button class="cf-add" type="button">＋ 밀가루 추가</button></td>
     <td class="cf-sum${okPs?'':' bad'}">${fmtP(ps)}</td>
     <td class="cf-sum${okPs?'':' bad'}">${fmt((calc.flour||0)*ps/100)}</td>
     <td>${okPs?'':'<button class="cf-fit" title="총량을 밀가루 합계에 맞춥니다">맞춤</button>'}</td></tr>`;
   calc.ingredients.forEach((ing,idx)=>{
     const w=(calc.flour||0)*(parseFloat(ing.pct)||0)/100;
+    // ===== 단가계산 시작: 재료 행 단가/비용 셀 =====
+    const priceCell = isCost ? `<td><input class="ci-price" type="number" step="1" min="0" value="${ing.price||''}" placeholder="원/kg"></td>` : '';
+    const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(w/1000*(ing.price||0)))}원</td>` : '';
+    // ===== 단가계산 끝 =====
     html += `<tr data-idx="${idx}">
       <td><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명"></td>
       <td><input class="ci-pct" type="number" step="0.1" min="0" value="${ing.pct}"></td>
       <td><input class="ci-w" type="number" step="1" min="0" value="${w?Math.round(w*10)/10:''}" placeholder="g"></td>
+      ${priceCell}${costCell}
       <td><button class="calc-del" title="삭제">✕</button></td></tr>`;
   });
   tb.innerHTML=html;
   document.getElementById('calcTotalWeight').textContent = fmt((calc.flour||0)*calcTotalPct()/100);
+  // ===== 단가계산 시작: 하단 총 재료비 / 개당 단가 =====
+  const tfoot=document.getElementById('calcTfoot');
+  if(isCost){
+    let totalCost=0;
+    calc.flours.forEach(f=>{ const fw=(calc.flour||0)*(parseFloat(f.pct)||0)/100; totalCost += fw/1000*(f.price||0); });
+    calc.ingredients.forEach(ing=>{ const w=(calc.flour||0)*(parseFloat(ing.pct)||0)/100; totalCost += w/1000*(ing.price||0); });
+    const unitCount = parseFloat(calc.costUnitCount)||0;
+    const unitCost = unitCount>0 ? Math.round(totalCost/unitCount) : null;
+    tfoot.innerHTML = `<tr class="calc-total">
+        <td colspan="2">총 완성 반죽 무게</td><td id="calcTotalWeight">${fmt((calc.flour||0)*calcTotalPct()/100)}</td><td colspan="3"></td></tr>
+      <tr class="calc-total">
+        <td colspan="4">총 재료비</td><td colspan="2" style="font-weight:700">${fmtWon(Math.round(totalCost))}원</td></tr>
+      <tr class="calc-total">
+        <td colspan="2">이 배합으로 총 몇 개 만드나요?</td>
+        <td colspan="2"><input type="number" id="calcUnitCount" min="0" step="1" value="${calc.costUnitCount||''}" placeholder="개수" style="width:100%"></td>
+        <td colspan="2" style="font-weight:700">${unitCost!==null?`개당 ${fmtWon(unitCost)}원`:'개수를 입력하세요'}</td></tr>`;
+    const unitEl=document.getElementById('calcUnitCount');
+    if(unitEl) unitEl.addEventListener('input',e=>{calc.costUnitCount=e.target.value;saveCalc();renderCalc();});
+  } else {
+    tfoot.innerHTML = `<tr class="calc-total">
+        <td colspan="2">총 완성 반죽 무게</td>
+        <td id="calcTotalWeight">—</td>
+        <td></td>
+      </tr>`;
+    document.getElementById('calcTotalWeight').textContent = fmt((calc.flour||0)*calcTotalPct()/100);
+  }
+  // ===== 단가계산 끝 =====
   // 밀가루 블렌드 행 이벤트
   tb.querySelectorAll('tr.calc-flourrow').forEach(tr=>{
     const fi=+tr.dataset.fidx;
@@ -1036,6 +1109,14 @@ function renderCalc(){
     const commitFW=()=>{const g=parseFloat(fwEl.value)||0; const F=calc.flour||0; if(F>0){calc.flours[fi].pct=Math.round((g/F*100)*100)/100;} saveCalc();renderCalc();};
     fwEl.addEventListener('change',commitFW);
     fwEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fwEl.blur();}});
+    // ===== 단가계산 시작: 밀가루 단가 입력 이벤트 =====
+    const fPriceEl=tr.querySelector('.cf-price');
+    if(fPriceEl){
+      const commitFPrice=()=>{calc.flours[fi].price=parseFloat(fPriceEl.value)||0;saveCalc();renderCalc();};
+      fPriceEl.addEventListener('change',commitFPrice);
+      fPriceEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fPriceEl.blur();}});
+    }
+    // ===== 단가계산 끝 =====
     const delB=tr.querySelector('.cf-del');
     if(delB) delB.addEventListener('click',()=>{calc.flours.splice(fi,1);syncFlourName();saveCalc();renderCalc();});
   });
@@ -1058,6 +1139,14 @@ function renderCalc(){
     const commitPct=()=>{calc.ingredients[idx].pct=pctEl.value;saveCalc();refreshCalcWeights();};
     pctEl.addEventListener('change',commitPct); // 다른 곳 클릭(blur) 시에도 확정
     pctEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();pctEl.blur();}}); // 엔터로 확정
+    // ===== 단가계산 시작: 재료 단가 입력 이벤트 =====
+    const priceEl=tr.querySelector('.ci-price');
+    if(priceEl){
+      const commitPrice=()=>{calc.ingredients[idx].price=parseFloat(priceEl.value)||0;saveCalc();renderCalc();};
+      priceEl.addEventListener('change',commitPrice);
+      priceEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();priceEl.blur();}});
+    }
+    // ===== 단가계산 끝 =====
     const wEl=tr.querySelector('.ci-w');
     const commitW=()=>{const g=parseFloat(wEl.value)||0; const F=calc.flour||0; if(F>0){calc.ingredients[idx].pct=Math.round((g/F*100)*100)/100;} saveCalc();renderCalc();};
     wEl.addEventListener('change',commitW); // 분량(g) 입력 → % 역산
@@ -1242,6 +1331,28 @@ document.getElementById('bigaYeast').addEventListener('input',e=>{calc.biga.yeas
 
 document.getElementById('calcNotes').addEventListener('input',e=>{calc.notes=e.target.value;saveCalc();});
 
+// ===== 단가계산 시작: 서브탭 전환 =====
+function switchCalcMode(mode){
+  if(calcMode===mode) return;
+  calcMode = mode;
+  LS.set('baking.calcMode', calcMode);
+  calc = LS.get(calcStorageKey(), JSON.parse(JSON.stringify(CALC_DEFAULT)));
+  if(!calc.flourName) calc.flourName='강력분';
+  ensureFlours(calc);
+  calcPresets = calcMode==='cost' ? LS.get('baking.costPresets', []) : LS.get('baking.calcPresets', JSON.parse(JSON.stringify(CALC_PRESETS_DEFAULT)));
+  document.getElementById('calcModeNormal').classList.toggle('active', calcMode==='normal');
+  document.getElementById('calcModeCost').classList.toggle('active', calcMode==='cost');
+  document.getElementById('bigaSurface').style.display = calcMode==='cost' ? 'none' : '';
+  renderCalc();
+}
+document.getElementById('calcModeNormal').addEventListener('click',()=>switchCalcMode('normal'));
+document.getElementById('calcModeCost').addEventListener('click',()=>switchCalcMode('cost'));
+// 초기 진입 시 모드 반영 (비가 섹션 표시/숨김, 탭 활성 표시)
+document.getElementById('calcModeNormal').classList.toggle('active', calcMode==='normal');
+document.getElementById('calcModeCost').classList.toggle('active', calcMode==='cost');
+document.getElementById('bigaSurface').style.display = calcMode==='cost' ? 'none' : '';
+// ===== 단가계산 끝: 서브탭 전환 =====
+
 // presets save/load (클릭형 메뉴)
 document.getElementById('calcSavePreset').addEventListener('click',()=>{
   const name=prompt('이 배합을 어떤 이름으로 저장할까요?', calc.loadedName||'내 배합');
@@ -1249,7 +1360,7 @@ document.getElementById('calcSavePreset').addEventListener('click',()=>{
   const nm=name.trim();
   calc.loadedName=nm; saveCalc(); renderPresetName();
   calcPresets.push({id:uid(),name:nm,data:JSON.parse(JSON.stringify(calc))});
-  LS.set('baking.calcPresets',calcPresets);
+  LS.set(presetsKey(),calcPresets);
   alert(`"${nm}" 저장 완료`);
 
   if(confirm(`Select Bread 라이브러리에도 "${nm}" 이름으로 개별 빵을 추가할까요?\n(어떤 프로젝트에도 속하지 않고, 나중에 원하는 프로젝트에 골라서 추가할 수 있어요.)`)){
@@ -1287,7 +1398,7 @@ function renderPresetList(){
   wrap.querySelectorAll('.preset-del').forEach(b=>b.addEventListener('click',()=>{
     const i=+b.dataset.i;if(!calcPresets[i])return;
     if(confirm(`"${calcPresets[i].name}" 프리셋을 삭제할까요?`)){
-      calcPresets.splice(i,1);LS.set('baking.calcPresets',calcPresets);renderPresetList();
+      calcPresets.splice(i,1);LS.set(presetsKey(),calcPresets);renderPresetList();
     }
   }));
 }
