@@ -976,6 +976,8 @@ const fmt=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; retur
 // ===== 단가계산 시작: 원(₩) 단위 포맷 (fmt는 g 단위 전용이라 별도 필요) =====
 const fmtWon=n=>{ if(!isFinite(n)) return '—'; return Math.round(n).toLocaleString('ko-KR'); };
 // ===== 단가계산 끝 =====
+// g→% 변환 정밀도 보정: 저장은 고정밀(6자리)로 하고, 입력창 표시만 짧게 반올림
+const roundPctDisplay=n=>{ const v=Math.round((parseFloat(n)||0)*100)/100; return v; };
 const fmtP=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; return (r%1===0?r.toFixed(0):r.toFixed(1))+'%'; };
 
 function calcTotalPct(){return 100 + calc.ingredients.reduce((s,i)=>s+(parseFloat(i.pct)||0),0);}
@@ -1037,7 +1039,7 @@ function renderCalc(){
     // ===== 단가계산 끝 =====
     html += `<tr class="calc-flourrow" data-fidx="${fi}">
       <td><input class="cf-name" value="${(f.name||'').replace(/"/g,'&quot;')}" placeholder="밀가루명 (예: 강력분)"></td>
-      <td><input class="cf-pct" type="number" step="0.1" min="0" value="${f.pct}"></td>
+      <td><input class="cf-pct" type="number" step="0.1" min="0" value="${roundPctDisplay(f.pct)}"></td>
       <td><input class="cf-w" type="number" step="1" min="0" value="${fw?Math.round(fw*10)/10:''}" placeholder="g"></td>
       ${priceCell}${costCell}
       <td>${canDel?'<button class="cf-del" title="삭제">✕</button>':''}</td></tr>`;
@@ -1062,7 +1064,7 @@ function renderCalc(){
     // ===== 단가계산 끝 =====
     html += `<tr data-idx="${idx}">
       <td><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명"></td>
-      <td><input class="ci-pct" type="number" step="0.1" min="0" value="${ing.pct}"></td>
+      <td><input class="ci-pct" type="number" step="0.1" min="0" value="${roundPctDisplay(ing.pct)}"></td>
       <td><input class="ci-w" type="number" step="1" min="0" value="${w?Math.round(w*10)/10:''}" placeholder="g"></td>
       ${priceCell}${costCell}
       <td><button class="calc-del" title="삭제">✕</button></td></tr>`;
@@ -1106,7 +1108,7 @@ function renderCalc(){
     fpEl.addEventListener('change',commitFP);
     fpEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fpEl.blur();}});
     const fwEl=tr.querySelector('.cf-w');
-    const commitFW=()=>{const g=parseFloat(fwEl.value)||0; const F=calc.flour||0; if(F>0){calc.flours[fi].pct=Math.round((g/F*100)*100)/100;} saveCalc();renderCalc();};
+    const commitFW=()=>{const g=parseFloat(fwEl.value)||0; const F=calc.flour||0; if(F>0){calc.flours[fi].pct=Math.round((g/F*100)*1e6)/1e6;} saveCalc();renderCalc();};
     fwEl.addEventListener('change',commitFW);
     fwEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fwEl.blur();}});
     // ===== 단가계산 시작: 밀가루 단가 입력 이벤트 =====
@@ -1128,7 +1130,7 @@ function renderCalc(){
   const fitF=tb.querySelector('.cf-fit');
   if(fitF) fitF.addEventListener('click',()=>{
     const sp=flourPctSum();
-    if(sp>0){ calc.flour=Math.round((calc.flour||0)*sp/100); calc.flours.forEach(f=>{f.pct=Math.round(((parseFloat(f.pct)||0)*100/sp)*100)/100;}); }
+    if(sp>0){ calc.flour=Math.round((calc.flour||0)*sp/100); calc.flours.forEach(f=>{f.pct=Math.round(((parseFloat(f.pct)||0)*100/sp)*1e6)/1e6;}); }
     saveCalc();renderCalc();
   });
   // bind ingredient row events
@@ -1148,7 +1150,7 @@ function renderCalc(){
     }
     // ===== 단가계산 끝 =====
     const wEl=tr.querySelector('.ci-w');
-    const commitW=()=>{const g=parseFloat(wEl.value)||0; const F=calc.flour||0; if(F>0){calc.ingredients[idx].pct=Math.round((g/F*100)*100)/100;} saveCalc();renderCalc();};
+    const commitW=()=>{const g=parseFloat(wEl.value)||0; const F=calc.flour||0; if(F>0){calc.ingredients[idx].pct=Math.round((g/F*100)*1e6)/1e6;} saveCalc();renderCalc();};
     wEl.addEventListener('change',commitW); // 분량(g) 입력 → % 역산
     wEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();wEl.blur();}});
     tr.querySelector('.calc-del').addEventListener('click',()=>{calc.ingredients.splice(idx,1);saveCalc();renderCalc();});
