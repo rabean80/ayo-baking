@@ -187,6 +187,13 @@
   .calc-table .cf-add{border:1px dashed #d8c9a8;background:#fff;border-radius:7px;font-family:inherit;font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;padding:6px 10px}
   .calc-table .cf-add:hover{background:var(--paper-2);border-color:var(--accent)}
   .calc-table .cf-sum{font-weight:700;color:var(--ink-3);font-size:13px}
+  /* ===== 단가 환산 계산기 버튼 시작 ===== */
+  .price-calc-btn{border:1px solid #e0d2b4;background:#fff;border-radius:6px;cursor:pointer;font-size:13px;padding:5px 7px;flex-shrink:0;line-height:1}
+  .price-calc-btn:hover{background:var(--paper-2);border-color:var(--accent)}
+  .pcalc-tabs{display:flex;gap:6px;margin-bottom:12px}
+  .pcalc-tab{flex:1;padding:8px;border:1px solid #d8c9a8;background:#fff;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer}
+  .pcalc-tab.active{background:linear-gradient(135deg,var(--accent),var(--crust-dark));color:#fff5dd;border-color:transparent}
+  /* ===== 단가 환산 계산기 버튼 끝 ===== */
   /* ===== 드래그 정렬(재료 순서 변경) 시작 ===== */
   .calc-table .ci-drag,.calc-table .cf-drag{cursor:grab;color:#ccc;font-size:14px;padding:0 2px;user-select:none;flex-shrink:0}
   .calc-table .ci-namecell{display:flex;align-items:center;gap:6px}
@@ -329,9 +336,10 @@
   <!-- CALCULATOR -->
   <section class="panel" id="panel-calc">
     <!-- ===== 단가계산 시작: 서브탭 ===== -->
-    <div class="calc-modetabs" style="display:flex;gap:8px;margin-bottom:14px">
+    <div class="calc-modetabs" style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
       <button class="btn btn-ghost calc-modetab active" id="calcModeNormal">일반 배합</button>
       <button class="btn btn-ghost calc-modetab" id="calcModeCost">💰 단가 계산</button>
+      <button class="btn btn-ghost" id="priceBookLoadBtn" style="display:none" title="이름이 같은 재료에 저장된 단가를 채워넣어요">📖 단가 불러오기</button>
     </div>
     <!-- ===== 단가계산 끝: 서브탭 ===== -->
     <!-- 베이커스 퍼센티지 -->
@@ -606,6 +614,55 @@
     </div>
   </div>
 </div>
+
+<!-- ===== 단가 환산 계산기 모달 시작 ===== -->
+<div class="modal-back" id="priceCalcModal">
+  <div class="modal-box" style="max-width:400px">
+    <h3>🧮 단가(원/kg) 환산 계산기</h3>
+    <p style="font-size:12.5px;color:#888;margin-bottom:12px;line-height:1.6">구매 단위(예: 25kg 포대, 400g 봉지, 개당 판매 등)를 원/kg으로 환산해요.</p>
+
+    <div class="pcalc-tabs">
+      <button type="button" class="pcalc-tab active" id="pcalcTabWeight">무게 기준</button>
+      <button type="button" class="pcalc-tab" id="pcalcTabCount">개수 기준</button>
+    </div>
+
+    <div id="pcalcWeightBox">
+      <div class="field-row">
+        <div class="field"><label>구매가</label><div class="calc-inwrap"><input type="number" id="pcalcWPrice" min="0" step="1" placeholder="예: 43000"><span class="calc-unit">원</span></div></div>
+        <div class="field">
+          <label>구매량</label>
+          <div class="calc-inwrap"><input type="number" id="pcalcWAmount" min="0" step="0.1" placeholder="예: 25">
+            <select id="pcalcWUnit" style="width:auto;border:none;background:transparent;font-weight:600">
+              <option value="kg" selected>kg</option>
+              <option value="g">g</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pcalcCountBox" style="display:none">
+      <div class="field-row">
+        <div class="field"><label>전체 구매가</label><div class="calc-inwrap"><input type="number" id="pcalcCPrice" min="0" step="1" placeholder="예: 9000"><span class="calc-unit">원</span></div></div>
+        <div class="field"><label>개수</label><div class="calc-inwrap"><input type="number" id="pcalcCCount" min="0" step="1" placeholder="예: 30"><span class="calc-unit">개</span></div></div>
+      </div>
+      <div class="field"><label>개당 무게 (직접 계량)</label><div class="calc-inwrap"><input type="number" id="pcalcCWeight" min="0" step="0.1" placeholder="예: 55"><span class="calc-unit">g</span></div></div>
+    </div>
+
+    <div id="pcalcResult" style="background:var(--paper-2);border:1px solid #e0d2b4;border-radius:10px;padding:12px 14px;margin-top:12px;font-size:13px;line-height:1.8;color:var(--ink)">값을 입력하면 원/kg으로 환산돼요.</div>
+
+    <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-2);margin:10px 0 4px;cursor:pointer">
+      <input type="checkbox" id="pcalcSaveToBook" checked style="width:auto">
+      단가 사전에도 저장 (다른 배합에서 이 재료 이름으로 자동으로 불러올 수 있어요)
+    </label>
+
+    <div class="modal-actions" style="margin-top:10px">
+      <button class="btn btn-ghost" data-close>닫기</button>
+      <button class="btn btn-ghost" id="pcalcApply">이 재료에 적용</button>
+    </div>
+  </div>
+</div>
+<!-- ===== 단가 환산 계산기 모달 끝 ===== -->
 
 <!-- Data Reset Modal -->
 <div class="modal-back" id="dataResetModal">
@@ -1041,7 +1098,7 @@ function renderCalc(){
     const fw=(calc.flour||0)*(parseFloat(f.pct)||0)/100;
     const canDel = calc.flours.length>1;
     // ===== 단가계산 시작: 밀가루 행 단가/비용 셀 =====
-    const priceCell = isCost ? `<td><input class="cf-price" type="number" step="1" min="0" value="${f.price||''}" placeholder="원/kg"></td>` : '';
+    const priceCell = isCost ? `<td><div style="display:flex;gap:4px;align-items:center"><input class="cf-price" type="number" step="1" min="0" value="${f.price||''}" placeholder="원/kg"><button type="button" class="price-calc-btn" data-type="flour" data-idx="${fi}" title="구매가로 원/kg 환산">🧮</button></div></td>` : '';
     const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(fw/1000*(f.price||0)))}원</td>` : '';
     // ===== 단가계산 끝 =====
     html += `<tr class="calc-flourrow" data-fidx="${fi}">
@@ -1066,7 +1123,7 @@ function renderCalc(){
   calc.ingredients.forEach((ing,idx)=>{
     const w=(calc.flour||0)*(parseFloat(ing.pct)||0)/100;
     // ===== 단가계산 시작: 재료 행 단가/비용 셀 =====
-    const priceCell = isCost ? `<td><input class="ci-price" type="number" step="1" min="0" value="${ing.price||''}" placeholder="원/kg"></td>` : '';
+    const priceCell = isCost ? `<td><div style="display:flex;gap:4px;align-items:center"><input class="ci-price" type="number" step="1" min="0" value="${ing.price||''}" placeholder="원/kg"><button type="button" class="price-calc-btn" data-type="ing" data-idx="${idx}" title="구매가로 원/kg 환산">🧮</button></div></td>` : '';
     const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(w/1000*(ing.price||0)))}원</td>` : '';
     // ===== 단가계산 끝 =====
     html += `<tr data-idx="${idx}">
@@ -1384,6 +1441,7 @@ function switchCalcMode(mode){
   document.getElementById('calcModeNormal').classList.toggle('active', calcMode==='normal');
   document.getElementById('calcModeCost').classList.toggle('active', calcMode==='cost');
   document.getElementById('bigaSurface').style.display = calcMode==='cost' ? 'none' : '';
+  document.getElementById('priceBookLoadBtn').style.display = calcMode==='cost' ? '' : 'none';
   renderCalc();
 }
 document.getElementById('calcModeNormal').addEventListener('click',()=>switchCalcMode('normal'));
@@ -1392,6 +1450,7 @@ document.getElementById('calcModeCost').addEventListener('click',()=>switchCalcM
 document.getElementById('calcModeNormal').classList.toggle('active', calcMode==='normal');
 document.getElementById('calcModeCost').classList.toggle('active', calcMode==='cost');
 document.getElementById('bigaSurface').style.display = calcMode==='cost' ? 'none' : '';
+document.getElementById('priceBookLoadBtn').style.display = calcMode==='cost' ? '' : 'none';
 // ===== 단가계산 끝: 서브탭 전환 =====
 
 // presets save/load (클릭형 메뉴)
@@ -1512,6 +1571,106 @@ document.getElementById('calcPrint').addEventListener('click',()=>{
   window.print();
 });
 document.getElementById('presetModal').addEventListener('click',e=>{if(e.target.id==='presetModal')e.target.classList.remove('show');});
+
+// ===== 단가 환산 계산기 + 단가 사전 시작 =====
+function getPriceBook(){ return LS.get('baking.priceBook', {}); }
+function savePriceBook(book){ LS.set('baking.priceBook', book); }
+
+let priceCalcTarget = null; // {type:'flour'|'ing', idx:number}
+
+function pcalcCompute(){
+  const isWeight = document.getElementById('pcalcTabWeight').classList.contains('active');
+  const resEl = document.getElementById('pcalcResult');
+  let perKg = null;
+  if(isWeight){
+    const price = parseFloat(document.getElementById('pcalcWPrice').value)||0;
+    const amount = parseFloat(document.getElementById('pcalcWAmount').value)||0;
+    const unit = document.getElementById('pcalcWUnit').value;
+    const kg = unit==='kg' ? amount : amount/1000;
+    if(price>0 && kg>0) perKg = price/kg;
+  } else {
+    const price = parseFloat(document.getElementById('pcalcCPrice').value)||0;
+    const count = parseFloat(document.getElementById('pcalcCCount').value)||0;
+    const unitWeightG = parseFloat(document.getElementById('pcalcCWeight').value)||0;
+    if(price>0 && count>0 && unitWeightG>0){
+      const perUnitPrice = price/count;
+      perKg = perUnitPrice / (unitWeightG/1000);
+    }
+  }
+  if(perKg!==null && isFinite(perKg)){
+    resEl.innerHTML = `환산 단가: <b style="font-size:15px;color:var(--crust-dark)">${fmtWon(Math.round(perKg))}원/kg</b>`;
+  } else {
+    resEl.textContent = '값을 입력하면 원/kg으로 환산돼요.';
+  }
+  return perKg;
+}
+['pcalcWPrice','pcalcWAmount','pcalcWUnit','pcalcCPrice','pcalcCCount','pcalcCWeight'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', pcalcCompute);
+  document.getElementById(id).addEventListener('change', pcalcCompute);
+});
+document.getElementById('pcalcTabWeight').addEventListener('click',()=>{
+  document.getElementById('pcalcTabWeight').classList.add('active');
+  document.getElementById('pcalcTabCount').classList.remove('active');
+  document.getElementById('pcalcWeightBox').style.display='';
+  document.getElementById('pcalcCountBox').style.display='none';
+  pcalcCompute();
+});
+document.getElementById('pcalcTabCount').addEventListener('click',()=>{
+  document.getElementById('pcalcTabCount').classList.add('active');
+  document.getElementById('pcalcTabWeight').classList.remove('active');
+  document.getElementById('pcalcCountBox').style.display='';
+  document.getElementById('pcalcWeightBox').style.display='none';
+  pcalcCompute();
+});
+
+function openPriceCalcModal(type, idx){
+  priceCalcTarget = {type, idx};
+  // 입력값 초기화
+  ['pcalcWPrice','pcalcWAmount','pcalcCPrice','pcalcCCount','pcalcCWeight'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pcalcWUnit').value='kg';
+  document.getElementById('pcalcSaveToBook').checked=true;
+  document.getElementById('pcalcTabWeight').click();
+  document.getElementById('priceCalcModal').classList.add('show');
+}
+
+document.getElementById('pcalcApply').addEventListener('click',()=>{
+  if(!priceCalcTarget) return;
+  const perKg = pcalcCompute();
+  if(perKg===null || !isFinite(perKg) || perKg<=0){ alert('값을 먼저 입력해주세요.'); return; }
+  const rounded = Math.round(perKg);
+  const {type, idx} = priceCalcTarget;
+  let ingName = '';
+  if(type==='flour'){ calc.flours[idx].price=rounded; ingName=calc.flours[idx].name||''; }
+  else { calc.ingredients[idx].price=rounded; ingName=calc.ingredients[idx].name||''; }
+
+  if(document.getElementById('pcalcSaveToBook').checked && ingName.trim()){
+    const book=getPriceBook();
+    book[ingName.trim()]=rounded;
+    savePriceBook(book);
+  }
+  saveCalc(); renderCalc();
+  document.getElementById('priceCalcModal').classList.remove('show');
+});
+
+// 재료/밀가루 행의 🧮 버튼은 매 렌더링마다 다시 그려지므로, 표(tbody) 위임 방식으로 한 번만 바인딩
+document.getElementById('calcRows').addEventListener('click',e=>{
+  const btn=e.target.closest('.price-calc-btn');
+  if(!btn) return;
+  openPriceCalcModal(btn.dataset.type, +btn.dataset.idx);
+});
+
+// 단가 사전 불러오기: 이름이 일치하는 재료에 저장된 단가를 채워넣음
+document.getElementById('priceBookLoadBtn').addEventListener('click',()=>{
+  const book=getPriceBook();
+  if(!Object.keys(book).length){ alert('단가 사전에 저장된 값이 없어요.\n🧮 계산기로 단가를 계산하면서 "단가 사전에도 저장"을 체크해두면 다음부터 여기서 불러올 수 있어요.'); return; }
+  let count=0;
+  calc.flours.forEach(f=>{ const key=(f.name||'').trim(); if(key && book[key]!==undefined){ f.price=book[key]; count++; } });
+  calc.ingredients.forEach(ing=>{ const key=(ing.name||'').trim(); if(key && book[key]!==undefined){ ing.price=book[key]; count++; } });
+  if(count===0){ alert('현재 배합의 재료 이름과 일치하는 저장된 단가가 없어요.'); return; }
+  saveCalc(); renderCalc();
+  alert(`${count}개 재료에 저장된 단가를 적용했어요.`);
+});
+// ===== 단가 환산 계산기 + 단가 사전 끝 =====
 
 // Init
 renderPlanList();renderHistory();renderFolders();renderTips();renderCalc();
