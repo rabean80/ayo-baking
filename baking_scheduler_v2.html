@@ -693,29 +693,40 @@ document.getElementById('totalBackdrop').addEventListener('click',()=>{document.
 // ========================
 function renderProjPanel(){
   const list=document.getElementById('projList');list.innerHTML='';
-  // Section 1: breads already in this project (toggle visibility / remove)
-  if(breads.length){
-    const hd=document.createElement('div');hd.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px';hd.textContent='이 프로젝트의 빵 (탭하여 타임라인 표시/숨김)';
+  // Section 1: 이 프로젝트에서 현재 선택된(타임라인에 표시 중인) 빵만
+  const selectedBreads = breads.filter(b=>selected.has(b.id));
+  if(selectedBreads.length){
+    const hd=document.createElement('div');hd.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px';hd.textContent='이 프로젝트의 빵 (탭하여 숨김)';
     list.appendChild(hd);
-    breads.forEach(b=>{
+    selectedBreads.forEach(b=>{
       const el=document.createElement('div');
-      el.className='proj-item'+(selected.has(b.id)?' active-proj':'');
-      el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span>${selected.has(b.id)?'<span class="p-check">✓</span>':''}<span class="p-remove" title="프로젝트에서 제거" style="font-size:13px;color:#c9a;cursor:pointer;padding:0 4px">✕</span>`;
+      el.className='proj-item active-proj';
+      el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span><span class="p-check">✓</span><span class="p-remove" title="프로젝트에서 완전히 제거" style="font-size:13px;color:#c9a;cursor:pointer;padding:0 4px">✕</span>`;
       el.addEventListener('click',e=>{
         if(e.target.classList.contains('p-remove')){
           e.stopPropagation();
           breads=breads.filter(x=>x.id!==b.id);selected.delete(b.id);
           saveActiveProject();renderProjPanel();buildToggles();render();return;
         }
-        if(selected.has(b.id)){selected.delete(b.id);}else{selected.add(b.id);}
+        selected.delete(b.id); // 배열에서 지우지 않고 숨기기만 함 (공정 단계 등 설정 유지)
         saveActiveProject();renderProjPanel();buildToggles();render();
       });
       list.appendChild(el);
     });
   }
-  // Section 2: library — add a copy into this project
-  const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:12px 0 4px;padding-top:10px;border-top:1px dashed #e0d2b4';hd2.textContent='빵 라이브러리 (탭하여 프로젝트에 추가)';
+  // Section 2: 라이브러리 — (a) 이 프로젝트에 있지만 숨겨진 빵(탭하면 그대로 복원) + (b) 순수 라이브러리(탭하면 새로 복사)
+  const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:12px 0 4px;padding-top:10px;border-top:1px dashed #e0d2b4';hd2.textContent='빵 라이브러리 (탭하여 프로젝트에 추가/복원)';
   list.appendChild(hd2);
+  const hiddenProjectBreads = breads.filter(b=>!selected.has(b.id));
+  hiddenProjectBreads.forEach(b=>{
+    const el=document.createElement('div');el.className='proj-item';
+    el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span><span style="font-size:11px;color:#a8906f">(숨김됨 · 탭하여 복원)</span><span style="font-size:13px;color:#5DCAA5;font-weight:700">↺</span>`;
+    el.addEventListener('click',()=>{
+      selected.add(b.id); // 기존 설정 그대로 복원 (새로 복사하지 않음)
+      saveActiveProject();renderProjPanel();buildToggles();render();
+    });
+    list.appendChild(el);
+  });
   getFullLibrary().forEach(lib=>{
     const el=document.createElement('div');el.className='proj-item';
     el.innerHTML=`<span class="p-dot" style="background:${lib.color}"></span><span class="p-name">${lib.name}</span><span style="font-size:13px;color:#5DCAA5;font-weight:700">＋</span>`;
