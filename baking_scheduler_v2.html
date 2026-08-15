@@ -566,8 +566,7 @@ if(!projects){
     first={id:uid(),name:'Project 1',breads:oldBreads,groups:oldGroups||DEFAULT_GROUPS.map(g=>({...g})),selected:oldSelected||[oldBreads[0]?.id].filter(Boolean)};
     projSeq=1;LS.set('sched.projSeq',1);
   } else {
-    first={id:uid(),name:'Project 1',breads:LIBRARY.map(b=>({...b,id:uid(),stages:b.stages.map(s=>({...s,id:uid()}))})),groups:DEFAULT_GROUPS.map(g=>({...g})),selected:[]};
-    first.selected=[first.breads[0]?.id].filter(Boolean);
+    first={id:uid(),name:'Project 1',breads:[],groups:DEFAULT_GROUPS.map(g=>({...g})),selected:[]};
     projSeq=1;LS.set('sched.projSeq',1);
   }
   projects=[first];
@@ -693,43 +692,28 @@ document.getElementById('totalBackdrop').addEventListener('click',()=>{document.
 // ========================
 function renderProjPanel(){
   const list=document.getElementById('projList');list.innerHTML='';
-  // Section 1: 이 프로젝트에서 현재 선택된(타임라인에 표시 중인) 빵만
-  const selectedBreads = breads.filter(b=>selected.has(b.id));
-  if(selectedBreads.length){
-    const hd=document.createElement('div');hd.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px';hd.textContent='이 프로젝트의 빵 (탭하여 숨김)';
+  // Section 1: 이 프로젝트에 있는 빵 전체 (탭=타임라인 표시/숨김, ✕=완전 삭제)
+  if(breads.length){
+    const hd=document.createElement('div');hd.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px';hd.textContent='이 프로젝트의 빵 (탭하여 타임라인 표시/숨김)';
     list.appendChild(hd);
-    selectedBreads.forEach(b=>{
+    breads.forEach(b=>{
       const el=document.createElement('div');
-      el.className='proj-item active-proj';
-      el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span><span class="p-check">✓</span><span class="p-remove" title="프로젝트에서 완전히 제거" style="font-size:13px;color:#c9a;cursor:pointer;padding:0 4px">✕</span>`;
+      el.className='proj-item'+(selected.has(b.id)?' active-proj':'');
+      el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span>${selected.has(b.id)?'<span class="p-check">✓</span>':''}<span class="p-remove" title="프로젝트에서 제거" style="font-size:13px;color:#c9a;cursor:pointer;padding:0 4px">✕</span>`;
       el.addEventListener('click',e=>{
         if(e.target.classList.contains('p-remove')){
           e.stopPropagation();
           breads=breads.filter(x=>x.id!==b.id);selected.delete(b.id);
           saveActiveProject();renderProjPanel();buildToggles();render();return;
         }
-        selected.delete(b.id); // 배열에서 지우지 않고 숨기기만 함 (공정 단계 등 설정 유지)
+        if(selected.has(b.id)){selected.delete(b.id);}else{selected.add(b.id);}
         saveActiveProject();renderProjPanel();buildToggles();render();
       });
       list.appendChild(el);
     });
   }
-  // Section 2: 라이브러리 — (a) 이 프로젝트에 있지만 숨겨진 빵(탭하면 그대로 복원) + (b) 순수 라이브러리(탭하면 새로 복사)
-  const hiddenProjectBreads = breads.filter(b=>!selected.has(b.id));
-  if(hiddenProjectBreads.length){
-    const hdHidden=document.createElement('div');hdHidden.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:12px 0 4px;padding-top:10px;border-top:1px dashed #e0d2b4';hdHidden.textContent='이 프로젝트에 숨겨둔 빵 (탭하면 기존 설정 그대로 복원)';
-    list.appendChild(hdHidden);
-    hiddenProjectBreads.forEach(b=>{
-      const el=document.createElement('div');el.className='proj-item';
-      el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span><span style="font-size:13px;color:#5DCAA5;font-weight:700">↺</span>`;
-      el.addEventListener('click',()=>{
-        selected.add(b.id); // 기존 설정 그대로 복원 (새로 복사하지 않음)
-        saveActiveProject();renderProjPanel();buildToggles();render();
-      });
-      list.appendChild(el);
-    });
-  }
-  const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:12px 0 4px;padding-top:10px;border-top:1px dashed #e0d2b4';hd2.textContent='빵 라이브러리 (탭하면 새 사본을 프로젝트에 추가)';
+  // Section 2: 라이브러리 — 탭하면 새 사본을 프로젝트에 추가
+  const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:12px 0 4px;padding-top:10px;border-top:1px dashed #e0d2b4';hd2.textContent='빵 라이브러리 (탭하여 프로젝트에 추가)';
   list.appendChild(hd2);
   getFullLibrary().forEach(lib=>{
     const el=document.createElement('div');el.className='proj-item';
