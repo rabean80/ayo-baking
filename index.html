@@ -188,11 +188,17 @@
   .calc-table .cf-add:hover{background:var(--paper-2);border-color:var(--accent)}
   .calc-table .cf-sum{font-weight:700;color:var(--ink-3);font-size:13px}
   /* ===== 단가 환산 계산기 버튼 시작 ===== */
-  .price-calc-btn{border:1px solid #e0d2b4;background:#fff;border-radius:6px;cursor:pointer;font-size:13px;padding:5px 7px;flex-shrink:0;line-height:1}
-  .price-calc-btn:hover{background:var(--paper-2);border-color:var(--accent)}
+  .price-calc-btn,.price-pick-btn{border:1px solid #e0d2b4;background:#fff;border-radius:6px;cursor:pointer;font-size:13px;padding:5px 7px;flex-shrink:0;line-height:1}
+  .price-calc-btn:hover,.price-pick-btn:hover{background:var(--paper-2);border-color:var(--accent)}
   .pcalc-tabs{display:flex;gap:6px;margin-bottom:12px}
   .pcalc-tab{flex:1;padding:8px;border:1px solid #d8c9a8;background:#fff;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer}
   .pcalc-tab.active{background:linear-gradient(135deg,var(--accent),var(--crust-dark));color:#fff5dd;border-color:transparent}
+  .pp-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid #e0d2b4;border-radius:8px;background:#fff;cursor:pointer}
+  .pp-item:hover{background:var(--paper-2);border-color:var(--accent)}
+  .pp-item .pp-name{flex:1;font-size:13px;font-weight:600;color:var(--ink)}
+  .pp-item .pp-price{font-size:12.5px;color:var(--crust-dark);font-weight:700;white-space:nowrap}
+  .pp-item .pp-del{border:none;background:transparent;color:var(--ink-4);cursor:pointer;font-size:13px;padding:2px 4px}
+  .pp-item .pp-del:hover{color:#b84431}
   /* ===== 단가 환산 계산기 버튼 끝 ===== */
   /* ===== 드래그 정렬(재료 순서 변경) 시작 ===== */
   .calc-table .ci-drag,.calc-table .cf-drag{cursor:grab;color:#ccc;font-size:14px;padding:0 2px;user-select:none;flex-shrink:0}
@@ -664,6 +670,27 @@
 </div>
 <!-- ===== 단가 환산 계산기 모달 끝 ===== -->
 
+<!-- ===== 단가 사전 선택 모달 시작 ===== -->
+<div class="modal-back" id="priceBookPickerModal">
+  <div class="modal-box" style="max-width:420px">
+    <h3>📖 단가 사전에서 선택</h3>
+    <input type="text" id="ppSearch" placeholder="재료 이름 검색" style="width:100%;padding:9px 12px;border:1px solid #e0d2b4;border-radius:8px;font-family:inherit;font-size:13px;margin-bottom:10px">
+    <div id="ppList" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+    <div style="border-top:1px dashed #e0d2b4;margin-top:14px;padding-top:12px">
+      <div style="font-size:12px;color:#a8906f;font-weight:600;margin-bottom:8px">사전에 없나요? 새로 추가</div>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:0"><label>재료 이름</label><input type="text" id="ppNewName" placeholder="예: 유기농 설탕"></div>
+        <div class="field" style="margin-bottom:0"><label>단가</label><div class="calc-inwrap"><input type="number" id="ppNewPrice" min="0" step="1" placeholder="원/kg"></div></div>
+      </div>
+      <button class="btn btn-ghost" id="ppAddNew" style="width:100%;margin-top:8px">＋ 추가하고 이 재료에 적용</button>
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn btn-ghost" data-close>닫기</button>
+    </div>
+  </div>
+</div>
+<!-- ===== 단가 사전 선택 모달 끝 =====-->
+
 <!-- Data Reset Modal -->
 <div class="modal-back" id="dataResetModal">
   <div class="modal-box" style="max-width:380px">
@@ -1102,7 +1129,7 @@ function renderCalc(){
     const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(fw/1000*(f.price||0)))}원</td>` : '';
     // ===== 단가계산 끝 =====
     html += `<tr class="calc-flourrow" data-fidx="${fi}">
-      <td class="ci-namecell"><span class="cf-drag" draggable="true" title="드래그하여 순서 변경">≡</span><input class="cf-name" value="${(f.name||'').replace(/"/g,'&quot;')}" placeholder="밀가루명 (예: 강력분)"></td>
+      <td class="ci-namecell"><span class="cf-drag" draggable="true" title="드래그하여 순서 변경">≡</span><input class="cf-name" value="${(f.name||'').replace(/"/g,'&quot;')}" placeholder="밀가루명 (예: 강력분)">${isCost?`<button type="button" class="price-pick-btn" data-type="flour" data-idx="${fi}" title="단가 사전에서 선택">📖</button>`:''}</td>
       <td><input class="cf-pct" type="number" step="0.1" min="0" value="${roundPctDisplay(f.pct)}"></td>
       <td><input class="cf-w" type="number" step="1" min="0" value="${fw?Math.round(fw*10)/10:''}" placeholder="g"></td>
       ${priceCell}${costCell}
@@ -1127,7 +1154,7 @@ function renderCalc(){
     const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(w/1000*(ing.price||0)))}원</td>` : '';
     // ===== 단가계산 끝 =====
     html += `<tr data-idx="${idx}">
-      <td class="ci-namecell"><span class="ci-drag" draggable="true" title="드래그하여 순서 변경">≡</span><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명"></td>
+      <td class="ci-namecell"><span class="ci-drag" draggable="true" title="드래그하여 순서 변경">≡</span><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명">${isCost?`<button type="button" class="price-pick-btn" data-type="ing" data-idx="${idx}" title="단가 사전에서 선택">📖</button>`:''}</td>
       <td><input class="ci-pct" type="number" step="0.1" min="0" value="${roundPctDisplay(ing.pct)}"></td>
       <td><input class="ci-w" type="number" step="1" min="0" value="${w?Math.round(w*10)/10:''}" placeholder="g"></td>
       ${priceCell}${costCell}
@@ -1670,6 +1697,81 @@ document.getElementById('priceBookLoadBtn').addEventListener('click',()=>{
   saveCalc(); renderCalc();
   alert(`${count}개 재료에 저장된 단가를 적용했어요.`);
 });
+
+// ===== 단가 사전 선택(픽커) 모달 시작 =====
+let priceBookPickerTarget = null; // {type:'flour'|'ing', idx:number}
+
+function renderPriceBookPicker(filter){
+  const book = getPriceBook();
+  const q = (filter||'').trim().toLowerCase();
+  const names = Object.keys(book).filter(n=>n.toLowerCase().includes(q)).sort((a,b)=>a.localeCompare(b,'ko'));
+  const listEl = document.getElementById('ppList');
+  if(!names.length){
+    listEl.innerHTML = '<div style="font-size:12.5px;color:#999;text-align:center;padding:14px 0">저장된 단가가 없어요.<br>아래에서 새로 추가해보세요.</div>';
+    return;
+  }
+  listEl.innerHTML = names.map(n=>`
+    <div class="pp-item" data-name="${n.replace(/"/g,'&quot;')}">
+      <span class="pp-name">${escapeHtml(n)}</span>
+      <span class="pp-price">${fmtWon(book[n])}원/kg</span>
+      <button type="button" class="pp-del" data-name="${n.replace(/"/g,'&quot;')}" title="사전에서 삭제">🗑</button>
+    </div>`).join('');
+  listEl.querySelectorAll('.pp-item').forEach(el=>{
+    el.addEventListener('click',e=>{
+      if(e.target.classList.contains('pp-del')) return;
+      applyPriceBookEntry(el.dataset.name, book[el.dataset.name]);
+    });
+  });
+  listEl.querySelectorAll('.pp-del').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(!confirm(`"${btn.dataset.name}" 단가를 사전에서 삭제할까요?`)) return;
+      const b=getPriceBook();
+      delete b[btn.dataset.name];
+      savePriceBook(b);
+      renderPriceBookPicker(document.getElementById('ppSearch').value);
+    });
+  });
+}
+
+function applyPriceBookEntry(name, price){
+  if(!priceBookPickerTarget) return;
+  const {type, idx} = priceBookPickerTarget;
+  if(type==='flour'){ calc.flours[idx].name=name; calc.flours[idx].price=price; syncFlourName(); }
+  else { calc.ingredients[idx].name=name; calc.ingredients[idx].price=price; }
+  saveCalc(); renderCalc();
+  document.getElementById('priceBookPickerModal').classList.remove('show');
+}
+
+function openPriceBookPicker(type, idx){
+  priceBookPickerTarget = {type, idx};
+  document.getElementById('ppSearch').value='';
+  document.getElementById('ppNewName').value='';
+  document.getElementById('ppNewPrice').value='';
+  renderPriceBookPicker('');
+  document.getElementById('priceBookPickerModal').classList.add('show');
+}
+
+document.getElementById('ppSearch').addEventListener('input',e=>renderPriceBookPicker(e.target.value));
+
+document.getElementById('ppAddNew').addEventListener('click',()=>{
+  const name=(document.getElementById('ppNewName').value||'').trim();
+  const price=parseFloat(document.getElementById('ppNewPrice').value)||0;
+  if(!name){ alert('재료 이름을 입력해주세요.'); return; }
+  if(price<=0){ alert('단가(원/kg)를 입력해주세요.'); return; }
+  const book=getPriceBook();
+  book[name]=Math.round(price);
+  savePriceBook(book);
+  applyPriceBookEntry(name, Math.round(price));
+});
+
+// 재료/밀가루 이름 셀의 📖 버튼 (표 위임 방식)
+document.getElementById('calcRows').addEventListener('click',e=>{
+  const btn=e.target.closest('.price-pick-btn');
+  if(!btn) return;
+  openPriceBookPicker(btn.dataset.type, +btn.dataset.idx);
+});
+// ===== 단가 사전 선택(픽커) 모달 끝 =====
 // ===== 단가 환산 계산기 + 단가 사전 끝 =====
 
 // Init
