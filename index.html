@@ -187,6 +187,11 @@
   .calc-table .cf-add{border:1px dashed #d8c9a8;background:#fff;border-radius:7px;font-family:inherit;font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;padding:6px 10px}
   .calc-table .cf-add:hover{background:var(--paper-2);border-color:var(--accent)}
   .calc-table .cf-sum{font-weight:700;color:var(--ink-3);font-size:13px}
+  /* ===== 드래그 정렬(재료 순서 변경) 시작 ===== */
+  .calc-table .ci-drag{cursor:grab;color:#ccc;font-size:14px;padding:0 2px;user-select:none;flex-shrink:0}
+  .calc-table .ci-namecell{display:flex;align-items:center;gap:6px}
+  .calc-table tr[data-idx].drag-over{background:var(--paper-2);box-shadow:inset 0 2px 0 var(--accent)}
+  /* ===== 드래그 정렬 끝 ===== */
   .calc-table .cf-sum.bad{color:#b84431}
   .calc-table .cf-fit{border:1px solid #f2cbc2;background:#fff;color:#b84431;border-radius:7px;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;padding:5px 9px;white-space:nowrap}
   .calc-table .cf-fit:hover{background:#fdefec}
@@ -941,6 +946,7 @@ const CALC_PRESETS_DEFAULT=[
 ];
 // ===== 단가계산 시작: 모드 상태 =====
 let calcMode = LS.get('baking.calcMode', 'normal'); // 'normal' | 'cost'
+let ingDragSrcIdx = null; // ===== 드래그 정렬: 재료 순서 변경 시 드래그 시작 인덱스 =====
 function presetsKey(){ return calcMode==='cost' ? 'baking.costPresets' : 'baking.calcPresets'; }
 function calcStorageKey(){ return calcMode==='cost' ? 'baking.costCalc' : 'baking.calc'; }
 // ===== 단가계산 끝: 모드 상태 =====
@@ -1063,7 +1069,7 @@ function renderCalc(){
     const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(w/1000*(ing.price||0)))}원</td>` : '';
     // ===== 단가계산 끝 =====
     html += `<tr data-idx="${idx}">
-      <td><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명"></td>
+      <td class="ci-namecell"><span class="ci-drag" draggable="true" title="드래그하여 순서 변경">≡</span><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명"></td>
       <td><input class="ci-pct" type="number" step="0.1" min="0" value="${roundPctDisplay(ing.pct)}"></td>
       <td><input class="ci-w" type="number" step="1" min="0" value="${w?Math.round(w*10)/10:''}" placeholder="g"></td>
       ${priceCell}${costCell}
@@ -1137,6 +1143,22 @@ function renderCalc(){
   tb.querySelectorAll('tr[data-idx]').forEach(tr=>{
     const idx=+tr.dataset.idx;
     tr.querySelector('.ci-name').addEventListener('input',e=>{calc.ingredients[idx].name=e.target.value;saveCalc();renderBiga();});
+    // ===== 드래그 정렬 시작: 재료 행 순서 변경 =====
+    const dragHandle=tr.querySelector('.ci-drag');
+    if(dragHandle){
+      dragHandle.addEventListener('dragstart',e=>{ingDragSrcIdx=idx;e.dataTransfer.effectAllowed='move';tr.style.opacity='.5';});
+      dragHandle.addEventListener('dragend',()=>{tr.style.opacity='1';tb.querySelectorAll('tr[data-idx]').forEach(x=>x.classList.remove('drag-over'));});
+    }
+    tr.addEventListener('dragover',e=>{if(ingDragSrcIdx===null)return;e.preventDefault();tb.querySelectorAll('tr[data-idx]').forEach(x=>x.classList.remove('drag-over'));tr.classList.add('drag-over');});
+    tr.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(ingDragSrcIdx===null||ingDragSrcIdx===idx){ingDragSrcIdx=null;return;}
+      const moved=calc.ingredients.splice(ingDragSrcIdx,1)[0];
+      calc.ingredients.splice(idx,0,moved);
+      ingDragSrcIdx=null;
+      saveCalc();renderCalc();
+    });
+    // ===== 드래그 정렬 끝 =====
     const pctEl=tr.querySelector('.ci-pct');
     const commitPct=()=>{calc.ingredients[idx].pct=pctEl.value;saveCalc();refreshCalcWeights();};
     pctEl.addEventListener('change',commitPct); // 다른 곳 클릭(blur) 시에도 확정
