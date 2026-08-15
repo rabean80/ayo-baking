@@ -315,6 +315,10 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
       <div class="stage-list" id="stageList"></div>
       <button class="add-stage-btn" id="addStageInBreadBtn">＋ 단계 추가</button>
     </div>
+    <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:#7a6a52;margin:10px 0 4px;cursor:pointer">
+      <input type="checkbox" id="bSaveToLibrary" style="width:auto">
+      빵 라이브러리에도 저장 (다른 프로젝트에서도 Select Bread로 바로 쓸 수 있어요)
+    </label>
     <div class="modal-actions">
       <button class="m-btn m-btn-danger left" id="bDelete">삭제</button>
       <button class="m-btn m-btn-ghost" data-close="breadModal">취소</button>
@@ -544,6 +548,21 @@ window.addLibraryBreadFromExternal = function(name, recipeNotes){
   saveCustomBreads(customBreads);
   return nb;
 };
+
+// 빵 편집 모달에서 "라이브러리에도 저장" 체크 시 사용 - 이름이 같은 기존 항목이 있으면 갱신, 없으면 새로 추가
+function upsertCustomBreadToLibrary(data){
+  const customBreads = getCustomBreads();
+  const idx = customBreads.findIndex(b=>b.name===data.name);
+  const libBread = {
+    id: idx>-1 ? customBreads[idx].id : uid(),
+    name: data.name,
+    color: data.color,
+    recipe: data.recipe||'',
+    stages: data.stages.map(s=>({...s, id:uid()})) // 라이브러리 전용 사본(새 id)
+  };
+  if(idx>-1){ customBreads[idx]=libBread; } else { customBreads.push(libBread); }
+  saveCustomBreads(customBreads);
+}
 
 // Build a fresh empty project. groups always seeded from defaults.
 let projSeq=LS.get('sched.projSeq',0);
@@ -831,6 +850,7 @@ function openBreadModal(breadId){
   document.getElementById('breadModalTitle').textContent=bread?'빵 편집':'새 빵 추가';
   document.getElementById('bName').value=bread?bread.name:'';
   document.getElementById('bRecipe').value=bread?(bread.recipe||''):'';
+  document.getElementById('bSaveToLibrary').checked=false;
   selectedColor=bread?bread.color:COLORS[0];
   editingStages=bread?bread.stages.map(s=>({...s})):[];
   const co=document.getElementById('colorOptions');co.innerHTML='';
@@ -866,8 +886,12 @@ document.getElementById('bSave').addEventListener('click',()=>{
   const name=document.getElementById('bName').value.trim();if(!name){alert('빵 이름을 입력하세요');return;}
   const data={name,color:selectedColor,recipe:document.getElementById('bRecipe').value,stages:editingStages};
   if(editingBreadId){breads=breads.map(b=>b.id===editingBreadId?{...b,...data}:b);}
-  else{const nb={id:uid(),targetDate:getTodayStr(),targetTime:DEFAULT_TIME,...data};breads.push(nb);}
-  LS.set('sched.breads',breads);closeModal('breadModal');buildToggles();render();
+  else{const nb={id:uid(),targetDate:getTodayStr(),targetTime:DEFAULT_TIME,...data};breads.push(nb);selected.add(nb.id);}
+  LS.set('sched.breads',breads);
+  if(document.getElementById('bSaveToLibrary').checked){
+    upsertCustomBreadToLibrary(data);
+  }
+  closeModal('breadModal');buildToggles();render();
 });
 document.getElementById('bDelete').addEventListener('click',()=>{
   if(!editingBreadId)return;if(!confirm('이 빵을 삭제할까요?'))return;
@@ -963,6 +987,16 @@ function render(){
   const cardsEl=document.getElementById('cards');cardsEl.innerHTML='';
   active.forEach((b)=>{
     const times=computeTimings(b);
+    if(!times.length){
+      const card=document.createElement('div');card.className='card';
+      card.innerHTML=`
+        <div class="card-label"><span class="dot" style="background:${b.color}"></span>${b.name}</div>
+        <div class="card-start" style="color:#c9a">⚠️ 공정 단계가 없어요</div>
+        <div class="card-end" style="font-size:11px;color:#aaa">✏️ 눌러서 단계를 추가해주세요</div>`;
+      card.addEventListener('click',()=>openBreadModal(b.id));
+      cardsEl.appendChild(card);
+      return;
+    }
     const st=times[0].startMin,en=times[times.length-1].endMin;
     const card=document.createElement('div');card.className='card';
     card.innerHTML=`
@@ -1221,8 +1255,9 @@ function buildSchedulePrint(){
   if(!active.length){
     body='<div class="sp-empty">선택된 빵이 없습니다. Select Bread에서 빵을 추가해 주세요.</div>';
   } else {
-    const list=active.map(b=>({b,times:computeTimings(b)})).sort((x,y)=>x.times[0].startMin-y.times[0].startMin);
+    const list=active.map(b=>({b,times:computeTimings(b)})).sort((x,y)=>(x.times[0]?.startMin??Infinity)-(y.times[0]?.startMin??Infinity));
     list.forEach(({b,times})=>{
+      if(!times.length) return; // 공정 단계가 없는 빵은 이 요약 목록에서 제외
       const st=times[0].startMin, en=times[times.length-1].endMin;
       let rows='';
       times.forEach(t=>{
