@@ -11,6 +11,7 @@ sudo curl -sL -o /var/www/ayobaking/index.html "$RAW/index.html"
 sudo curl -sL -o /var/www/ayobaking/baking_scheduler_v2.html "$RAW/baking_scheduler_v2.html"
 sudo curl -sL -o /var/www/ayobaking/manifest.json "$RAW/manifest.json"
 sudo curl -sL -o /var/www/ayobaking/sw.js "$RAW/sw.js"
+sudo curl -sL -o /var/www/ayobaking/season.html "$RAW/season.html"
 
 echo "2) 백엔드 서버 코드 최신화..."
 curl -sL -o ~/bakerflow-server/server.js "$RAW/server/server.js"
