@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제철재료 · Ayo's Baking</title>
+<meta name="theme-color" content="#b8704a">
+<style>
+  :root {
+    --bg:#f8f1e4;--bg-2:#f1e7d2;--paper:#fffdf7;--paper-2:#fbf5e8;
+    --ink:#3a2a17;--ink-2:#5c4528;--ink-3:#8a7253;--ink-4:#b7a384;
+    --accent:#b8704a;--accent-2:#e0a472;--accent-soft:#f3ddc2;
+    --crust-dark:#7a4f30;
+    --shadow:0 1px 2px rgba(90,60,30,.06),0 6px 18px rgba(90,60,30,.08);
+    --radius:14px;--radius-sm:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(circle at 10% 0%,#fbeccb 0%,transparent 40%),radial-gradient(circle at 95% 10%,#f4dcb4 0%,transparent 35%),var(--bg);color:var(--ink);line-height:1.55;min-height:100%}
+  .wrap{max-width:820px;margin:0 auto;padding:24px 20px 60px}
+  @media(max-width:900px){.wrap{padding:16px 14px 40px}}
+
+  header.topbar{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid #ece1c9;margin-bottom:18px}
+  .back-link{font-size:12.5px;color:var(--ink-3);text-decoration:none;padding:6px 10px;border-radius:100px;border:1px solid #e0d2b3;white-space:nowrap}
+  .back-link:hover{background:var(--paper-2)}
+  .brand h1{font-family:'Playfair Display',Georgia,serif;font-size:19px;font-weight:600;letter-spacing:.3px;color:var(--crust-dark)}
+  .brand .tag{font-size:11.5px;color:var(--ink-3);letter-spacing:.5px}
+  .spacer{flex:1}
+
+  nav.monthbar{display:flex;gap:6px;margin-bottom:18px;background:var(--paper);padding:6px;border-radius:100px;box-shadow:var(--shadow);border:1px solid #ece1c9;overflow-x:auto}
+  .month-btn{flex:0 0 auto;min-width:44px;padding:8px 10px;border:none;background:transparent;font-size:12.5px;font-weight:500;color:var(--ink-2);border-radius:100px;cursor:pointer;font-family:inherit;transition:all .15s ease;white-space:nowrap}
+  .month-btn:hover{background:var(--bg-2)}
+  .month-btn.active{background:linear-gradient(135deg,var(--accent),var(--crust-dark));color:#fff5dd;box-shadow:0 2px 6px rgba(184,112,74,.35)}
+
+  .surface{background:var(--paper);border-radius:var(--radius);border:1px solid #ece1c9;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:14px}
+  .section-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:4px;gap:10px;flex-wrap:wrap}
+  .section-title{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:600;color:var(--crust-dark)}
+  .section-sub{font-size:12px;color:var(--ink-3);margin-top:2px}
+
+  .btn{padding:8px 14px;border:none;border-radius:100px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s ease;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--crust-dark));color:#fff5dd;box-shadow:0 2px 6px rgba(184,112,74,.3)}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(184,112,74,.4)}
+  .btn-ghost{background:transparent;color:var(--ink-2);border:1px solid #d8c9a8}
+  .btn-ghost:hover{background:var(--paper-2)}
+  .btn-danger{background:#fff;color:#b84431;border:1px solid #f2cbc2}
+  .btn-danger:hover{background:#fdefec}
+  .btn-sm{padding:5px 10px;font-size:11.5px}
+
+  .ing-list{display:flex;flex-direction:column;gap:12px}
+  .ing-card{background:var(--paper-2);border-radius:var(--radius-sm);border-left:3px solid var(--accent);padding:14px 16px}
+  .ing-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .ing-name{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:600;color:var(--crust-dark)}
+  .ing-months{font-size:10.5px;color:var(--ink-4);margin-top:2px}
+  .ing-reason{font-size:12.5px;color:var(--ink-2);margin-top:8px}
+  .ing-notes{font-size:12px;color:var(--ink-3);margin-top:4px;white-space:pre-wrap}
+  .ing-actions{display:flex;gap:6px;flex-shrink:0}
+  .icon-btn{background:transparent;border:none;cursor:pointer;font-size:14px;color:var(--ink-3);padding:4px}
+  .icon-btn:hover{color:var(--accent)}
+
+  .idea-block{margin-top:12px;padding-top:10px;border-top:1px dashed #ddc9a5}
+  .idea-item{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:8px 0;font-size:12.5px}
+  .idea-item:not(:last-child){border-bottom:1px solid #f0e5cc}
+  .idea-title{font-weight:600;color:var(--ink)}
+  .idea-note{color:var(--ink-3);margin-top:2px;white-space:pre-wrap}
+  .idea-add-btn{margin-top:8px}
+
+  .empty{text-align:center;padding:40px 10px;color:var(--ink-3);font-size:13px}
+
+  .modal-back{display:none;position:fixed;inset:0;background:rgba(58,42,23,.35);z-index:50;align-items:center;justify-content:center;padding:20px}
+  .modal-back.show{display:flex}
+  .modal{background:var(--paper);border-radius:var(--radius);padding:22px 24px;width:100%;max-width:440px;max-height:86vh;overflow-y:auto;box-shadow:0 10px 30px rgba(58,42,23,.25)}
+  .modal h3{font-family:'Playfair Display',Georgia,serif;font-size:17px;color:var(--crust-dark);margin-bottom:14px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;color:var(--ink-3);margin-bottom:5px}
+  .field input[type=text],.field textarea{width:100%;padding:9px 11px;border:1px solid #ddcba8;border-radius:8px;font-family:inherit;font-size:13.5px;background:#fffdf8}
+  .field textarea{resize:vertical}
+  .month-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .month-chip{padding:6px 10px;border-radius:100px;border:1px solid #d8c9a8;background:transparent;font-size:12px;cursor:pointer;font-family:inherit;color:var(--ink-2)}
+  .month-chip.selected{background:var(--accent);border-color:var(--accent);color:#fff5dd}
+  .modal-actions{display:flex;justify-content:space-between;gap:8px;margin-top:16px}
+  .modal-actions .right{display:flex;gap:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <a class="back-link" href="index.html">← BakerFlow</a>
+    <div class="brand">
+      <h1>🌱 제철재료</h1>
+      <div class="tag">월별 제철 재료 &amp; 레시피 아이디어</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-primary btn-sm" id="addIngredientBtn">＋ 재료 추가</button>
+  </header>
+
+  <nav class="monthbar" id="monthBar"></nav>
+
+  <div class="surface">
+    <div class="section-head">
+      <div>
+        <div class="section-title" id="listTitle">이달의 제철 재료</div>
+        <div class="section-sub">재료를 눌러 레시피 아이디어를 추가하거나, ✏️로 수정할 수 있어요.</div>
+      </div>
+    </div>
+    <div class="ing-list" id="ingList"></div>
+  </div>
+
+</div>
+
+<!-- 재료 추가/수정 모달 -->
+<div class="modal-back" id="ingredientOverlay">
+  <div class="modal">
+    <h3 id="ingredientSheetTitle">재료 추가</h3>
+    <div class="field">
+      <label>재료 이름</label>
+      <input type="text" id="ingName" placeholder="예) 로즈마리">
+    </div>
+    <div class="field">
+      <label>제철 월 (여러 개 선택 가능)</label>
+      <div class="month-chips" id="monthSelect"></div>
+    </div>
+    <div class="field">
+      <label>빵과 어울리는 이유 (수분감/단맛 등)</label>
+      <input type="text" id="ingReason" placeholder="예) 은은한 향, 유지방과 잘 어울림">
+    </div>
+    <div class="field">
+      <label>메모</label>
+      <textarea id="ingNotes" rows="3" placeholder="자유롭게 메모하세요"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="ingDeleteBtn" style="display:none">삭제</button>
+      <div class="right">
+        <button class="btn btn-ghost" id="ingCancelBtn">취소</button>
+        <button class="btn btn-primary" id="ingSaveBtn">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 레시피 아이디어 추가 모달 -->
+<div class="modal-back" id="ideaOverlay">
+  <div class="modal">
+    <h3>레시피 아이디어 추가</h3>
+    <div class="field">
+      <label>아이디어 제목</label>
+      <input type="text" id="ideaTitle" placeholder="예) 로즈마리 포카치아">
+    </div>
+    <div class="field">
+      <label>메모</label>
+      <textarea id="ideaNote" rows="3" placeholder="자유롭게 메모하세요"></textarea>
+    </div>
+    <div class="modal-actions">
+      <div></div>
+      <div class="right">
+        <button class="btn btn-ghost" id="ideaCancelBtn">취소</button>
+        <button class="btn btn-primary" id="ideaSaveBtn">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== BakerFlow V3.0: 서버 전용 데이터 저장 (localStorage 사용 안 함) =====
+// index.html과 동일한 패턴 - 독립 페이지이므로 이 파일에서 자체적으로 부트스트랩
+const LS = (function(){
+  const API_BASE = '/api';
+  const API_KEY = '02782f74015166e8372400dfe2b759979a22c92ab169b017549f6a0a70ca3d71';
+  let cache = {};
+
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `${API_BASE}/bootstrap`, false);
+    xhr.setRequestHeader('X-API-Key', API_KEY);
+    xhr.send(null);
+    if(xhr.status === 200) cache = JSON.parse(xhr.responseText);
+  } catch(e){
+    console.warn('[server] 초기 데이터 로드 실패 (서버 연결을 확인하세요):', e);
+  }
+
+  const pushTimers = {};
+  function push(key){
+    clearTimeout(pushTimers[key]);
+    pushTimers[key] = setTimeout(() => {
+      fetch(`${API_BASE}/data/${key}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+        body: JSON.stringify({ value: cache[key] })
+      }).catch(e => console.warn(`[server] ${key} 저장 실패 (오프라인일 수 있음):`, e));
+    }, 400);
+  }
+
+  return {
+    get(k, f){ try { return (k in cache) ? JSON.parse(cache[k]) : f; } catch(e){ return f; } },
+    set(k, v){ cache[k] = JSON.stringify(v); push(k); },
+    remove(k){
+      delete cache[k];
+      clearTimeout(pushTimers[k]);
+      fetch(`${API_BASE}/data/${k}`, { method: 'DELETE', headers: { 'X-API-Key': API_KEY } })
+        .catch(e => console.warn(`[server] ${k} 삭제 실패:`, e));
+    }
+  };
+})();
+
+const uid=()=>Math.random().toString(36).slice(2,10);
+const MONTH_LABELS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+const DEFAULT_INGREDIENTS=[
+  {id:uid(),name:'시금치',months:[11,12,1,2,3],reason:'수분감 있고 은은한 단맛, 색이 예뻐 반죽에 갈아 넣기 좋음',notes:'',ideas:[]},
+  {id:uid(),name:'토마토',months:[6,7,8],reason:'수분·산미 보충, 세미드라이로 만들면 감칠맛 응축',notes:'',ideas:[]},
+  {id:uid(),name:'늙은호박',months:[9,10,11],reason:'단맛과 촉촉함, 삶아서 퓨레로 반죽에 활용',notes:'',ideas:[]},
+  {id:uid(),name:'바질',months:[6,7,8,9],reason:'향이 강해 소량으로도 포인트, 오일과 잘 어울림',notes:'',ideas:[]},
+  {id:uid(),name:'로즈마리',months:[9,10,11,12],reason:'은은한 향, 유지방과 잘 어울려 포카치아류에 적합',notes:'',ideas:[]},
+  {id:uid(),name:'부추',months:[3,4,5],reason:'향긋함과 아삭함, 짭짤한 빵/찐빵류에 어울림',notes:'',ideas:[]},
+  {id:uid(),name:'마늘',months:[5,6],reason:'풍미 강화, 콩피/오일 형태로 반죽에 섞기 좋음',notes:'',ideas:[]},
+  {id:uid(),name:'양파',months:[5,6,7],reason:'단맛 캐러멜라이즈로 깊은 풍미, 카라멜 어니언 브레드',notes:'',ideas:[]},
+  {id:uid(),name:'오미자',months:[8,9,10],reason:'새콤달콤한 산미, 시럽/청으로 반죽에 은은하게 활용',notes:'',ideas:[]},
+  {id:uid(),name:'생강',months:[10,11,12],reason:'알싸한 향, 겨울철 향신빵/쿠키류와 잘 어울림',notes:'',ideas:[]},
+];
+
+let ingredients = LS.get('season.ingredients', null);
+if(!ingredients){ ingredients = DEFAULT_INGREDIENTS; LS.set('season.ingredients', ingredients); }
+
+function saveData(){ LS.set('season.ingredients', ingredients); }
+
+let currentMonth = new Date().getMonth()+1;
+let selectedMonths = [];
+let editingIngredientId = null;
+let ideaTargetId = null;
+
+function renderMonthTabs(){
+  const bar = document.getElementById('monthBar');
+  bar.innerHTML='';
+  const allBtn = document.createElement('button');
+  allBtn.className = 'month-btn'+(currentMonth===0?' active':'');
+  allBtn.textContent = '전체';
+  allBtn.onclick = ()=>{ currentMonth=0; renderMonthTabs(); renderIngredientList(); };
+  bar.appendChild(allBtn);
+  for(let m=1;m<=12;m++){
+    const b=document.createElement('button');
+    b.className='month-btn'+(currentMonth===m?' active':'');
+    b.textContent=MONTH_LABELS[m-1];
+    b.onclick=()=>{ currentMonth=m; renderMonthTabs(); renderIngredientList(); };
+    bar.appendChild(b);
+  }
+}
+
+function renderIngredientList(){
+  const list = document.getElementById('ingList');
+  const title = document.getElementById('listTitle');
+  title.textContent = currentMonth===0 ? '전체 재료' : `${MONTH_LABELS[currentMonth-1]} 제철 재료`;
+  const filtered = currentMonth===0 ? ingredients : ingredients.filter(i=>i.months.includes(currentMonth));
+  if(filtered.length===0){
+    list.innerHTML = `<div class="empty">${currentMonth===0?'등록된 재료가 없어요.':'이 달의 제철 재료가 없어요.'}<br>＋ 재료 추가로 새로 등록해보세요.</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(ing=>`
+    <div class="ing-card">
+      <div class="ing-head">
+        <div>
+          <div class="ing-name">${escapeHtml(ing.name)}</div>
+          <div class="ing-months">${ing.months.map(m=>MONTH_LABELS[m-1]).join(' · ')}</div>
+        </div>
+        <div class="ing-actions">
+          <button class="icon-btn" data-edit="${ing.id}" title="수정">✏️</button>
+        </div>
+      </div>
+      ${ing.reason?`<div class="ing-reason">${escapeHtml(ing.reason)}</div>`:''}
+      ${ing.notes?`<div class="ing-notes">${escapeHtml(ing.notes)}</div>`:''}
+      <div class="idea-block">
+        ${ing.ideas.length? ing.ideas.map((idea,ix)=>`
+          <div class="idea-item">
+            <div>
+              <div class="idea-title">💡 ${escapeHtml(idea.title)}</div>
+              ${idea.note?`<div class="idea-note">${escapeHtml(idea.note)}</div>`:''}
+            </div>
+            <button class="icon-btn" data-idea-del="${ing.id}" data-idea-idx="${ix}" title="삭제">🗑</button>
+          </div>
+        `).join('') : ''}
+        <button class="btn btn-ghost btn-sm idea-add-btn" data-idea-add="${ing.id}">＋ 레시피 아이디어 추가</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openIngredientSheet(b.dataset.edit));
+  list.querySelectorAll('[data-idea-add]').forEach(b=>b.onclick=()=>openIdeaSheet(b.dataset.ideaAdd));
+  list.querySelectorAll('[data-idea-del]').forEach(b=>b.onclick=()=>{
+    const ing = ingredients.find(i=>i.id===b.dataset.ideaDel);
+    if(!confirm('이 레시피 아이디어를 삭제할까요?')) return;
+    ing.ideas.splice(Number(b.dataset.ideaIdx),1);
+    saveData();
+    renderIngredientList();
+  });
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderMonthSelect(){
+  const wrap = document.getElementById('monthSelect');
+  wrap.innerHTML='';
+  for(let m=1;m<=12;m++){
+    const chip=document.createElement('button');
+    chip.type='button';
+    chip.className='month-chip'+(selectedMonths.includes(m)?' selected':'');
+    chip.textContent=MONTH_LABELS[m-1];
+    chip.onclick=()=>{
+      if(selectedMonths.includes(m)) selectedMonths=selectedMonths.filter(x=>x!==m);
+      else selectedMonths.push(m);
+      renderMonthSelect();
+    };
+    wrap.appendChild(chip);
+  }
+}
+
+function openIngredientSheet(id){
+  editingIngredientId = id;
+  const sheet = document.getElementById('ingredientOverlay');
+  const title = document.getElementById('ingredientSheetTitle');
+  const deleteBtn = document.getElementById('ingDeleteBtn');
+  if(id){
+    const ing = ingredients.find(i=>i.id===id);
+    title.textContent='재료 수정';
+    document.getElementById('ingName').value=ing.name;
+    document.getElementById('ingReason').value=ing.reason||'';
+    document.getElementById('ingNotes').value=ing.notes||'';
+    selectedMonths=ing.months.slice();
+    deleteBtn.style.display='inline-flex';
+  } else {
+    title.textContent='재료 추가';
+    document.getElementById('ingName').value='';
+    document.getElementById('ingReason').value='';
+    document.getElementById('ingNotes').value='';
+    selectedMonths = currentMonth===0 ? [] : [currentMonth];
+    deleteBtn.style.display='none';
+  }
+  renderMonthSelect();
+  sheet.classList.add('show');
+}
+function closeIngredientSheet(){
+  document.getElementById('ingredientOverlay').classList.remove('show');
+  editingIngredientId=null;
+}
+
+document.getElementById('addIngredientBtn').onclick=()=>openIngredientSheet(null);
+document.getElementById('ingCancelBtn').onclick=closeIngredientSheet;
+
+document.getElementById('ingSaveBtn').onclick=()=>{
+  const name=document.getElementById('ingName').value.trim();
+  const reason=document.getElementById('ingReason').value.trim();
+  const notes=document.getElementById('ingNotes').value.trim();
+  if(!name){ alert('재료 이름을 입력해주세요.'); return; }
+  if(selectedMonths.length===0){ alert('제철 월을 하나 이상 선택해주세요.'); return; }
+  if(editingIngredientId){
+    const ing=ingredients.find(i=>i.id===editingIngredientId);
+    ing.name=name; ing.months=selectedMonths.slice(); ing.reason=reason; ing.notes=notes;
+  } else {
+    ingredients.push({id:uid(),name,months:selectedMonths.slice(),reason,notes,ideas:[]});
+  }
+  saveData();
+  closeIngredientSheet();
+  renderIngredientList();
+};
+
+document.getElementById('ingDeleteBtn').onclick=()=>{
+  if(!editingIngredientId) return;
+  if(!confirm('이 재료를 삭제할까요? 등록된 레시피 아이디어도 함께 삭제됩니다.')) return;
+  ingredients = ingredients.filter(i=>i.id!==editingIngredientId);
+  saveData();
+  closeIngredientSheet();
+  renderIngredientList();
+};
+
+function openIdeaSheet(id){
+  ideaTargetId=id;
+  document.getElementById('ideaTitle').value='';
+  document.getElementById('ideaNote').value='';
+  document.getElementById('ideaOverlay').classList.add('show');
+}
+document.getElementById('ideaCancelBtn').onclick=()=>{
+  document.getElementById('ideaOverlay').classList.remove('show');
+  ideaTargetId=null;
+};
+document.getElementById('ideaSaveBtn').onclick=()=>{
+  const title=document.getElementById('ideaTitle').value.trim();
+  const note=document.getElementById('ideaNote').value.trim();
+  if(!title){ alert('아이디어 제목을 입력해주세요.'); return; }
+  const ing=ingredients.find(i=>i.id===ideaTargetId);
+  ing.ideas.push({title,note});
+  saveData();
+  document.getElementById('ideaOverlay').classList.remove('show');
+  ideaTargetId=null;
+  renderIngredientList();
+};
+
+document.querySelectorAll('.modal-back').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('show'); });
+});
+
+renderMonthTabs();
+renderIngredientList();
+</script>
+</body>
+</html>
