@@ -66,6 +66,10 @@
 
   .empty{text-align:center;padding:40px 10px;color:var(--ink-3);font-size:13px}
 
+  .ing-drag{cursor:grab;color:#ccc;font-size:15px;padding:2px 6px 2px 0;user-select:none;flex-shrink:0}
+  .ing-card.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
+  .ing-namewrap{display:flex;align-items:flex-start}
+
   .modal-back{display:none;position:fixed;inset:0;background:rgba(58,42,23,.35);z-index:50;align-items:center;justify-content:center;padding:20px}
   .modal-back.show{display:flex}
   .modal{background:var(--paper);border-radius:var(--radius);padding:22px 24px;width:100%;max-width:440px;max-height:86vh;overflow-y:auto;box-shadow:0 10px 30px rgba(58,42,23,.25)}
@@ -255,11 +259,14 @@ function renderIngredientList(){
     return;
   }
   list.innerHTML = filtered.map(ing=>`
-    <div class="ing-card">
+    <div class="ing-card" data-id="${ing.id}">
       <div class="ing-head">
-        <div>
-          <div class="ing-name">${escapeHtml(ing.name)}</div>
-          <div class="ing-months">${ing.months.map(m=>MONTH_LABELS[m-1]).join(' · ')}</div>
+        <div class="ing-namewrap">
+          <span class="ing-drag" draggable="true" title="드래그하여 순서 변경">≡</span>
+          <div>
+            <div class="ing-name">${escapeHtml(ing.name)}</div>
+            <div class="ing-months">${ing.months.map(m=>MONTH_LABELS[m-1]).join(' · ')}</div>
+          </div>
         </div>
         <div class="ing-actions">
           <button class="icon-btn" data-edit="${ing.id}" title="수정">✏️</button>
@@ -291,6 +298,41 @@ function renderIngredientList(){
     saveData();
     renderIngredientList();
   });
+
+  // ===== 드래그 정렬: 재료 카드 순서 변경 =====
+  let dragSrcId = null;
+  list.querySelectorAll('.ing-card').forEach(card=>{
+    const targetId = card.dataset.id;
+    const handle = card.querySelector('.ing-drag');
+    handle.addEventListener('dragstart', e=>{
+      dragSrcId = targetId;
+      e.dataTransfer.effectAllowed = 'move';
+      card.style.opacity = '.5';
+    });
+    handle.addEventListener('dragend', ()=>{
+      card.style.opacity = '1';
+      list.querySelectorAll('.ing-card').forEach(c=>c.classList.remove('drag-over'));
+    });
+    card.addEventListener('dragover', e=>{
+      if(dragSrcId===null) return;
+      e.preventDefault();
+      list.querySelectorAll('.ing-card').forEach(c=>c.classList.remove('drag-over'));
+      card.classList.add('drag-over');
+    });
+    card.addEventListener('drop', e=>{
+      e.preventDefault();
+      if(dragSrcId===null || dragSrcId===targetId){ dragSrcId=null; return; }
+      const fromIdx = ingredients.findIndex(i=>i.id===dragSrcId);
+      const toIdx = ingredients.findIndex(i=>i.id===targetId);
+      if(fromIdx===-1 || toIdx===-1){ dragSrcId=null; return; }
+      const moved = ingredients.splice(fromIdx,1)[0];
+      ingredients.splice(toIdx,0,moved);
+      dragSrcId = null;
+      saveData();
+      renderIngredientList();
+    });
+  });
+  // ===== 드래그 정렬 끝 =====
 }
 
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
