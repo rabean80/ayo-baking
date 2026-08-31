@@ -85,7 +85,7 @@
   .h-date .dow{font-size:10.5px;color:var(--ink-4);font-weight:400;letter-spacing:.5px}
   .h-body{flex:1}
   .h-body .h-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px}
-  .h-body .h-note{font-size:12.5px;color:var(--ink-3)}
+  .h-body .h-note{font-size:12.5px;color:var(--ink-3);white-space:pre-wrap}
   .h-body .h-env{font-size:11px;color:var(--ink-4);margin-top:3px}
   .h-rating{font-size:13px;color:var(--accent-2);letter-spacing:1px;margin-top:4px}
   .h-photos{display:flex;gap:6px;flex-shrink:0;align-items:flex-start}
@@ -520,7 +520,7 @@
       <div class="field"><label>구운 빵 / 제품</label><input type="text" id="hTitle" placeholder="예: 기본 식빵"></div>
       <div class="field"><label>온도 및 습도</label><input type="text" id="hEnv" placeholder="예: 22°C / 65%"></div>
     </div>
-    <div class="field"><label>메모 (변수, 결과, 다음번 개선점)</label><textarea id="hNote" style="min-height:90px" placeholder="예: 1차 발효 실온 1h → 냉장 12h, 크럼 탄력 ↑"></textarea></div>
+    <div class="field"><label>메모 (변수, 결과, 다음번 개선점)</label><textarea id="hNote" style="min-height:320px" placeholder="예: 1차 발효 실온 1h → 냉장 12h, 크럼 탄력 ↑"></textarea></div>
     <div class="field">
       <label>사진 추가 <span style="color:var(--ink-4);font-weight:400">(클릭하여 업로드 · 사진 클릭으로 대표 사진 지정)</span></label>
       <div class="photo-upload-area" id="photoUploadArea">
