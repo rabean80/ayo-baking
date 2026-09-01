@@ -299,27 +299,12 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="plan"><span class="ico">📋</span> Baking Plan</button>
+    <button class="tab-btn active" data-tab="calc"><span class="ico">✨</span> Calculator</button>
     <button class="tab-btn" data-tab="scheduler"><span class="ico">🥖</span> Scheduler</button>
-    <button class="tab-btn" data-tab="calc"><span class="ico">✨</span> Calculator</button>
     <button class="tab-btn" data-tab="history"><span class="ico">📅</span> Journal</button>
     <button class="tab-btn" data-tab="tips"><span class="ico">💡</span> Baking Tips</button>
     <button class="tab-btn" onclick="window.open('season.html','_blank')"><span class="ico">🌱</span> 제철재료</button>
   </nav>
-
-  <!-- BAKING PLAN -->
-  <section class="panel active" id="panel-plan">
-    <div class="surface">
-      <div class="section-head">
-        <div>
-          <div class="section-title">Baking Plan</div>
-          <div class="section-sub">완벽한 계획이 완벽한 빵을 만든다.</div>
-        </div>
-        <button class="btn btn-primary" id="addPlanBtn">＋ 기록 추가</button>
-      </div>
-      <div class="plan-list" id="planList"></div>
-    </div>
-  </section>
 
   <!-- SCHEDULER -->
   <section class="panel" id="panel-scheduler">
@@ -342,7 +327,7 @@
   </section>
 
   <!-- CALCULATOR -->
-  <section class="panel" id="panel-calc">
+  <section class="panel active" id="panel-calc">
     <!-- ===== 단가계산 시작: 서브탭 ===== -->
     <div class="calc-modetabs" style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
       <button class="btn btn-ghost calc-modetab active" id="calcModeNormal">일반 배합</button>
@@ -489,19 +474,6 @@
 </div>
 
 <!-- PLAN MODAL -->
-<div class="modal-back" id="planModal">
-  <div class="modal-box">
-    <h3 id="planModalTitle">베이킹 계획 추가</h3>
-    <div class="field"><label>날짜</label><input type="date" id="pDate"></div>
-    <div class="field"><label>계획</label><textarea id="pContent" placeholder="예: 식빵 2개, 치아바타 1개 / 탕종 전날 준비" style="min-height:120px"></textarea></div>
-    <div class="modal-actions">
-      <button class="btn btn-danger left" id="pDelete" style="display:none">삭제</button>
-      <button class="btn btn-ghost" data-close>취소</button>
-      <button class="btn btn-primary" id="pSave">저장</button>
-    </div>
-  </div>
-</div>
-
 <!-- HISTORY MODAL -->
 <div class="modal-back" id="historyModal">
   <div class="modal-box">
@@ -778,7 +750,6 @@ const DEFAULT_TIPS=(folders)=>[
 ];
 
 // State
-let plans=LS.get('baking.plans',null);if(!plans){plans=[];LS.set('baking.plans',plans);}
 let histories=LS.get('baking.history',null);if(!histories){histories=[];LS.set('baking.history',histories);}
 let folders=LS.get('baking.folders',null);
 let tips=LS.get('baking.tips',null);
@@ -802,38 +773,6 @@ function closeModal(id){document.getElementById(id).classList.remove('show');}
 document.querySelectorAll('[data-close]').forEach(b=>{b.addEventListener('click',()=>b.closest('.modal-back').classList.remove('show'));});
 document.querySelectorAll('.modal-back').forEach(mb=>{mb.addEventListener('click',e=>{if(e.target===mb)mb.classList.remove('show');});});
 function escapeHtml(s){if(s==null)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-
-// ── Baking Plan ──
-let editingPlanId=null;
-function renderPlanList(){
-  const list=document.getElementById('planList');list.innerHTML='';
-  if(plans.length===0){list.innerHTML=`<div class="empty-state"><div class="e-icon">📋</div>아직 계획이 없어요. 다음 베이킹을 계획해보세요!</div>`;return;}
-  plans.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(p=>{
-    const d=new Date(p.date);const dow=['일','월','화','수','목','금','토'][d.getDay()];
-    const el=document.createElement('div');el.className='plan-item';
-    el.innerHTML=`<div class="p-date">${d.getMonth()+1}/${d.getDate()}</div><div class="p-date-sub">${d.getFullYear()} · ${dow}</div><div class="p-content">${escapeHtml(p.content||'')}</div>`;
-    el.addEventListener('click',()=>openPlan(p.id));list.appendChild(el);
-  });
-}
-function openPlan(id){
-  editingPlanId=id;const p=id?plans.find(x=>x.id===id):null;
-  document.getElementById('planModalTitle').textContent=p?'베이킹 계획 수정':'베이킹 계획 추가';
-  document.getElementById('pDate').value=p?p.date:new Date().toISOString().slice(0,10);
-  document.getElementById('pContent').value=p?(p.content||''):'';  
-  document.getElementById('pDelete').style.display=p?'':'none';
-  openModal('planModal');
-}
-document.getElementById('addPlanBtn').addEventListener('click',()=>openPlan(null));
-document.getElementById('pSave').addEventListener('click',()=>{
-  const content=document.getElementById('pContent').value.trim();if(!content){alert('계획 내용을 입력하세요');return;}
-  const data={date:document.getElementById('pDate').value||new Date().toISOString().slice(0,10),content};
-  if(editingPlanId){plans=plans.map(p=>p.id===editingPlanId?{...p,...data}:p);}else{plans.push({id:uid(),...data});}
-  LS.set('baking.plans',plans);closeModal('planModal');renderPlanList();
-});
-document.getElementById('pDelete').addEventListener('click',()=>{
-  if(!editingPlanId)return;if(!confirm('이 계획을 삭제할까요?'))return;
-  plans=plans.filter(p=>p.id!==editingPlanId);LS.set('baking.plans',plans);closeModal('planModal');renderPlanList();
-});
 
 // ── History ──
 let editingHistoryId=null,editingPhotos=[],editingMainPhotoIdx=0;
@@ -1801,7 +1740,7 @@ document.getElementById('calcRows').addEventListener('click',e=>{
 // ===== 단가 환산 계산기 + 단가 사전 끝 =====
 
 // Init
-renderPlanList();renderHistory();renderFolders();renderTips();renderCalc();
+renderHistory();renderFolders();renderTips();renderCalc();
 
 // Service Worker
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW error:',e));});}
