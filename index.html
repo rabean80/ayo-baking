@@ -102,6 +102,9 @@
   .folder .f-count{margin-left:auto;font-size:10.5px;background:var(--accent-soft);color:var(--crust-dark);padding:1px 7px;border-radius:100px;font-weight:500}
   .folder .f-del{margin-left:4px;opacity:0;font-size:12px;color:#b84431;cursor:pointer}
   .folder:hover .f-del{opacity:.7}
+  .folder .f-pin{border:none;background:none;padding:2px 3px;font-size:13px;line-height:1;cursor:pointer;opacity:.35;filter:grayscale(1);flex-shrink:0}
+  .folder .f-pin:hover{opacity:.7}
+  .folder.pinned .f-pin{opacity:1;filter:none}
   .add-folder{padding:8px 11px;border:1px dashed #d8c9a8;border-radius:8px;font-size:12px;color:var(--ink-3);cursor:pointer;background:transparent;text-align:left;font-family:inherit;margin-top:4px}
   .add-folder:hover{border-color:var(--accent);color:var(--accent)}
   .tip-content{display:flex;flex-direction:column;gap:10px}
@@ -109,12 +112,7 @@
   .tip-head .t-folder-name{font-family:'Playfair Display',Georgia,serif;font-size:17px;color:var(--crust-dark);font-weight:600}
   .tip-list{display:flex;flex-direction:column;gap:8px}
   .tip-item{background:var(--paper-2);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid #ecddbe;position:relative}
-  .tip-item .t-title{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding-right:64px}
-  .tip-item .t-pin{border:none;background:none;padding:2px 3px;font-size:13px;cursor:pointer;opacity:.45;filter:grayscale(1);line-height:1}
-  .tip-item .t-pin:hover{opacity:.8}
-  .tip-item.pinned{border-color:#d9b98a;box-shadow:0 1px 0 #ecddbe}
-  .tip-item.pinned .t-pin{opacity:1;filter:none}
-  .tip-item .t-src{font-size:11px;font-weight:500;color:#a08a6a;background:var(--accent-soft);padding:1px 8px;border-radius:100px;margin-left:4px}
+  .tip-item .t-title{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px}
   .tip-item .t-body{font-size:12.5px;color:var(--ink-2);white-space:pre-wrap;line-height:1.65}
   .tip-item .t-actions{position:absolute;top:10px;right:10px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
   .tip-item:hover .t-actions{opacity:1}
@@ -768,8 +766,9 @@ let folders=LS.get('baking.folders',null);
 let tips=LS.get('baking.tips',null);
 if(!folders){folders=DEFAULT_FOLDERS;tips=DEFAULT_TIPS(folders);LS.set('baking.folders',folders);LS.set('baking.tips',tips);}
 if(!tips){tips=[];LS.set('baking.tips',tips);}
-const PINNED_ID='__pinned__'; // 📌 고정한 팁 (가상 폴더)
-let activeFolderId=tips.some(t=>t.pinned)?PINNED_ID:(folders[0]?folders[0].id:null);
+// 📌 고정한 폴더가 위로 (나중에 고정한 폴더가 맨 위), 나머지는 원래 순서
+function sortedFolders(){return folders.map((f,i)=>({f,i})).sort((a,b)=>((b.f.pinnedAt||0)-(a.f.pinnedAt||0))||(a.i-b.i)).map(x=>x.f);}
+let activeFolderId=sortedFolders()[0]?sortedFolders()[0].id:null;
 
 // Today pill
 (function(){const d=new Date();const dow=['일','월','화','수','목','금','토'][d.getDay()];document.getElementById('todayPill').textContent=`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}. (${dow})`;})();
@@ -873,22 +872,13 @@ document.getElementById('hDelete').addEventListener('click',()=>{
 let editingTipId=null;
 function renderFolders(){
   const list=document.getElementById('folderList');list.innerHTML='';
-  // ===== 핀 시작: 고정한 팁이 있으면 맨 위에 '📌 고정한 팁' 표시 =====
-  const pinCount=tips.filter(t=>t.pinned).length;
-  if(!pinCount && activeFolderId===PINNED_ID) activeFolderId=folders[0]?folders[0].id:null;
-  if(pinCount){
-    const pe=document.createElement('div');pe.className='folder folder-pinned'+(activeFolderId===PINNED_ID?' active':'');
-    pe.innerHTML=`<span class="f-ico">📌</span><span>고정한 팁</span><span class="f-count">${pinCount}</span>`;
-    pe.addEventListener('click',()=>{activeFolderId=PINNED_ID;renderFolders();renderTips();});
-    list.appendChild(pe);
-  }
-  // ===== 핀 끝 =====
-  folders.forEach(f=>{
+  sortedFolders().forEach(f=>{
     const count=tips.filter(t=>t.folderId===f.id).length;
-    const el=document.createElement('div');el.className='folder'+(f.id===activeFolderId?' active':'');
-    el.innerHTML=`<span class="f-ico">${escapeHtml(f.icon||'📁')}</span><span>${escapeHtml(f.name)}</span><span class="f-count">${count}</span><span class="f-del" title="삭제">✕</span>`;
+    const el=document.createElement('div');el.className='folder'+(f.id===activeFolderId?' active':'')+(f.pinnedAt?' pinned':'');
+    el.innerHTML=`<span class="f-ico">${escapeHtml(f.icon||'📁')}</span><span>${escapeHtml(f.name)}</span><span class="f-count">${count}</span><button class="f-pin" type="button" title="${f.pinnedAt?'고정 해제':'맨 위에 고정'}">📌</button><span class="f-del" title="삭제">✕</span>`;
     el.addEventListener('click',(e)=>{
-      if(e.target.classList.contains('f-del')){e.stopPropagation();if(!confirm(`'${f.name}' 폴더를 삭제할까요?`))return;folders=folders.filter(x=>x.id!==f.id);tips=tips.filter(t=>t.folderId!==f.id);if(activeFolderId===f.id)activeFolderId=folders[0]?folders[0].id:null;LS.set('baking.folders',folders);LS.set('baking.tips',tips);renderFolders();renderTips();return;}
+      if(e.target.classList.contains('f-pin')){e.stopPropagation();folders=folders.map(x=>x.id===f.id?{...x,pinnedAt:x.pinnedAt?0:Date.now()}:x);LS.set('baking.folders',folders);renderFolders();return;}
+      if(e.target.classList.contains('f-del')){e.stopPropagation();if(!confirm(`'${f.name}' 폴더를 삭제할까요?`))return;folders=folders.filter(x=>x.id!==f.id);tips=tips.filter(t=>t.folderId!==f.id);if(activeFolderId===f.id)activeFolderId=sortedFolders()[0]?sortedFolders()[0].id:null;LS.set('baking.folders',folders);LS.set('baking.tips',tips);renderFolders();renderTips();return;}
       activeFolderId=f.id;renderFolders();renderTips();
     });
     list.appendChild(el);
@@ -899,19 +889,15 @@ function renderFolders(){
 }
 function renderTips(){
   const tl=document.getElementById('tipList');const nameEl=document.getElementById('activeFolderName');const cntEl=document.getElementById('activeFolderCount');
-  const isPinView=activeFolderId===PINNED_ID;
-  const folder=isPinView?{icon:'📌',name:'고정한 팁'}:folders.find(f=>f.id===activeFolderId);
+  const folder=folders.find(f=>f.id===activeFolderId);
   if(!folder){nameEl.textContent='폴더 없음';cntEl.textContent='';tl.innerHTML=`<div class="empty-state"><div class="e-icon">📁</div>폴더를 먼저 만들어보세요.</div>`;return;}
-  // 고정한 팁이 위로, 그 다음 최근 수정순
-  const fTips=tips.filter(t=>isPinView?t.pinned:t.folderId===activeFolderId).sort((a,b)=>((b.pinned?1:0)-(a.pinned?1:0))||((b.updated||0)-(a.updated||0)));
+  const fTips=tips.filter(t=>t.folderId===activeFolderId).sort((a,b)=>(b.updated||0)-(a.updated||0));
   nameEl.textContent=`${folder.icon} ${folder.name}`;cntEl.textContent=`${fTips.length}개의 팁`;tl.innerHTML='';
   if(fTips.length===0){tl.innerHTML=`<div class="empty-state"><div class="e-icon">💭</div>이 폴더에 첫 팁을 추가해보세요.</div>`;return;}
   fTips.forEach(t=>{
-    const el=document.createElement('div');el.className='tip-item'+(t.pinned?' pinned':'');
-    const srcF=isPinView?folders.find(f=>f.id===t.folderId):null;
-    el.innerHTML=`<div class="t-title"><button class="t-pin" title="${t.pinned?'고정 해제':'상단에 고정'}">📌</button>✨ ${escapeHtml(t.title)}${srcF?`<span class="t-src">${escapeHtml(srcF.icon||'📁')} ${escapeHtml(srcF.name)}</span>`:''}</div><div class="t-body">${escapeHtml(t.body||'')}</div><div class="t-actions"><button class="icon-btn edit">✎</button><button class="icon-btn del">🗑</button></div>`;
+    const el=document.createElement('div');el.className='tip-item';
+    el.innerHTML=`<div class="t-title">✨ ${escapeHtml(t.title)}</div><div class="t-body">${escapeHtml(t.body||'')}</div><div class="t-actions"><button class="icon-btn edit">✎</button><button class="icon-btn del">🗑</button></div>`;
     el.querySelector('.edit').addEventListener('click',()=>openTip(t.id));
-    el.querySelector('.t-pin').addEventListener('click',()=>{tips=tips.map(x=>x.id===t.id?{...x,pinned:!x.pinned}:x);LS.set('baking.tips',tips);renderFolders();renderTips();});
     el.querySelector('.del').addEventListener('click',()=>{if(!confirm('이 팁을 삭제할까요?'))return;tips=tips.filter(x=>x.id!==t.id);LS.set('baking.tips',tips);renderFolders();renderTips();});
     tl.appendChild(el);
   });
@@ -920,7 +906,7 @@ function openTip(id){
   editingTipId=id;const t=id?tips.find(x=>x.id===id):null;
   document.getElementById('tipModalTitle').textContent=t?'팁 수정':'팁 추가';
   const sel=document.getElementById('tFolder');sel.innerHTML=folders.map(f=>`<option value="${f.id}">${f.icon} ${escapeHtml(f.name)}</option>`).join('');
-  sel.value=t?t.folderId:((activeFolderId!==PINNED_ID&&activeFolderId)||(folders[0]&&folders[0].id)||'');
+  sel.value=t?t.folderId:(activeFolderId||(folders[0]&&folders[0].id)||'');
   document.getElementById('tTitle').value=t?t.title:'';document.getElementById('tBody').value=t?t.body:'';
   document.getElementById('tDelete').style.display=t?'':'none';openModal('tipModal');
 }
@@ -929,7 +915,7 @@ document.getElementById('tSave').addEventListener('click',()=>{
   const title=document.getElementById('tTitle').value.trim();if(!title){alert('팁 제목을 입력하세요');return;}
   const data={folderId:document.getElementById('tFolder').value,title,body:document.getElementById('tBody').value,updated:Date.now()};
   if(editingTipId){tips=tips.map(t=>t.id===editingTipId?{...t,...data}:t);}else{tips.push({id:uid(),...data});}
-  LS.set('baking.tips',tips);if(activeFolderId!==PINNED_ID||!editingTipId)activeFolderId=data.folderId;closeModal('tipModal');renderFolders();renderTips();
+  LS.set('baking.tips',tips);activeFolderId=data.folderId;closeModal('tipModal');renderFolders();renderTips();
 });
 document.getElementById('tDelete').addEventListener('click',()=>{
   if(!editingTipId)return;if(!confirm('이 팁을 삭제할까요?'))return;
