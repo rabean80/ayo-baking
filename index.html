@@ -900,7 +900,7 @@ function renderTips(){
   if(fTips.length===0){tl.innerHTML=`<div class="empty-state"><div class="e-icon">💭</div>이 폴더에 첫 팁을 추가해보세요.</div>`;return;}
   fTips.forEach(t=>{
     const el=document.createElement('div');el.className='tip-item';
-    el.innerHTML=`<div class="t-title">✨ ${escapeHtml(t.title)}</div><div class="t-body">${escapeHtml(t.body||'')}</div><div class="t-actions"><button class="icon-btn edit">✎</button><button class="icon-btn del">🗑</button></div>`;
+    el.innerHTML=`<div class="t-title">${escapeHtml(t.title)}</div><div class="t-body">${escapeHtml(t.body||'')}</div><div class="t-actions"><button class="icon-btn edit">✎</button><button class="icon-btn del">🗑</button></div>`;
     el.querySelector('.edit').addEventListener('click',()=>openTip(t.id));
     el.querySelector('.del').addEventListener('click',()=>{if(!confirm('이 팁을 삭제할까요?'))return;tips=tips.filter(x=>x.id!==t.id);LS.set('baking.tips',tips);renderFolders();renderTips();});
     tl.appendChild(el);
