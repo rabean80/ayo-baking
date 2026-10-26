@@ -109,7 +109,12 @@
   .tip-head .t-folder-name{font-family:'Playfair Display',Georgia,serif;font-size:17px;color:var(--crust-dark);font-weight:600}
   .tip-list{display:flex;flex-direction:column;gap:8px}
   .tip-item{background:var(--paper-2);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid #ecddbe;position:relative}
-  .tip-item .t-title{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px}
+  .tip-item .t-title{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding-right:64px}
+  .tip-item .t-pin{border:none;background:none;padding:2px 3px;font-size:13px;cursor:pointer;opacity:.25;filter:grayscale(1);line-height:1}
+  .tip-item .t-pin:hover{opacity:.6}
+  .tip-item.pinned{border-color:#d9b98a;box-shadow:0 1px 0 #ecddbe}
+  .tip-item.pinned .t-pin{opacity:1;filter:none}
+  .tip-item .t-src{font-size:11px;font-weight:500;color:#a08a6a;background:var(--accent-soft);padding:1px 8px;border-radius:100px;margin-left:4px}
   .tip-item .t-body{font-size:12.5px;color:var(--ink-2);white-space:pre-wrap;line-height:1.65}
   .tip-item .t-actions{position:absolute;top:10px;right:10px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
   .tip-item:hover .t-actions{opacity:1}
@@ -204,6 +209,14 @@
   /* ===== 드래그 정렬(재료 순서 변경) 시작 ===== */
   .calc-table .ci-drag,.calc-table .cf-drag{cursor:grab;color:#ccc;font-size:14px;padding:0 2px;user-select:none;flex-shrink:0}
   .calc-table .ci-namecell{display:flex;align-items:center;gap:6px}
+  /* 계량 체크 */
+  .calc-table .ci-check{width:20px;height:20px;flex-shrink:0;margin:0;cursor:pointer;accent-color:var(--crust-dark,#8a5a3b)}
+  .calc-table tr.ci-checked td{background:#f3efe6}
+  .calc-table tr.ci-checked input:not(.ci-check){opacity:.5;text-decoration:line-through}
+  .calc-table tr.ci-checked .calc-w{opacity:.5}
+  .calc-table tr.calc-donehead td{padding:10px 6px 6px;border-top:1.5px dashed #e2d3b5}
+  .calc-table .cd-wrap{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:#8a7558}
+  .calc-table .cd-reset{border:1px solid #e2d3b5;background:#fff;color:#8a7558;font-size:11.5px;padding:3px 10px;border-radius:100px;cursor:pointer}
   .calc-table tr[data-idx].drag-over,.calc-table tr.calc-flourrow.drag-over{background:var(--paper-2);box-shadow:inset 0 2px 0 var(--accent)}
   /* ===== 드래그 정렬 끝 ===== */
   .calc-table .cf-sum.bad{color:#b84431}
@@ -343,7 +356,7 @@
           <div class="section-sub">밀가루를 100% 기준으로, 분량만 넣으면 나머지 재료가 자동 계산돼요.</div>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost" id="calcLoadPreset">📂 프리셋</button>
+          <button class="btn btn-ghost" id="calcLoadPreset">📚 내 레시피</button>
           <button class="btn btn-ghost" id="calcSavePreset">💾 저장</button>
           <button class="btn btn-ghost" id="calcPrint">🖨 프린트</button>
         </div>
@@ -428,7 +441,7 @@
       <div class="section-head">
         <div>
           <div class="section-title">공정 메모</div>
-          <div class="section-sub">이 배합의 오토리즈·믹싱·발효·굽기 등 공정 관련 메모를 자유롭게 남겨두세요. 프리셋 저장 시 함께 저장됩니다.</div>
+          <div class="section-sub">이 배합의 오토리즈·믹싱·발효·굽기 등 공정 관련 메모를 자유롭게 남겨두세요. 레시피 저장 시 함께 저장됩니다.</div>
         </div>
       </div>
       <textarea id="calcNotes" rows="8" style="width:100%;font-family:inherit;font-size:13.5px;line-height:1.6;padding:12px;border:1px solid #e6d5bd;border-radius:10px;background:#fffdf8;resize:vertical" placeholder="예) 1. 제한적 오토리즈 - 통밀 280g, 백밀가루 120g, 물 260g만 먼저 섞어 30분 오토리즈..."></textarea>
@@ -542,7 +555,7 @@
 <!-- Preset Modal -->
 <div class="modal-back" id="presetModal">
   <div class="modal-box" style="max-width:380px">
-    <h3>📂 저장된 배합 프리셋</h3>
+    <h3>📚 내 레시피</h3>
     <p style="font-size:12.5px;color:#888;margin-bottom:6px;line-height:1.6">이름을 누르면 불러오고, 🗑 으로 삭제합니다.</p>
     <div id="presetList" style="display:flex;flex-direction:column;gap:8px;margin:12px 0"></div>
     <div class="modal-actions">
@@ -677,7 +690,7 @@
       </button>
       <button class="btn btn-ghost" id="resetCalc" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto">
         <div style="font-weight:600;font-size:13px;margin-bottom:2px">계산기 초기화</div>
-        <div style="font-size:11px;color:#888">베이커스 % 배합·프리셋을 기본값으로 리셋.</div>
+        <div style="font-size:11px;color:#888">베이커스 % 배합·내 레시피를 기본값으로 리셋.</div>
       </button>
       <button class="btn btn-danger" id="resetAllIndex" style="text-align:left;border-radius:8px;padding:10px 14px;height:auto">
         <div style="font-weight:600;font-size:13px;margin-bottom:2px">전체 초기화</div>
@@ -755,7 +768,8 @@ let folders=LS.get('baking.folders',null);
 let tips=LS.get('baking.tips',null);
 if(!folders){folders=DEFAULT_FOLDERS;tips=DEFAULT_TIPS(folders);LS.set('baking.folders',folders);LS.set('baking.tips',tips);}
 if(!tips){tips=[];LS.set('baking.tips',tips);}
-let activeFolderId=folders[0]?folders[0].id:null;
+const PINNED_ID='__pinned__'; // 📌 고정한 팁 (가상 폴더)
+let activeFolderId=tips.some(t=>t.pinned)?PINNED_ID:(folders[0]?folders[0].id:null);
 
 // Today pill
 (function(){const d=new Date();const dow=['일','월','화','수','목','금','토'][d.getDay()];document.getElementById('todayPill').textContent=`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}. (${dow})`;})();
@@ -859,6 +873,16 @@ document.getElementById('hDelete').addEventListener('click',()=>{
 let editingTipId=null;
 function renderFolders(){
   const list=document.getElementById('folderList');list.innerHTML='';
+  // ===== 핀 시작: 고정한 팁이 있으면 맨 위에 '📌 고정한 팁' 표시 =====
+  const pinCount=tips.filter(t=>t.pinned).length;
+  if(!pinCount && activeFolderId===PINNED_ID) activeFolderId=folders[0]?folders[0].id:null;
+  if(pinCount){
+    const pe=document.createElement('div');pe.className='folder folder-pinned'+(activeFolderId===PINNED_ID?' active':'');
+    pe.innerHTML=`<span class="f-ico">📌</span><span>고정한 팁</span><span class="f-count">${pinCount}</span>`;
+    pe.addEventListener('click',()=>{activeFolderId=PINNED_ID;renderFolders();renderTips();});
+    list.appendChild(pe);
+  }
+  // ===== 핀 끝 =====
   folders.forEach(f=>{
     const count=tips.filter(t=>t.folderId===f.id).length;
     const el=document.createElement('div');el.className='folder'+(f.id===activeFolderId?' active':'');
@@ -875,15 +899,19 @@ function renderFolders(){
 }
 function renderTips(){
   const tl=document.getElementById('tipList');const nameEl=document.getElementById('activeFolderName');const cntEl=document.getElementById('activeFolderCount');
-  const folder=folders.find(f=>f.id===activeFolderId);
+  const isPinView=activeFolderId===PINNED_ID;
+  const folder=isPinView?{icon:'📌',name:'고정한 팁'}:folders.find(f=>f.id===activeFolderId);
   if(!folder){nameEl.textContent='폴더 없음';cntEl.textContent='';tl.innerHTML=`<div class="empty-state"><div class="e-icon">📁</div>폴더를 먼저 만들어보세요.</div>`;return;}
-  const fTips=tips.filter(t=>t.folderId===activeFolderId).sort((a,b)=>(b.updated||0)-(a.updated||0));
+  // 고정한 팁이 위로, 그 다음 최근 수정순
+  const fTips=tips.filter(t=>isPinView?t.pinned:t.folderId===activeFolderId).sort((a,b)=>((b.pinned?1:0)-(a.pinned?1:0))||((b.updated||0)-(a.updated||0)));
   nameEl.textContent=`${folder.icon} ${folder.name}`;cntEl.textContent=`${fTips.length}개의 팁`;tl.innerHTML='';
   if(fTips.length===0){tl.innerHTML=`<div class="empty-state"><div class="e-icon">💭</div>이 폴더에 첫 팁을 추가해보세요.</div>`;return;}
   fTips.forEach(t=>{
-    const el=document.createElement('div');el.className='tip-item';
-    el.innerHTML=`<div class="t-title">✨ ${escapeHtml(t.title)}</div><div class="t-body">${escapeHtml(t.body||'')}</div><div class="t-actions"><button class="icon-btn edit">✎</button><button class="icon-btn del">🗑</button></div>`;
+    const el=document.createElement('div');el.className='tip-item'+(t.pinned?' pinned':'');
+    const srcF=isPinView?folders.find(f=>f.id===t.folderId):null;
+    el.innerHTML=`<div class="t-title"><button class="t-pin" title="${t.pinned?'고정 해제':'상단에 고정'}">📌</button>✨ ${escapeHtml(t.title)}${srcF?`<span class="t-src">${escapeHtml(srcF.icon||'📁')} ${escapeHtml(srcF.name)}</span>`:''}</div><div class="t-body">${escapeHtml(t.body||'')}</div><div class="t-actions"><button class="icon-btn edit">✎</button><button class="icon-btn del">🗑</button></div>`;
     el.querySelector('.edit').addEventListener('click',()=>openTip(t.id));
+    el.querySelector('.t-pin').addEventListener('click',()=>{tips=tips.map(x=>x.id===t.id?{...x,pinned:!x.pinned}:x);LS.set('baking.tips',tips);renderFolders();renderTips();});
     el.querySelector('.del').addEventListener('click',()=>{if(!confirm('이 팁을 삭제할까요?'))return;tips=tips.filter(x=>x.id!==t.id);LS.set('baking.tips',tips);renderFolders();renderTips();});
     tl.appendChild(el);
   });
@@ -892,7 +920,7 @@ function openTip(id){
   editingTipId=id;const t=id?tips.find(x=>x.id===id):null;
   document.getElementById('tipModalTitle').textContent=t?'팁 수정':'팁 추가';
   const sel=document.getElementById('tFolder');sel.innerHTML=folders.map(f=>`<option value="${f.id}">${f.icon} ${escapeHtml(f.name)}</option>`).join('');
-  sel.value=t?t.folderId:(activeFolderId||(folders[0]&&folders[0].id)||'');
+  sel.value=t?t.folderId:((activeFolderId!==PINNED_ID&&activeFolderId)||(folders[0]&&folders[0].id)||'');
   document.getElementById('tTitle').value=t?t.title:'';document.getElementById('tBody').value=t?t.body:'';
   document.getElementById('tDelete').style.display=t?'':'none';openModal('tipModal');
 }
@@ -901,7 +929,7 @@ document.getElementById('tSave').addEventListener('click',()=>{
   const title=document.getElementById('tTitle').value.trim();if(!title){alert('팁 제목을 입력하세요');return;}
   const data={folderId:document.getElementById('tFolder').value,title,body:document.getElementById('tBody').value,updated:Date.now()};
   if(editingTipId){tips=tips.map(t=>t.id===editingTipId?{...t,...data}:t);}else{tips.push({id:uid(),...data});}
-  LS.set('baking.tips',tips);activeFolderId=data.folderId;closeModal('tipModal');renderFolders();renderTips();
+  LS.set('baking.tips',tips);if(activeFolderId!==PINNED_ID||!editingTipId)activeFolderId=data.folderId;closeModal('tipModal');renderFolders();renderTips();
 });
 document.getElementById('tDelete').addEventListener('click',()=>{
   if(!editingTipId)return;if(!confirm('이 팁을 삭제할까요?'))return;
@@ -920,7 +948,7 @@ document.getElementById('resetFolders').addEventListener('click',()=>{
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
 });
 document.getElementById('resetCalc').addEventListener('click',()=>{
-  if(!confirm('계산기 배합과 프리셋을 기본값으로 초기화할까요? (단가 계산 배합도 함께 초기화됩니다)'))return;
+  if(!confirm('계산기 배합과 내 레시피를 기본값으로 초기화할까요? (단가 계산 배합도 함께 초기화됩니다)'))return;
   LS.remove('baking.calc');LS.remove('baking.calcPresets');LS.remove('baking.calcPresetsVer');
   LS.remove('baking.costCalc');LS.remove('baking.costPresets'); // ===== 단가계산: 초기화 대상 =====
   document.getElementById('dataResetModal').classList.remove('show');location.reload();
@@ -1061,6 +1089,8 @@ function refreshCalcWeights(){
   renderBiga();
 }
 
+// 계량 체크 상태: 재료 id 모음 (배합/프리셋에는 저장하지 않음)
+let calcChecked=new Set();
 function renderCalc(){
   document.getElementById('calcFlour').value = calc.flour||'';
   const notesEl=document.getElementById('calcNotes');
@@ -1104,19 +1134,30 @@ function renderCalc(){
     <td class="cf-sum${okPs?'':' bad'}">${fmtP(ps)}</td>
     <td class="cf-sum${okPs?'':' bad'}">${fmt(sumDisplayedFlourWeight())}</td>
     <td>${okPs?'':'<button class="cf-fit" title="총량을 밀가루 합계에 맞춥니다">맞춤</button>'}</td></tr>`;
-  calc.ingredients.forEach((ing,idx)=>{
+  // ===== 계량 체크 시작: 체크 안 된 재료 먼저, 체크된 재료는 아래 '계량 완료' 묶음으로 =====
+  calc.ingredients.forEach(ing=>{ if(!ing.id) ing.id=uid(); });
+  const ingRowHtml=(ing,idx)=>{
     const w=(calc.flour||0)*(parseFloat(ing.pct)||0)/100;
+    const isChecked=calcChecked.has(ing.id);
     // ===== 단가계산 시작: 재료 행 단가/비용 셀 =====
     const priceCell = isCost ? `<td><div style="display:flex;gap:4px;align-items:center"><input class="ci-price" type="number" step="1" min="0" value="${ing.price||''}" placeholder="원/kg"><button type="button" class="price-calc-btn" data-type="ing" data-idx="${idx}" title="구매가로 원/kg 환산">🧮</button></div></td>` : '';
     const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(w/1000*(ing.price||0)))}원</td>` : '';
     // ===== 단가계산 끝 =====
-    html += `<tr data-idx="${idx}">
-      <td class="ci-namecell"><span class="ci-drag" draggable="true" title="드래그하여 순서 변경">≡</span><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명">${isCost?`<button type="button" class="price-pick-btn" data-type="ing" data-idx="${idx}" title="단가 사전에서 선택">📖</button>`:''}</td>
+    return `<tr data-idx="${idx}"${isChecked?' class="ci-checked"':''}>
+      <td class="ci-namecell"><input type="checkbox" class="ci-check" title="계량 완료 체크"${isChecked?' checked':''}><span class="ci-drag" draggable="true" title="드래그하여 순서 변경">≡</span><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명">${isCost?`<button type="button" class="price-pick-btn" data-type="ing" data-idx="${idx}" title="단가 사전에서 선택">📖</button>`:''}</td>
       <td><input class="ci-pct" type="number" step="0.1" min="0" value="${roundPctDisplay(ing.pct)}"></td>
       <td><input class="ci-w" type="number" step="1" min="0" value="${w?Math.round(w*10)/10:''}" placeholder="g"></td>
       ${priceCell}${costCell}
       <td><button class="calc-del" title="삭제">✕</button></td></tr>`;
-  });
+  };
+  const doneIdx=[];
+  calc.ingredients.forEach((ing,idx)=>{ if(calcChecked.has(ing.id)) doneIdx.push(idx); else html+=ingRowHtml(ing,idx); });
+  if(doneIdx.length){
+    const allDone = doneIdx.length===calc.ingredients.length;
+    html += `<tr class="calc-donehead"><td colspan="${isCost?6:4}"><div class="cd-wrap"><span>${allDone?'🎉 모든 재료 계량 완료':'✓ 계량 완료'} <b>${doneIdx.length}</b> / ${calc.ingredients.length}</span><button type="button" class="cd-reset">체크 모두 해제</button></div></td></tr>`;
+    doneIdx.forEach(idx=>{ html+=ingRowHtml(calc.ingredients[idx],idx); });
+  }
+  // ===== 계량 체크 끝 =====
   tb.innerHTML=html;
   document.getElementById('calcTotalWeight').textContent = fmt(sumDisplayedTotalWeight());
   // ===== 단가계산 시작: 하단 총 재료비 / 개당 단가 =====
@@ -1201,6 +1242,9 @@ function renderCalc(){
   tb.querySelectorAll('tr[data-idx]').forEach(tr=>{
     const idx=+tr.dataset.idx;
     tr.querySelector('.ci-name').addEventListener('input',e=>{calc.ingredients[idx].name=e.target.value;saveCalc();renderBiga();});
+    // ===== 계량 체크: 체크 토글 (저장 안 함, 화면에서만 유지) =====
+    const chk=tr.querySelector('.ci-check');
+    if(chk) chk.addEventListener('change',()=>{const id=calc.ingredients[idx].id; if(chk.checked) calcChecked.add(id); else calcChecked.delete(id); renderCalc();});
     // ===== 드래그 정렬 시작: 재료 행 순서 변경 =====
     const dragHandle=tr.querySelector('.ci-drag');
     if(dragHandle){
@@ -1233,8 +1277,10 @@ function renderCalc(){
     const commitW=()=>{const g=parseFloat(wEl.value)||0; const F=calc.flour||0; if(F>0){calc.ingredients[idx].pct=Math.round((g/F*100)*1e6)/1e6;} saveCalc();renderCalc();};
     wEl.addEventListener('change',commitW); // 분량(g) 입력 → % 역산
     wEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();wEl.blur();}});
-    tr.querySelector('.calc-del').addEventListener('click',()=>{calc.ingredients.splice(idx,1);saveCalc();renderCalc();});
+    tr.querySelector('.calc-del').addEventListener('click',()=>{calcChecked.delete(calc.ingredients[idx].id);calc.ingredients.splice(idx,1);saveCalc();renderCalc();});
   });
+  const cdReset=tb.querySelector('.cd-reset');
+  if(cdReset) cdReset.addEventListener('click',()=>{calcChecked.clear();renderCalc();});
   renderPresetName();
   renderBiga();
 }
@@ -1453,7 +1499,7 @@ document.getElementById('calcSavePreset').addEventListener('click',()=>{
     existingIdx = calcPresets.findIndex(p=>p.name===nm);
   }
   if(existingIdx>-1){
-    const overwrite = confirm(`기존 프리셋 "${calcPresets[existingIdx].name}"에 덮어쓸까요?\n(취소를 누르면 "${nm}" 이름으로 새 프리셋이 저장됩니다)`);
+    const overwrite = confirm(`기존 레시피 "${calcPresets[existingIdx].name}"에 덮어쓸까요?\n(취소를 누르면 "${nm}" 이름으로 새 레시피가 저장됩니다)`);
     if(overwrite){
       const keepId = calcPresets[existingIdx].id;
       calcPresets[existingIdx] = {id:keepId, name:nm, data:JSON.parse(JSON.stringify(calc))};
@@ -1491,7 +1537,7 @@ document.getElementById('calcSavePreset').addEventListener('click',()=>{
 });
 function renderPresetList(){
   const wrap=document.getElementById('presetList');
-  if(!calcPresets.length){wrap.innerHTML='<div style="font-size:12.5px;color:#999;text-align:center;padding:18px 0">저장된 프리셋이 없습니다.<br>배합을 만든 뒤 💾 저장을 눌러보세요.</div>';return;}
+  if(!calcPresets.length){wrap.innerHTML='<div style="font-size:12.5px;color:#999;text-align:center;padding:18px 0">저장된 레시피가 없습니다.<br>배합을 만든 뒤 💾 저장을 눌러보세요.</div>';return;}
   wrap.innerHTML=calcPresets.map((p,i)=>`
     <div class="preset-item">
       <button class="preset-load" data-i="${i}">${escapeHtml(p.name)}</button>
@@ -1504,12 +1550,13 @@ function renderPresetList(){
     ensureFlours(calc);
     calc.loadedName=p.name; // 불러온 프리셋 이름 표시
     calc.loadedPresetId=p.id; // ===== 덮어쓰기 판별용: 어느 프리셋에서 불러왔는지 기록 =====
+    calcChecked.clear(); // 새 배합을 불러오면 계량 체크 초기화
     saveCalc();renderCalc();
     document.getElementById('presetModal').classList.remove('show');
   }));
   wrap.querySelectorAll('.preset-del').forEach(b=>b.addEventListener('click',()=>{
     const i=+b.dataset.i;if(!calcPresets[i])return;
-    if(confirm(`"${calcPresets[i].name}" 프리셋을 삭제할까요?`)){
+    if(confirm(`"${calcPresets[i].name}" 레시피를 삭제할까요?`)){
       calcPresets.splice(i,1);LS.set(presetsKey(),calcPresets);renderPresetList();
     }
   }));
