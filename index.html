@@ -542,7 +542,7 @@
   <div class="modal-box">
     <h3 id="fModalTitle">새 폴더</h3>
     <div class="field-row">
-      <div class="field"><label>아이콘</label><input type="text" id="fIcon" maxlength="2" placeholder="🧂"></div>
+      <div class="field"><label>아이콘 (선택)</label><input type="text" id="fIcon" maxlength="8" placeholder="비워도 돼요"></div>
       <div class="field"><label>이름</label><input type="text" id="fName" placeholder="예: 소금 / 염도"></div>
     </div>
     <div class="modal-actions">
@@ -878,9 +878,9 @@ function renderFolders(){
   sortedFolders().forEach(f=>{
     const count=tips.filter(t=>t.folderId===f.id).length;
     const el=document.createElement('div');el.className='folder'+(f.id===activeFolderId?' active':'')+(f.pinnedAt?' pinned':'');
-    el.innerHTML=`<button class="f-pin" type="button" title="${f.pinnedAt?'고정 해제':'맨 위에 고정'}">📌</button><span class="f-ico">${escapeHtml(f.icon||'📁')}</span><span>${escapeHtml(f.name)}</span><span class="f-count">${count}</span><button class="f-edit" type="button" title="이름 수정">✎</button><span class="f-del" title="삭제">✕</span>`;
+    el.innerHTML=`<button class="f-pin" type="button" title="${f.pinnedAt?'고정 해제':'맨 위에 고정'}">📌</button>${f.icon?`<span class="f-ico">${escapeHtml(f.icon)}</span>`:''}<span>${escapeHtml(f.name)}</span><span class="f-count">${count}</span><button class="f-edit" type="button" title="이름 수정">✎</button><span class="f-del" title="삭제">✕</span>`;
     el.addEventListener('click',(e)=>{
-      if(e.target.classList.contains('f-edit')){e.stopPropagation();editingFolderId=f.id;document.getElementById('fModalTitle').textContent='폴더 수정';document.getElementById('fSave').textContent='저장';document.getElementById('fIcon').value=f.icon||'📁';document.getElementById('fName').value=f.name;openModal('folderModal');return;}
+      if(e.target.classList.contains('f-edit')){e.stopPropagation();editingFolderId=f.id;document.getElementById('fModalTitle').textContent='폴더 수정';document.getElementById('fSave').textContent='저장';document.getElementById('fIcon').value=f.icon||'';document.getElementById('fName').value=f.name;openModal('folderModal');return;}
       if(e.target.classList.contains('f-pin')){e.stopPropagation();folders=folders.map(x=>x.id===f.id?{...x,pinnedAt:x.pinnedAt?0:Date.now()}:x);LS.set('baking.folders',folders);renderFolders();return;}
       if(e.target.classList.contains('f-del')){e.stopPropagation();if(!confirm(`'${f.name}' 폴더를 삭제할까요?`))return;folders=folders.filter(x=>x.id!==f.id);tips=tips.filter(t=>t.folderId!==f.id);if(activeFolderId===f.id)activeFolderId=sortedFolders()[0]?sortedFolders()[0].id:null;LS.set('baking.folders',folders);LS.set('baking.tips',tips);renderFolders();renderTips();return;}
       activeFolderId=f.id;renderFolders();renderTips();
@@ -888,7 +888,7 @@ function renderFolders(){
     list.appendChild(el);
   });
   const add=document.createElement('button');add.className='add-folder';add.textContent='＋ 폴더 추가';
-  add.addEventListener('click',()=>{editingFolderId=null;document.getElementById('fModalTitle').textContent='새 폴더';document.getElementById('fSave').textContent='추가';document.getElementById('fIcon').value='📁';document.getElementById('fName').value='';openModal('folderModal');});
+  add.addEventListener('click',()=>{editingFolderId=null;document.getElementById('fModalTitle').textContent='새 폴더';document.getElementById('fSave').textContent='추가';document.getElementById('fIcon').value='';document.getElementById('fName').value='';openModal('folderModal');});
   list.appendChild(add);
 }
 function renderTips(){
@@ -896,7 +896,7 @@ function renderTips(){
   const folder=folders.find(f=>f.id===activeFolderId);
   if(!folder){nameEl.textContent='폴더 없음';cntEl.textContent='';tl.innerHTML=`<div class="empty-state"><div class="e-icon">📁</div>폴더를 먼저 만들어보세요.</div>`;return;}
   const fTips=tips.filter(t=>t.folderId===activeFolderId).sort((a,b)=>(b.updated||0)-(a.updated||0));
-  nameEl.textContent=`${folder.icon} ${folder.name}`;cntEl.textContent=`${fTips.length}개의 팁`;tl.innerHTML='';
+  nameEl.textContent=folder.icon?`${folder.icon} ${folder.name}`:folder.name;cntEl.textContent=`${fTips.length}개의 팁`;tl.innerHTML='';
   if(fTips.length===0){tl.innerHTML=`<div class="empty-state"><div class="e-icon">💭</div>이 폴더에 첫 팁을 추가해보세요.</div>`;return;}
   fTips.forEach(t=>{
     const el=document.createElement('div');el.className='tip-item';
@@ -909,7 +909,7 @@ function renderTips(){
 function openTip(id){
   editingTipId=id;const t=id?tips.find(x=>x.id===id):null;
   document.getElementById('tipModalTitle').textContent=t?'팁 수정':'팁 추가';
-  const sel=document.getElementById('tFolder');sel.innerHTML=folders.map(f=>`<option value="${f.id}">${f.icon} ${escapeHtml(f.name)}</option>`).join('');
+  const sel=document.getElementById('tFolder');sel.innerHTML=folders.map(f=>`<option value="${f.id}">${f.icon?escapeHtml(f.icon)+' ':''}${escapeHtml(f.name)}</option>`).join('');
   sel.value=t?t.folderId:(activeFolderId||(folders[0]&&folders[0].id)||'');
   document.getElementById('tTitle').value=t?t.title:'';document.getElementById('tBody').value=t?t.body:'';
   document.getElementById('tDelete').style.display=t?'':'none';openModal('tipModal');
@@ -927,7 +927,7 @@ document.getElementById('tDelete').addEventListener('click',()=>{
 });
 document.getElementById('fSave').addEventListener('click',()=>{
   const name=document.getElementById('fName').value.trim();if(!name){alert('폴더 이름을 입력하세요');return;}
-  const icon=document.getElementById('fIcon').value.trim()||'📁';
+  const icon=document.getElementById('fIcon').value.trim(); // 아이콘은 선택 사항
   if(editingFolderId){folders=folders.map(x=>x.id===editingFolderId?{...x,icon,name}:x);LS.set('baking.folders',folders);activeFolderId=editingFolderId;editingFolderId=null;closeModal('folderModal');renderFolders();renderTips();return;}
   const f={id:uid(),icon,name};
   folders.push(f);LS.set('baking.folders',folders);activeFolderId=f.id;closeModal('folderModal');renderFolders();renderTips();
