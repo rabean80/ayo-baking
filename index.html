@@ -102,6 +102,8 @@
   .folder .f-count{margin-left:auto;font-size:10.5px;background:var(--accent-soft);color:var(--crust-dark);padding:1px 7px;border-radius:100px;font-weight:500}
   .folder .f-del{margin-left:4px;opacity:0;font-size:12px;color:#b84431;cursor:pointer}
   .folder:hover .f-del{opacity:.7}
+  .folder .f-edit{margin-left:4px;opacity:0;font-size:12px;color:var(--ink-3,#8a7558);cursor:pointer;border:none;background:none;padding:0 2px}
+  .folder:hover .f-edit,.folder.active .f-edit{opacity:.7}
   .folder .f-pin{border:none;background:none;padding:2px 3px;font-size:13px;line-height:1;cursor:pointer;opacity:.35;filter:grayscale(1);flex-shrink:0}
   .folder .f-pin:hover{opacity:.7}
   .folder.pinned .f-pin{opacity:1;filter:none}
@@ -538,7 +540,7 @@
 <!-- FOLDER MODAL -->
 <div class="modal-back" id="folderModal">
   <div class="modal-box">
-    <h3>새 폴더</h3>
+    <h3 id="fModalTitle">새 폴더</h3>
     <div class="field-row">
       <div class="field"><label>아이콘</label><input type="text" id="fIcon" maxlength="2" placeholder="🧂"></div>
       <div class="field"><label>이름</label><input type="text" id="fName" placeholder="예: 소금 / 염도"></div>
@@ -870,13 +872,15 @@ document.getElementById('hDelete').addEventListener('click',()=>{
 
 // ── Tips ──
 let editingTipId=null;
+let editingFolderId=null; // 폴더 수정 중이면 해당 id
 function renderFolders(){
   const list=document.getElementById('folderList');list.innerHTML='';
   sortedFolders().forEach(f=>{
     const count=tips.filter(t=>t.folderId===f.id).length;
     const el=document.createElement('div');el.className='folder'+(f.id===activeFolderId?' active':'')+(f.pinnedAt?' pinned':'');
-    el.innerHTML=`<span class="f-ico">${escapeHtml(f.icon||'📁')}</span><span>${escapeHtml(f.name)}</span><span class="f-count">${count}</span><button class="f-pin" type="button" title="${f.pinnedAt?'고정 해제':'맨 위에 고정'}">📌</button><span class="f-del" title="삭제">✕</span>`;
+    el.innerHTML=`<button class="f-pin" type="button" title="${f.pinnedAt?'고정 해제':'맨 위에 고정'}">📌</button><span class="f-ico">${escapeHtml(f.icon||'📁')}</span><span>${escapeHtml(f.name)}</span><span class="f-count">${count}</span><button class="f-edit" type="button" title="이름 수정">✎</button><span class="f-del" title="삭제">✕</span>`;
     el.addEventListener('click',(e)=>{
+      if(e.target.classList.contains('f-edit')){e.stopPropagation();editingFolderId=f.id;document.getElementById('fModalTitle').textContent='폴더 수정';document.getElementById('fSave').textContent='저장';document.getElementById('fIcon').value=f.icon||'📁';document.getElementById('fName').value=f.name;openModal('folderModal');return;}
       if(e.target.classList.contains('f-pin')){e.stopPropagation();folders=folders.map(x=>x.id===f.id?{...x,pinnedAt:x.pinnedAt?0:Date.now()}:x);LS.set('baking.folders',folders);renderFolders();return;}
       if(e.target.classList.contains('f-del')){e.stopPropagation();if(!confirm(`'${f.name}' 폴더를 삭제할까요?`))return;folders=folders.filter(x=>x.id!==f.id);tips=tips.filter(t=>t.folderId!==f.id);if(activeFolderId===f.id)activeFolderId=sortedFolders()[0]?sortedFolders()[0].id:null;LS.set('baking.folders',folders);LS.set('baking.tips',tips);renderFolders();renderTips();return;}
       activeFolderId=f.id;renderFolders();renderTips();
@@ -884,7 +888,7 @@ function renderFolders(){
     list.appendChild(el);
   });
   const add=document.createElement('button');add.className='add-folder';add.textContent='＋ 폴더 추가';
-  add.addEventListener('click',()=>{document.getElementById('fIcon').value='📁';document.getElementById('fName').value='';openModal('folderModal');});
+  add.addEventListener('click',()=>{editingFolderId=null;document.getElementById('fModalTitle').textContent='새 폴더';document.getElementById('fSave').textContent='추가';document.getElementById('fIcon').value='📁';document.getElementById('fName').value='';openModal('folderModal');});
   list.appendChild(add);
 }
 function renderTips(){
@@ -923,7 +927,9 @@ document.getElementById('tDelete').addEventListener('click',()=>{
 });
 document.getElementById('fSave').addEventListener('click',()=>{
   const name=document.getElementById('fName').value.trim();if(!name){alert('폴더 이름을 입력하세요');return;}
-  const f={id:uid(),icon:document.getElementById('fIcon').value.trim()||'📁',name};
+  const icon=document.getElementById('fIcon').value.trim()||'📁';
+  if(editingFolderId){folders=folders.map(x=>x.id===editingFolderId?{...x,icon,name}:x);LS.set('baking.folders',folders);activeFolderId=editingFolderId;editingFolderId=null;closeModal('folderModal');renderFolders();renderTips();return;}
+  const f={id:uid(),icon,name};
   folders.push(f);LS.set('baking.folders',folders);activeFolderId=f.id;closeModal('folderModal');renderFolders();renderTips();
 });
 
