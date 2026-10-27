@@ -747,6 +747,11 @@ const LS = (function(){
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
         body: JSON.stringify({ value: cache[key] })
+      }).then(r => {
+        if(!r.ok){
+          console.warn(`[server] ${key} 저장 실패: HTTP ${r.status}`);
+          alert(`⚠️ 서버 저장에 실패했어요 (${r.status}). 방금 변경한 내용이 저장되지 않았을 수 있어요.`);
+        }
       }).catch(e => console.warn(`[server] ${key} 저장 실패 (오프라인일 수 있음):`, e));
     }, 400);
   }
@@ -854,9 +859,16 @@ function renderHistory(){
 const photoUploadArea=document.getElementById('photoUploadArea');
 const photoInput=document.getElementById('photoInput');
 photoUploadArea.addEventListener('click',()=>photoInput.click());
-photoInput.addEventListener('change',e=>{
-  Array.from(e.target.files).forEach(file=>{const reader=new FileReader();reader.onload=ev=>{editingPhotos.push(ev.target.result);renderPhotoPreviews();};reader.readAsDataURL(file);});
+var photoUploading=0;
+photoInput.addEventListener('change',async e=>{
+  const files=Array.from(e.target.files).filter(f=>f.type.startsWith('image/'));
   photoInput.value='';
+  photoUploading+=files.length;renderPhotoPreviews();
+  for(const file of files){
+    try{ const blob=await compressImage(file); editingPhotos.push(await LS.upload(blob)); }
+    catch(err){ console.warn('[server] 사진 업로드 실패:',err); alert('사진 업로드에 실패했어요. 인터넷 연결을 확인해주세요.'); }
+    finally{ photoUploading--; renderPhotoPreviews(); }
+  }
 });
 function renderPhotoPreviews(){
   const container=document.getElementById('photoPreviews');container.innerHTML='';
@@ -871,6 +883,11 @@ function renderPhotoPreviews(){
     if(i===editingMainPhotoIdx&&editingPhotos.length>1){const badge=document.createElement('div');badge.className='ph-main-badge';badge.textContent='대표';wrap.appendChild(badge);}
     wrap.appendChild(del);container.appendChild(wrap);
   });
+  for(let k=0;k<photoUploading;k++){
+    const ph=document.createElement('div');ph.className='photo-preview-item';
+    ph.style.cssText='display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-4);background:#f6efe3';
+    ph.textContent='업로드 중…';container.appendChild(ph);
+  }
 }
 function openHistory(id){
   editingHistoryId=id;const h=id?histories.find(x=>x.id===id):null;
@@ -887,8 +904,26 @@ function openHistory(id){
   openModal('historyModal');
 }
 document.getElementById('addHistoryBtn').addEventListener('click',()=>openHistory(null));
+// 예전 방식(사진을 데이터에 직접 저장)의 기록을 서버 이미지 주소로 옮김 (해당 기록이 있을 때만 실행)
+(async function migrateHistoryPhotos(){
+  const targets=histories.filter(h=>(h.photos||[]).some(p=>typeof p==='string'&&p.startsWith('data:')));
+  if(!targets.length) return;
+  let changed=false;
+  for(const h of targets){
+    const out=[];
+    for(const p of h.photos){
+      if(typeof p==='string'&&p.startsWith('data:')){
+        try{ const blob=await (await fetch(p)).blob(); out.push(await LS.upload(await compressImage(blob))); changed=true; }
+        catch(e){ console.warn('[server] 기존 사진 이전 실패:',e); out.push(p); }
+      } else out.push(p);
+    }
+    const cur=histories.find(x=>x.id===h.id); if(cur) cur.photos=out;
+  }
+  if(changed){ LS.set('baking.history',histories); renderHistory(); console.log('[server] Journal 사진 서버 이전 완료'); }
+})();
 document.getElementById('hSave').addEventListener('click',()=>{
   const title=document.getElementById('hTitle').value.trim();if(!title){alert('구운 빵의 이름을 입력하세요');return;}
+  if(photoUploading>0){alert('사진을 업로드하는 중이에요. 잠시 후 다시 저장해주세요.');return;}
   const data={date:document.getElementById('hDate').value||new Date().toISOString().slice(0,10),rating:parseInt(document.getElementById('hRating').value,10),title,env:document.getElementById('hEnv').value.trim(),note:document.getElementById('hNote').value,photos:editingPhotos,mainPhotoIdx:editingMainPhotoIdx};
   if(editingHistoryId){histories=histories.map(h=>h.id===editingHistoryId?{...h,...data}:h);}else{histories.push({id:uid(),...data});}
   LS.set('baking.history',histories);closeModal('historyModal');renderHistory();
