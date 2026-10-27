@@ -4,6 +4,8 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,8 +26,16 @@ db.exec(`
   )
 `);
 
+// --- 업로드 폴더 (공정 메모 이미지 등) ---
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const IMG_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+
 // --- 미들웨어 ---
 app.use(express.json({ limit: '5mb' }));
+
+// 업로드된 이미지 조회 (<img> 태그는 헤더를 못 보내므로 인증 없이 제공, 파일명은 랜덤)
+app.use('/api/uploads', express.static(UPLOAD_DIR, { maxAge: '365d', immutable: true }));
 
 // API키 인증 (헬스체크 제외)
 app.use((req, res, next) => {
@@ -67,6 +77,18 @@ app.put('/api/data/:key', (req, res) => {
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
   `).run(req.params.key, value, now);
   res.json({ key: req.params.key, updated_at: now });
+});
+
+// 이미지 업로드 (body: 이미지 바이너리 그대로, Content-Type: image/*)
+// 응답: { url: "/api/uploads/xxxx.jpg" }
+app.post('/api/upload', express.raw({ type: 'image/*', limit: '10mb' }), (req, res) => {
+  const ext = IMG_EXT[(req.headers['content-type'] || '').split(';')[0].trim()];
+  if (!ext || !Buffer.isBuffer(req.body) || !req.body.length) {
+    return res.status(400).json({ error: 'jpeg/png/webp/gif 이미지만 업로드할 수 있어요' });
+  }
+  const name = `${Date.now().toString(36)}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, name), req.body);
+  res.json({ url: `/api/uploads/${name}` });
 });
 
 // 전체 데이터 한 번에 조회 (앱 초기 로딩용 - { key: value, ... } 형태)
