@@ -616,6 +616,19 @@
   </div>
 </div>
 
+<!-- 저장 시 덮어쓰기/새로 저장 선택 모달 -->
+<div class="modal-back" id="saveChoiceModal">
+  <div class="modal-box" style="max-width:380px">
+    <h3>💾 같은 이름의 레시피가 있어요</h3>
+    <p id="saveChoiceMsg" style="font-size:13.5px;color:var(--ink-2);line-height:1.7;margin-bottom:4px"></p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" id="saveChoiceNew" style="justify-content:center;padding:11px 14px;font-size:13.5px">＋ 새 레시피로 저장</button>
+      <button class="btn btn-danger" id="saveChoiceOverwrite" style="justify-content:center;padding:11px 14px;font-size:13.5px">기존 레시피에 덮어쓰기</button>
+      <button class="btn btn-ghost" id="saveChoiceCancel" style="justify-content:center;padding:10px 14px">저장 안 함</button>
+    </div>
+  </div>
+</div>
+
 <!-- 버터→오일 치환 계산 모달 -->
 <div class="modal-back" id="subModal">
   <div class="modal-box" style="max-width:420px">
@@ -1670,10 +1683,25 @@ document.getElementById('priceBookLoadBtn').style.display = calcMode==='cost' ? 
 // ===== 단가계산 끝: 서브탭 전환 =====
 
 // presets save/load (클릭형 메뉴)
-document.getElementById('calcSavePreset').addEventListener('click',()=>{
+// 덮어쓰기/새로 저장 선택 모달 → 'overwrite' | 'new' | null(취소)
+function askSaveChoice(existingName, newName){
+  return new Promise(resolve=>{
+    const m=document.getElementById('saveChoiceModal');
+    document.getElementById('saveChoiceMsg').innerHTML=
+      `기존 레시피 <b>"${escapeHtml(existingName)}"</b>에 덮어쓸지,<br><b>"${escapeHtml(newName)}"</b> 이름으로 새 레시피를 만들지 골라주세요.`;
+    const done=v=>{m.classList.remove('show');m.onclick=null;resolve(v);};
+    document.getElementById('saveChoiceNew').onclick=()=>done('new');
+    document.getElementById('saveChoiceOverwrite').onclick=()=>done('overwrite');
+    document.getElementById('saveChoiceCancel').onclick=()=>done(null);
+    m.onclick=e=>{if(e.target===m)done(null);};
+    m.classList.add('show');
+  });
+}
+document.getElementById('calcSavePreset').addEventListener('click',async ()=>{
   const name=prompt('이 배합을 어떤 이름으로 저장할까요?', calc.loadedName||'내 배합');
   if(!name||!name.trim())return;
   const nm=name.trim();
+  const prevLoadedName=calc.loadedName;
   calc.loadedName=nm;
 
   // ===== 덮어쓰기 지원 시작: 불러온 프리셋을 수정한 경우, 덮어쓸지 새로 저장할지 확인 =====
@@ -1683,8 +1711,9 @@ document.getElementById('calcSavePreset').addEventListener('click',()=>{
     existingIdx = calcPresets.findIndex(p=>p.name===nm);
   }
   if(existingIdx>-1){
-    const overwrite = confirm(`기존 레시피 "${calcPresets[existingIdx].name}"에 덮어쓸까요?\n(취소를 누르면 "${nm}" 이름으로 새 레시피가 저장됩니다)`);
-    if(overwrite){
+    const choice = await askSaveChoice(calcPresets[existingIdx].name, nm);
+    if(!choice){ calc.loadedName=prevLoadedName; return; } // 저장 안 함
+    if(choice==='overwrite'){
       const keepId = calcPresets[existingIdx].id;
       calcPresets[existingIdx] = {id:keepId, name:nm, data:JSON.parse(JSON.stringify(calc))};
       calc.loadedPresetId=keepId;
