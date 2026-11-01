@@ -619,9 +619,7 @@
 <!-- 저장 시 덮어쓰기/새로 저장 선택 모달 -->
 <div class="modal-back" id="saveChoiceModal">
   <div class="modal-box" style="max-width:380px">
-    <h3>💾 같은 이름의 레시피가 있어요</h3>
-    <p id="saveChoiceMsg" style="font-size:13.5px;color:var(--ink-2);line-height:1.7;margin-bottom:4px"></p>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+    <div style="display:flex;flex-direction:column;gap:8px">
       <button class="btn btn-primary" id="saveChoiceNew" style="justify-content:center;padding:11px 14px;font-size:13.5px">＋ 새 레시피로 저장</button>
       <button class="btn btn-danger" id="saveChoiceOverwrite" style="justify-content:center;padding:11px 14px;font-size:13.5px">기존 레시피에 덮어쓰기</button>
       <button class="btn btn-ghost" id="saveChoiceCancel" style="justify-content:center;padding:10px 14px">저장 안 함</button>
@@ -1687,8 +1685,6 @@ document.getElementById('priceBookLoadBtn').style.display = calcMode==='cost' ? 
 function askSaveChoice(existingName, newName){
   return new Promise(resolve=>{
     const m=document.getElementById('saveChoiceModal');
-    document.getElementById('saveChoiceMsg').innerHTML=
-      `기존 레시피 <b>"${escapeHtml(existingName)}"</b>에 덮어쓸지,<br><b>"${escapeHtml(newName)}"</b> 이름으로 새 레시피를 만들지 골라주세요.`;
     const done=v=>{m.classList.remove('show');m.onclick=null;resolve(v);};
     document.getElementById('saveChoiceNew').onclick=()=>done('new');
     document.getElementById('saveChoiceOverwrite').onclick=()=>done('overwrite');
