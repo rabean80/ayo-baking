@@ -125,7 +125,8 @@
   .tip-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px dashed #e0d2b4;gap:10px;flex-wrap:wrap}
   .tip-head .t-folder-name{font-family:'Playfair Display',Georgia,serif;font-size:17px;color:var(--crust-dark);font-weight:600}
   .tip-list{display:flex;flex-direction:column;gap:8px}
-  .tip-item{background:var(--paper-2);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid #ecddbe;position:relative}
+  .tip-item{background:var(--paper-2);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid #ecddbe;position:relative;cursor:pointer}
+  .tip-item:active{background:#f3e7cf}
   .tip-item .t-title{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px}
   .tip-item .t-body{font-size:12.5px;color:var(--ink-2);white-space:pre-wrap;line-height:1.65}
   .tip-item .t-actions{position:absolute;top:10px;right:10px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
@@ -1012,8 +1013,9 @@ function renderTips(){
   fTips.forEach(t=>{
     const el=document.createElement('div');el.className='tip-item';
     el.innerHTML=`<div class="t-title">${escapeHtml(t.title)}</div><div class="t-body">${escapeHtml(t.body||'')}</div><div class="t-actions"><button class="icon-btn edit">✎</button><button class="icon-btn del">🗑</button></div>`;
-    el.querySelector('.edit').addEventListener('click',()=>openTip(t.id));
-    el.querySelector('.del').addEventListener('click',()=>{if(!confirm('이 팁을 삭제할까요?'))return;tips=tips.filter(x=>x.id!==t.id);LS.set('baking.tips',tips);renderFolders();renderTips();});
+    el.addEventListener('click',()=>openTip(t.id));
+    el.querySelector('.edit').addEventListener('click',e=>{e.stopPropagation();openTip(t.id);});
+    el.querySelector('.del').addEventListener('click',e=>{e.stopPropagation();if(!confirm('이 팁을 삭제할까요?'))return;tips=tips.filter(x=>x.id!==t.id);LS.set('baking.tips',tips);renderFolders();renderTips();});
     tl.appendChild(el);
   });
 }
