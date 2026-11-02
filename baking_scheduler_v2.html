@@ -176,6 +176,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 .stage-item.drag-over{background:#fff5ee;border-top:2px solid #b8704a}
 .stage-item .s-name{flex:1;color:#333;font-weight:500}
 .stage-item .s-dur{color:#888;min-width:60px;text-align:right;font-size:11px}
+.stage-item .s-note{display:block;font-size:11px;font-weight:400;color:#9a8a72;margin-top:2px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
 .stage-item .s-group{font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px;white-space:nowrap}
 .stage-item .s-acts{display:flex;gap:3px;margin-left:4px}
 .s-btn{background:transparent;border:none;cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;color:#aaa}
@@ -537,7 +538,7 @@ const LS = (function(){
 function defaultNewStages(){
   return [
     {id:uid(),n:'사전준비',m:30,g:'사전 준비',note:''},
-    {id:uid(),n:'반죽',m:30,g:'반죽',note:''},
+    {id:uid(),n:'반죽',m:15,g:'반죽',note:''},
     {id:uid(),n:'1차발효',m:60,g:'발효',note:''},
     {id:uid(),n:'분할 및 성형',m:30,g:'성형',note:''},
     {id:uid(),n:'2차 발효',m:60,g:'발효',note:''},
@@ -630,6 +631,14 @@ if(!activeProjectId||!projects.find(p=>p.id===activeProjectId)){activeProjectId=
   let changed=false;
   projects.forEach(p=>(p.breads||[]).forEach(b=>{ if(empty(b)){ b.stages=defaultNewStages(); changed=true; } }));
   if(changed) LS.set('sched.projects',projects);
+})();
+// 1회: 자동으로 채워진 기본 공정의 '반죽' 30분 → 15분 (기본값 변경 반영)
+(function migrateDough15(){
+  if(LS.get('sched.migDough15',false)) return;
+  const fix=b=>{ let c=false; (b.stages||[]).forEach(st=>{ if(st.n==='반죽'&&st.g==='반죽'&&+st.m===30){ st.m=15; c=true; } }); return c; };
+  const cb=getCustomBreads(); if(cb.map(fix).some(Boolean)) saveCustomBreads(cb);
+  if(projects.map(p=>(p.breads||[]).map(fix).some(Boolean)).some(Boolean)) LS.set('sched.projects',projects);
+  LS.set('sched.migDough15',true);
 })();
 
 // Active project's data is exposed via the same variable names the rest of the code uses.
@@ -913,7 +922,7 @@ function renderStageList(){
   editingStages.forEach((s,i)=>{
     const gc=getGroupStyle(s.g);
     const el=document.createElement('div');el.className='stage-item';
-    el.innerHTML=`<span class="stage-drag-handle">≡</span><span class="s-name">${s.n}</span><span class="s-group" style="background:${gc.bg};color:${gc.fg}">${s.g}</span><span class="s-dur">${fmtDur(s.m)}</span><div class="s-acts"><button class="s-btn edit">✏️</button><button class="s-btn del">🗑</button></div>`;
+    el.innerHTML=`<span class="stage-drag-handle">≡</span><span class="s-name">${s.n}${s.note?`<span class="s-note">${String(s.note).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`:''}</span><span class="s-dur">${fmtDur(s.m)}</span><div class="s-acts"><button class="s-btn edit">✏️</button><button class="s-btn del">🗑</button></div>`;
     el.querySelector('.edit').addEventListener('click',()=>openStageModal(i));
     el.querySelector('.del').addEventListener('click',()=>{editingStages.splice(i,1);renderStageList();});
     el.setAttribute('draggable','true');
