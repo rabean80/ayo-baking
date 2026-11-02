@@ -633,6 +633,18 @@ if(!activeProjectId||!projects.find(p=>p.id===activeProjectId)){activeProjectId=
   projects.forEach(p=>(p.breads||[]).forEach(b=>{ if(empty(b)){ b.stages=defaultNewStages(); changed=true; } }));
   if(changed) LS.set('sched.projects',projects);
 })();
+// 1회: 숨겨진 채로 남아 있던 빵 정리 (이제 프로젝트의 빵 = 화면에 보이는 빵)
+(function dropHiddenBreads(){
+  if(LS.get('sched.migDropHidden',false)) return;
+  let changed=false;
+  projects.forEach(p=>{
+    const sel=new Set(p.selected||[]);
+    const kept=(p.breads||[]).filter(b=>sel.has(b.id));
+    if(kept.length!==(p.breads||[]).length){ p.breads=kept; changed=true; }
+  });
+  if(changed) LS.set('sched.projects',projects);
+  LS.set('sched.migDropHidden',true);
+})();
 // 1회: 자동으로 채워진 기본 공정의 '반죽' 30분 → 15분 (기본값 변경 반영)
 (function migrateDough15(){
   if(LS.get('sched.migDough15',false)) return;
@@ -758,28 +770,8 @@ document.getElementById('totalBackdrop').addEventListener('click',()=>{document.
 // ========================
 function renderProjPanel(){
   const list=document.getElementById('projList');list.innerHTML='';
-  // Section 1: 이 프로젝트에 있는 빵 전체 (탭=타임라인 표시/숨김, ✕=완전 삭제)
-  if(breads.length){
-    const hd=document.createElement('div');hd.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px';hd.textContent='이 프로젝트의 빵 (탭하여 타임라인 표시/숨김)';
-    list.appendChild(hd);
-    breads.forEach(b=>{
-      const el=document.createElement('div');
-      el.className='proj-item'+(selected.has(b.id)?' active-proj':'');
-      el.innerHTML=`<span class="p-dot" style="background:${b.color}"></span><span class="p-name">${b.name}</span>${selected.has(b.id)?'<span class="p-check">✓</span>':''}<span class="p-remove" title="프로젝트에서 제거" style="font-size:13px;color:#c9a;cursor:pointer;padding:0 4px">✕</span>`;
-      el.addEventListener('click',e=>{
-        if(e.target.classList.contains('p-remove')){
-          e.stopPropagation();
-          breads=breads.filter(x=>x.id!==b.id);selected.delete(b.id);
-          saveActiveProject();renderProjPanel();buildToggles();render();return;
-        }
-        if(selected.has(b.id)){selected.delete(b.id);}else{selected.add(b.id);}
-        saveActiveProject();renderProjPanel();buildToggles();render();
-      });
-      list.appendChild(el);
-    });
-  }
   // Section 2: 라이브러리 — 탭하면 새 사본을 프로젝트에 추가
-  const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:12px 0 4px;padding-top:10px;border-top:1px dashed #e0d2b4';hd2.textContent='빵 라이브러리 (탭하여 프로젝트에 추가)';
+  const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px';hd2.textContent='빵 라이브러리 (탭하여 프로젝트에 추가)';
   list.appendChild(hd2);
   getFullLibrary().forEach(lib=>{
     const el=document.createElement('div');el.className='proj-item';
@@ -1003,12 +995,17 @@ function buildToggles(){
     const btn=document.createElement('button');
     btn.className='toggle-btn active';btn.style.borderColor=b.color;btn.style.background=b.color;btn.style.color='#fff';
     const nameSpan=document.createElement('span');nameSpan.textContent=b.name;
-    const delIco=document.createElement('span');delIco.className='edit-ico';delIco.textContent='✕';delIco.title='타임라인에서 숨기기 (Select Bread에서 다시 켤 수 있어요)';
+    const delIco=document.createElement('span');delIco.className='edit-ico';delIco.textContent='✕';delIco.title='프로젝트에서 제거 (Select Bread 라이브러리에서 다시 추가할 수 있어요)';
     btn.appendChild(nameSpan);btn.appendChild(delIco);
     btn.title='눌러서 공정 보기/수정';
-    // 칩 클릭 = 공정 보기/수정, ✕ = 타임라인에서 숨기기
+    // 칩 클릭 = 공정 보기/수정, ✕ = 프로젝트에서 제거
     btn.addEventListener('click',()=>openBreadModal(b.id));
-    delIco.addEventListener('click',e=>{e.stopPropagation();selected.delete(b.id);LS.set('sched.selected',[...selected]);buildToggles();render();});
+    delIco.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(!confirm(`"${b.name}"을(를) 이 프로젝트에서 뺄까요?\n(라이브러리에 있는 빵은 Select Bread에서 다시 추가할 수 있어요.)`))return;
+      breads=breads.filter(x=>x.id!==b.id);selected.delete(b.id);
+      saveActiveProject();buildToggles();render();
+    });
     cont.appendChild(btn);
   });
 }
