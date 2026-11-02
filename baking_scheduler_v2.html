@@ -622,6 +622,16 @@ if(!projects){
 }
 if(!activeProjectId||!projects.find(p=>p.id===activeProjectId)){activeProjectId=projects[0].id;LS.set('sched.activeProject',activeProjectId);}
 
+// 공정이 비어 있는 기존 빵(라이브러리 + 모든 프로젝트)에 기본 공정 채우기 — 빈 빵이 있을 때만 저장
+(function fillEmptyStages(){
+  const empty=b=>!b.stages||!b.stages.length;
+  const cb=getCustomBreads();
+  if(cb.some(empty)){ cb.forEach(b=>{ if(empty(b)) b.stages=defaultNewStages(); }); saveCustomBreads(cb); }
+  let changed=false;
+  projects.forEach(p=>(p.breads||[]).forEach(b=>{ if(empty(b)){ b.stages=defaultNewStages(); changed=true; } }));
+  if(changed) LS.set('sched.projects',projects);
+})();
+
 // Active project's data is exposed via the same variable names the rest of the code uses.
 function activeProject(){return projects.find(p=>p.id===activeProjectId)||projects[0];}
 let breads,groups,selected;
