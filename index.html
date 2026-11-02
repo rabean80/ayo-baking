@@ -332,6 +332,22 @@
   .preset-load:hover{background:#fff;border-color:var(--accent);transform:translateX(2px)}
   .preset-del{border:1px solid #f2cbc2;background:#fff;color:#b84431;border-radius:8px;padding:0 13px;cursor:pointer;font-size:14px;line-height:1}
   .preset-del:hover{background:#fdefec}
+  /* ===== 르방 버전 섹션 ===== */
+  .levain-box{margin-top:16px;border:1px dashed #d8c9a8;border-radius:10px;padding:12px 14px;background:#fbf6ea}
+  .levain-box.on{border-style:solid;border-color:#c9a86a;background:#fbf3e2}
+  .lv-head{display:flex;align-items:center;gap:10px}
+  .lv-title{font-size:14px;font-weight:700;color:var(--crust-dark)}
+  .lv-sub{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px;line-height:1.5}
+  .lv-switch{position:relative;margin-left:auto;flex:none;width:44px;height:24px;cursor:pointer}
+  .lv-switch input{opacity:0;width:0;height:0;position:absolute}
+  .lv-switch span{position:absolute;inset:0;background:#d9cdb3;border-radius:999px;transition:background .15s ease}
+  .lv-switch span::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .15s ease}
+  .lv-switch input:checked + span{background:var(--accent)}
+  .lv-switch input:checked + span::after{transform:translateX(20px)}
+  .lv-summary{font-size:12px;color:var(--ink-3);margin-top:8px}
+  .levain-box .calc-table{margin-top:10px}
+  .calc-table tr.ci-replaced td{opacity:.35}
+  .calc-table tr.ci-replaced .ci-name{text-decoration:line-through}
   /* ===== 레시피 섹션 ===== */
   .preset-sec{display:flex;flex-direction:column;gap:8px}
   .preset-sec-head{display:flex;align-items:center;gap:8px;width:100%;padding:9px 4px 7px;border:none;border-bottom:1px solid #e6d8bb;background:none;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--crust-dark);cursor:pointer;text-align:left}
@@ -456,6 +472,7 @@
         </tfoot>
       </table>
       <button class="btn btn-ghost calc-addrow" id="calcAddRow">＋ 재료 추가</button>
+      <div class="levain-box" id="levainBox"></div>
     </div>
 
     <!-- 비가 계산기 -->
@@ -633,7 +650,6 @@
     <h3>💾 레시피 저장</h3>
     <div class="field"><label>이름</label><input type="text" id="psName"></div>
     <div class="field"><label>섹션</label><select id="psCategory"></select></div>
-    <label class="chk-row" style="margin:4px 0 6px"><input type="checkbox" id="psLevain"> 르방 사용 <span class="levain-badge" style="margin-left:0">르방</span></label>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="psCancel">취소</button>
       <button class="btn btn-primary" id="psOk">저장</button>
@@ -1180,12 +1196,17 @@ function autoCategory(name){
   return PRESET_UNCAT;
 }
 function autoLevain(name){ return /르방|사워도우/.test(String(name||'')); }
+// 르방 배지: 이름(르방/사워도우) 또는 기본 재료의 르방 줄 또는 르방 버전 섹션에 값이 있으면 자동 표시
+function ingsHaveLevain(list){ return (list||[]).some(i=>/르방/.test(i.name||'') && (parseFloat(i.pct)||0)>0); }
+function presetHasLevain(p){
+  const d=p.data||{};
+  return autoLevain(p.name) || ingsHaveLevain(d.ingredients) || !!(d.levain && ingsHaveLevain(d.levain.ingredients));
+}
 // 섹션/배지 정보가 없는 기존 레시피는 이름으로 1회 자동 분류
 function migratePresetSections(list, key){
   let changed=false;
   (list||[]).forEach(p=>{
     if(!p.category){ p.category=autoCategory(p.name); changed=true; }
-    if(typeof p.levain!=='boolean'){ p.levain=autoLevain(p.name); changed=true; }
   });
   if(changed) LS.set(key, list);
   return list;
@@ -1208,7 +1229,26 @@ const fmtWon=n=>{ if(!isFinite(n)) return '—'; return Math.round(n).toLocaleSt
 const roundPctDisplay=n=>{ const v=Math.round((parseFloat(n)||0)*100)/100; return v; };
 const fmtP=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; return (r%1===0?r.toFixed(0):r.toFixed(1))+'%'; };
 
-function calcTotalPct(){return 100 + calc.ingredients.reduce((s,i)=>s+(parseFloat(i.pct)||0),0);}
+// ===== 르방 버전 시작: 공통 판별/유효 재료 =====
+const lvIsWater=i=>/물/.test(i.name||'') && !/물엿/.test(i.name||'') || /water/i.test(i.name||'');
+const lvIsYeast=i=>/이스트/.test(i.name||'') || /yeast/i.test(i.name||'');
+const lvIsLevain=i=>/르방/.test(i.name||'') || /levain/i.test(i.name||'');
+const lvIsReplaced=i=>lvIsWater(i)||lvIsYeast(i)||lvIsLevain(i);
+function levainActive(){ return calcMode!=='cost' && !!(calc.levain && calc.levain.on); }
+// 현재 계산에 쓰이는 재료: 르방 ON이면 기본 재료의 물·이스트·르방을 빼고 르방 섹션 재료로 대체
+function effIngs(){
+  if(!levainActive()) return calc.ingredients;
+  // 대체되는 첫 재료 자리에 르방 섹션 재료를 끼워 넣어 순서 유지 (프린트/계량 순서용)
+  const out=[]; let placed=false;
+  calc.ingredients.forEach(i=>{
+    if(lvIsReplaced(i)){ if(!placed){ out.push(...(calc.levain.ingredients||[])); placed=true; } }
+    else out.push(i);
+  });
+  if(!placed) out.push(...(calc.levain.ingredients||[]));
+  return out;
+}
+// ===== 르방 버전 끝 =====
+function calcTotalPct(){return 100 + effIngs().reduce((s,i)=>s+(parseFloat(i.pct)||0),0);}
 // ===== 무게 합계 정확도 개선 시작 =====
 // % 값이 정확히 100%로 안 나뉘어도(과거 데이터 등) 무게 합계가 항상 "화면에 보이는 각 행의 무게"를 그대로 더한 값과 일치하도록,
 // %로 역산하지 않고 각 행의 반올림된 무게를 직접 더해서 총합을 구함
@@ -1221,7 +1261,7 @@ function sumDisplayedFlourWeight(){
 function sumDisplayedTotalWeight(){
   let sum=sumDisplayedFlourWeight();
   const F=calc.flour||0;
-  calc.ingredients.forEach(ing=>{ const w=F*(parseFloat(ing.pct)||0)/100; sum += w?Math.round(w*10)/10:0; });
+  effIngs().forEach(ing=>{ const w=F*(parseFloat(ing.pct)||0)/100; sum += w?Math.round(w*10)/10:0; });
   return Math.round(sum*10)/10;
 }
 // ===== 무게 합계 정확도 개선 끝 =====
@@ -1254,6 +1294,7 @@ function refreshCalcWeights(){
     const cell=tr.querySelector('.ci-w');
     if(cell && document.activeElement!==cell){ const g=F*(parseFloat(calc.ingredients[i].pct)||0)/100; cell.value = g? Math.round(g*10)/10 : ''; }
   });
+  refreshLevainWeights();
   renderBiga();
 }
 
@@ -1312,7 +1353,9 @@ function renderCalc(){
     const priceCell = isCost ? `<td><div style="display:flex;gap:4px;align-items:center"><input class="ci-price" type="number" step="1" min="0" value="${ing.price||''}" placeholder="원/kg"><button type="button" class="price-calc-btn" data-type="ing" data-idx="${idx}" title="구매가로 원/kg 환산">🧮</button></div></td>` : '';
     const costCell = isCost ? `<td class="calc-w">${fmtWon(Math.round(w/1000*(ing.price||0)))}원</td>` : '';
     // ===== 단가계산 끝 =====
-    return `<tr data-idx="${idx}"${isChecked?' class="ci-checked"':''}>
+    const isRep = levainActive() && lvIsReplaced(ing);
+    const cls=[isChecked?'ci-checked':'', isRep?'ci-replaced':''].filter(Boolean).join(' ');
+    return `<tr data-idx="${idx}"${cls?` class="${cls}"`:''}${isRep?' title="르방 버전 ON: 아래 르방 섹션 값으로 대체됨"':''}>
       <td class="ci-namecell"><input type="checkbox" class="ci-check" title="계량 완료 체크"${isChecked?' checked':''}><span class="ci-drag" draggable="true" title="드래그하여 순서 변경">≡</span><input class="ci-name" value="${(ing.name||'').replace(/"/g,'&quot;')}" placeholder="재료명">${isCost?`<button type="button" class="price-pick-btn" data-type="ing" data-idx="${idx}" title="단가 사전에서 선택">📖</button>`:''}</td>
       <td><span class="u-box u-pct"><input class="ci-pct" type="number" step="0.1" min="0" value="${roundPctDisplay(ing.pct)}"></span></td>
       <td><span class="u-box u-g"><input class="ci-w" type="number" step="1" min="0" value="${w?Math.round(w*10)/10:''}"></span></td>
@@ -1349,7 +1392,7 @@ function renderCalc(){
     if(unitEl) unitEl.addEventListener('input',e=>{calc.costUnitCount=e.target.value;saveCalc();renderCalc();});
   } else {
     tfoot.innerHTML = `<tr class="calc-total">
-        <td colspan="2">총 완성 반죽 무게</td>
+        <td colspan="2">총 완성 반죽 무게${levainActive()?' <span class="levain-badge">르방 버전</span>':''}</td>
         <td id="calcTotalWeight">—</td>
         <td></td>
       </tr>`;
@@ -1411,6 +1454,7 @@ function renderCalc(){
   tb.querySelectorAll('tr[data-idx]').forEach(tr=>{
     const idx=+tr.dataset.idx;
     tr.querySelector('.ci-name').addEventListener('input',e=>{calc.ingredients[idx].name=e.target.value;saveCalc();renderBiga();});
+    tr.querySelector('.ci-name').addEventListener('change',()=>{ if(levainActive()) renderCalc(); }); // 르방 ON일 때 이름 바뀌면 대체 표시 갱신
     // ===== 계량 체크: 체크 토글 (저장 안 함, 화면에서만 유지) =====
     const chk=tr.querySelector('.ci-check');
     if(chk) chk.addEventListener('change',()=>{const id=calc.ingredients[idx].id; if(chk.checked) calcChecked.add(id); else calcChecked.delete(id); renderCalc();});
@@ -1451,8 +1495,79 @@ function renderCalc(){
   const cdReset=tb.querySelector('.cd-reset');
   if(cdReset) cdReset.addEventListener('click',()=>{calcChecked.clear();renderCalc();});
   renderPresetName();
+  renderLevain();
   renderBiga();
 }
+
+// ===== 르방 버전 시작: 섹션 렌더 =====
+function lvInitFromBase(){
+  const cp=i=>({id:uid(), name:i.name, pct:i.pct});
+  const base=calc.ingredients;
+  const w=base.filter(lvIsWater).map(cp), y=base.filter(lvIsYeast).map(cp), l=base.filter(lvIsLevain).map(cp);
+  if(!w.length) w.push({id:uid(),name:'물',pct:''});
+  if(!y.length) y.push({id:uid(),name:'이스트',pct:''});
+  if(!l.length) l.push({id:uid(),name:'르방',pct:''});
+  return [...w,...y,...l];
+}
+function renderLevain(){
+  const box=document.getElementById('levainBox'); if(!box) return;
+  if(calcMode==='cost'){ box.style.display='none'; return; }
+  box.style.display='';
+  const lv=calc.levain||{on:false,ingredients:[]};
+  const on=!!lv.on, F=calc.flour||0;
+  box.classList.toggle('on',on);
+  let html=`<div class="lv-head"><div><div class="lv-title">🫙 르방 사용</div><span class="lv-sub">켜면 위 기본 재료의 물·이스트·르방이 아래 값으로 대체돼요.</span></div>
+    <label class="lv-switch" title="르방 버전 켜기/끄기"><input type="checkbox" id="lvOn"${on?' checked':''}><span></span></label></div>`;
+  if(on){
+    (lv.ingredients||[]).forEach(i=>{ if(!i.id) i.id=uid(); });
+    html+=`<table class="calc-table"><colgroup><col style="width:48%"><col style="width:20%"><col style="width:24%"><col style="width:8%"></colgroup><tbody id="lvRows">`+
+      (lv.ingredients||[]).map((ing,li)=>{
+        const g=F*(parseFloat(ing.pct)||0)/100, ck=calcChecked.has(ing.id);
+        return `<tr data-lidx="${li}"${ck?' class="ci-checked"':''}>
+          <td class="ci-namecell"><input type="checkbox" class="ci-check lv-check" title="계량 완료 체크"${ck?' checked':''}><input class="ci-name lv-name" value="${escapeHtml(ing.name||'')}" placeholder="재료명"></td>
+          <td><span class="u-box u-pct"><input class="lv-pct" type="number" step="0.1" min="0" value="${roundPctDisplay(ing.pct)}"></span></td>
+          <td><span class="u-box u-g"><input class="lv-w" type="number" step="1" min="0" value="${g?Math.round(g*10)/10:''}"></span></td>
+          <td><button class="calc-del lv-del" title="삭제">✕</button></td></tr>`;
+      }).join('')+`</tbody></table>
+      <button class="btn btn-ghost calc-addrow" id="lvAdd" type="button">＋ 재료 추가</button>`;
+  } else if((lv.ingredients||[]).some(i=>(parseFloat(i.pct)||0)>0)){
+    html+=`<div class="lv-summary">저장된 르방 버전: ${lv.ingredients.filter(i=>(i.name||'').trim()).map(i=>`${escapeHtml(i.name)} ${fmtP(parseFloat(i.pct)||0)}`).join(' · ')}</div>`;
+  }
+  box.innerHTML=html;
+  document.getElementById('lvOn').addEventListener('change',e=>{
+    if(!calc.levain) calc.levain={on:false,ingredients:[]};
+    calc.levain.on=e.target.checked;
+    if(calc.levain.on && !(calc.levain.ingredients||[]).length) calc.levain.ingredients=lvInitFromBase();
+    saveCalc(); renderCalc();
+  });
+  if(!on) return;
+  box.querySelectorAll('#lvRows tr[data-lidx]').forEach(tr=>{
+    const li=+tr.dataset.lidx, ing=calc.levain.ingredients[li];
+    tr.querySelector('.lv-name').addEventListener('input',e=>{ing.name=e.target.value;saveCalc();renderBiga();});
+    tr.querySelector('.lv-check').addEventListener('change',e=>{ if(e.target.checked) calcChecked.add(ing.id); else calcChecked.delete(ing.id); renderLevain(); });
+    const pEl=tr.querySelector('.lv-pct');
+    pEl.addEventListener('change',()=>{ing.pct=pEl.value;saveCalc();refreshCalcWeights();});
+    pEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();pEl.blur();}});
+    const wEl=tr.querySelector('.lv-w');
+    wEl.addEventListener('change',()=>{const g=parseFloat(wEl.value)||0; if(F>0){ing.pct=Math.round((g/F*100)*1e6)/1e6;} saveCalc();renderCalc();});
+    wEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();wEl.blur();}});
+    tr.querySelector('.lv-del').addEventListener('click',()=>{calcChecked.delete(ing.id);calc.levain.ingredients.splice(li,1);saveCalc();renderCalc();});
+  });
+  document.getElementById('lvAdd').addEventListener('click',()=>{
+    calc.levain.ingredients.push({id:uid(),name:'',pct:0});saveCalc();renderCalc();
+    const ns=document.querySelectorAll('#lvRows .lv-name'); if(ns.length) ns[ns.length-1].focus();
+  });
+}
+// 르방 섹션 분량 셀만 갱신 (포커스 유지)
+function refreshLevainWeights(){
+  if(!levainActive()) return;
+  const F=calc.flour||0;
+  document.querySelectorAll('#lvRows tr[data-lidx]').forEach(tr=>{
+    const ing=calc.levain.ingredients[+tr.dataset.lidx]; const cell=tr.querySelector('.lv-w');
+    if(ing && cell && document.activeElement!==cell){ const g=F*(parseFloat(ing.pct)||0)/100; cell.value=g?Math.round(g*10)/10:''; }
+  });
+}
+// ===== 르방 버전 끝 =====
 
 function renderBiga(){
   const F=calc.flour||0;
@@ -1470,9 +1585,9 @@ function renderBiga(){
   // 재료 이름으로 물/이스트 자동 판별 (물·찬물·끓는물 등 / 이스트 종류)
   const isWater=i=>/물/.test(i.name||'')||/water/i.test(i.name||'');
   const isYeast=i=>/이스트/.test(i.name||'')||/yeast/i.test(i.name||'');
-  const totalWater=calc.ingredients.filter(isWater).reduce((s,i)=>s+F*(parseFloat(i.pct)||0)/100,0);
-  const totalYeast=calc.ingredients.filter(isYeast).reduce((s,i)=>s+F*(parseFloat(i.pct)||0)/100,0);
-  const others=calc.ingredients.filter(i=>!isWater(i)&&!isYeast(i));
+  const totalWater=effIngs().filter(isWater).reduce((s,i)=>s+F*(parseFloat(i.pct)||0)/100,0);
+  const totalYeast=effIngs().filter(isYeast).reduce((s,i)=>s+F*(parseFloat(i.pct)||0)/100,0);
+  const others=effIngs().filter(i=>!isWater(i)&&!isYeast(i));
   const bigaFlour=F*ratio/100;
   const bigaWater=bigaFlour*hyd/100;
   const bigaYeast=bigaFlour*byeast/100;
@@ -1510,6 +1625,7 @@ document.getElementById('calcFlour').addEventListener('input',e=>{calc.flour=par
   updateFlourCells();
   document.getElementById('calcTotalWeight').textContent=fmt(sumDisplayedTotalWeight());
   document.querySelectorAll('#calcRows tr[data-idx]').forEach(tr=>{const i=+tr.dataset.idx;const cell=tr.querySelector('.ci-w');if(cell&&document.activeElement!==cell){const g=calc.flour*(parseFloat(calc.ingredients[i].pct)||0)/100;cell.value=g?Math.round(g*10)/10:'';}});
+  refreshLevainWeights();
   renderBiga();
 });
 document.getElementById('calcRevBtn').addEventListener('click',()=>{
@@ -1747,20 +1863,19 @@ function askSaveChoice(existingName, newName){
     m.classList.add('show');
   });
 }
-// 저장 모달 → {name, category, levain} | null(취소)
-function askPresetSave(defName, defCat, defLevain){
+// 저장 모달 → {name, category} | null(취소)
+function askPresetSave(defName, defCat){
   return new Promise(resolve=>{
     const m=document.getElementById('presetSaveModal');
     const nameEl=document.getElementById('psName');
     const catEl=document.getElementById('psCategory');
-    const lvEl=document.getElementById('psLevain');
     catEl.innerHTML=[...PRESET_SECTIONS,PRESET_UNCAT].map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-    nameEl.value=defName; catEl.value=defCat; lvEl.checked=!!defLevain;
+    nameEl.value=defName; catEl.value=defCat;
     const done=v=>{m.classList.remove('show');m.onclick=null;nameEl.onkeydown=null;resolve(v);};
     const ok=()=>{
       const nm=nameEl.value.trim();
       if(!nm){nameEl.focus();return;}
-      done({name:nm, category:catEl.value, levain:lvEl.checked});
+      done({name:nm, category:catEl.value});
     };
     document.getElementById('psOk').onclick=ok;
     document.getElementById('psCancel').onclick=()=>done(null);
@@ -1771,17 +1886,16 @@ function askPresetSave(defName, defCat, defLevain){
   });
 }
 document.getElementById('calcSavePreset').addEventListener('click',async ()=>{
-  // 불러온 레시피가 있으면 그 섹션/배지로, 없으면 이름으로 자동 추정해서 미리 채움
+  // 불러온 레시피가 있으면 그 섹션으로, 없으면 이름으로 자동 추정해서 미리 채움
   const srcPreset = calc.loadedPresetId ? calcPresets.find(p=>p.id===calc.loadedPresetId) : null;
   const defName = calc.loadedName||'내 배합';
   const res = await askPresetSave(
     defName,
-    (srcPreset&&srcPreset.category) || autoCategory(defName),
-    srcPreset && typeof srcPreset.levain==='boolean' ? srcPreset.levain : autoLevain(defName)
+    (srcPreset&&srcPreset.category) || autoCategory(defName)
   );
   if(!res)return;
   const nm=res.name;
-  const secInfo={category:res.category, levain:res.levain};
+  const secInfo={category:res.category};
   const prevLoadedName=calc.loadedName;
   calc.loadedName=nm;
 
@@ -1849,7 +1963,7 @@ function renderPresetList(){
       <button class="preset-sec-head"><span class="arrow">▶</span>${escapeHtml(c)}<span class="cnt">${groups[c].length}</span></button>
       <div class="preset-sec-body">${groups[c].map(({p,i})=>`
         <div class="preset-item">
-          <button class="preset-load" data-i="${i}">${escapeHtml(p.name)}${p.levain?'<span class="levain-badge">르방</span>':''}</button>
+          <button class="preset-load" data-i="${i}">${escapeHtml(p.name)}${presetHasLevain(p)?'<span class="levain-badge">르방</span>':''}</button>
           <button class="preset-del" data-i="${i}" title="삭제">🗑</button>
         </div>`).join('')}
       </div>
@@ -1886,13 +2000,13 @@ function buildPrintCard(){
   const F=calc.flour||0;
   const d=new Date();
   const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  const title=(calc.loadedName&&calc.loadedName.trim())?calc.loadedName:'베이커스 퍼센티지 배합';
+  const title=((calc.loadedName&&calc.loadedName.trim())?calc.loadedName:'베이커스 퍼센티지 배합') + (levainActive()?' (르방 버전)':'');
   const ps=flourPctSum();
   const flourRows=calc.flours.map(f=>{
     const g=F*(parseFloat(f.pct)||0)/100;
     return `<tr><td class="pc-sub">${escapeHtml(f.name||'밀가루')}</td><td class="pc-num">${fmtP(parseFloat(f.pct)||0)}</td><td class="pc-num">${fmt(g)}</td></tr>`;
   }).join('');
-  const ingRows=calc.ingredients.map(i=>{
+  const ingRows=effIngs().map(i=>{
     const g=F*(parseFloat(i.pct)||0)/100;
     return `<tr><td>${escapeHtml(i.name||'재료')}</td><td class="pc-num">${fmtP(parseFloat(i.pct)||0)}</td><td class="pc-num">${fmt(g)}</td></tr>`;
   }).join('');
