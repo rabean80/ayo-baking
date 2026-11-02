@@ -540,7 +540,21 @@ const LIBRARY=DEFAULT_BREADS;
 // 사용자가 개별로 추가한 커스텀 빵 (어떤 프로젝트에도 속하지 않고, Select Bread 패널에서만 노출됨)
 function getCustomBreads(){ return LS.get('sched.customBreads', []); }
 function saveCustomBreads(arr){ LS.set('sched.customBreads', arr); }
-function getFullLibrary(){ return [...DEFAULT_BREADS, ...getCustomBreads()]; }
+// 라이브러리에서 삭제한 기본 빵 (기본 빵은 코드에 고정돼 있어 이름으로 숨김 처리)
+function getRemovedDefaults(){ return LS.get('sched.removedDefaults', []); }
+function getFullLibrary(){
+  const removed=getRemovedDefaults();
+  return [...DEFAULT_BREADS.filter(b=>!removed.includes(b.name)).map(b=>({...b,_default:true})), ...getCustomBreads()];
+}
+// 라이브러리에서 빵 삭제 (프로젝트에 이미 추가된 빵은 영향 없음)
+function deleteLibraryBread(lib){
+  if(lib._default){
+    const removed=getRemovedDefaults();
+    if(!removed.includes(lib.name)){ removed.push(lib.name); LS.set('sched.removedDefaults', removed); }
+  } else {
+    saveCustomBreads(getCustomBreads().filter(b=>b.id!==lib.id));
+  }
+}
 
 // 외부(Calculator 등)에서 이름/메모만으로 커스텀 빵을 라이브러리에 추가
 window.addLibraryBreadFromExternal = function(name, recipeNotes){
@@ -738,8 +752,13 @@ function renderProjPanel(){
   list.appendChild(hd2);
   getFullLibrary().forEach(lib=>{
     const el=document.createElement('div');el.className='proj-item';
-    el.innerHTML=`<span class="p-dot" style="background:${lib.color}"></span><span class="p-name">${lib.name}</span><span style="font-size:13px;color:#5DCAA5;font-weight:700">＋</span>`;
-    el.addEventListener('click',()=>{
+    el.innerHTML=`<span class="p-dot" style="background:${lib.color}"></span><span class="p-name">${lib.name}</span><span style="font-size:13px;color:#5DCAA5;font-weight:700">＋</span><span class="p-libdel" title="라이브러리에서 삭제" style="font-size:13px;cursor:pointer;padding:0 2px 0 8px;opacity:.7">🗑</span>`;
+    el.addEventListener('click',e=>{
+      if(e.target.classList.contains('p-libdel')){
+        e.stopPropagation();
+        if(confirm(`"${lib.name}"을(를) 빵 라이브러리에서 삭제할까요?\n(이미 프로젝트에 추가된 빵은 그대로 남아요.)`)){ deleteLibraryBread(lib); renderProjPanel(); }
+        return;
+      }
       const nb={...lib,id:uid(),targetDate:(activeProject().defaultDate||getTodayStr()),targetTime:DEFAULT_TIME,stages:lib.stages.map(s=>({...s,id:uid()}))};
       breads.push(nb);selected.add(nb.id);
       saveActiveProject();renderProjPanel();buildToggles();render();
