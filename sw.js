@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ayo-baking-v4'; // GET 이외 요청 캐싱 버그 수정
+const CACHE_NAME = 'ayo-baking-v5'; // 페이지(iframe 포함)는 항상 서버에 새 버전 확인
 const ASSETS = [
   '/',
   '/index.html',
@@ -28,8 +28,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || !req.url.startsWith('http')) return;
+  // 페이지 요청(메인/iframe 스케줄러)은 브라우저 캐시를 쓰지 않고 서버에 변경 여부 확인 → 배포 후 강력 새로고침 불필요
+  const fresh = req.mode === 'navigate' ? fetch(req, { cache: 'no-cache' }) : fetch(req);
   e.respondWith(
-    fetch(req)
+    fresh
       .then(res => {
         const clone = res.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(req, clone)).catch(() => {});

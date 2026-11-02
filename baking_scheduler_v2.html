@@ -35,7 +35,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 .toggles{display:flex;gap:6px;flex-wrap:wrap;flex:1}
 .toggle-btn{padding:5px 11px;border-radius:20px;border:1.5px solid;font-size:12px;font-weight:500;cursor:pointer;background:transparent;transition:all .15s;color:#1a1a1a;display:inline-flex;align-items:center;gap:4px}
 .toggle-btn.active{color:#fff}
-.toggle-btn .edit-ico{font-size:10px;opacity:.7;cursor:pointer;padding:1px 3px;border-radius:3px}
+.toggle-btn .edit-ico{font-size:11px;font-weight:700;opacity:.8;cursor:pointer;padding:1px 5px;margin-left:2px;border-radius:50%}
 .toggle-btn .edit-ico:hover{opacity:1;background:rgba(255,255,255,.25)}
 .action-btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .btn{padding:5px 12px;border-radius:20px;border:1px solid #ccc;font-size:12px;cursor:pointer;background:#fff;color:#444;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
@@ -970,10 +970,12 @@ function buildToggles(){
     const btn=document.createElement('button');
     btn.className='toggle-btn active';btn.style.borderColor=b.color;btn.style.background=b.color;btn.style.color='#fff';
     const nameSpan=document.createElement('span');nameSpan.textContent=b.name;
-    const editIco=document.createElement('span');editIco.className='edit-ico';editIco.textContent='✏️';
-    btn.appendChild(nameSpan);btn.appendChild(editIco);
-    nameSpan.addEventListener('click',()=>{selected.delete(b.id);LS.set('sched.selected',[...selected]);buildToggles();render();});
-    editIco.addEventListener('click',e=>{e.stopPropagation();openBreadModal(b.id);});
+    const delIco=document.createElement('span');delIco.className='edit-ico';delIco.textContent='✕';delIco.title='타임라인에서 숨기기 (Select Bread에서 다시 켤 수 있어요)';
+    btn.appendChild(nameSpan);btn.appendChild(delIco);
+    btn.title='눌러서 공정 보기/수정';
+    // 칩 클릭 = 공정 보기/수정, ✕ = 타임라인에서 숨기기
+    btn.addEventListener('click',()=>openBreadModal(b.id));
+    delIco.addEventListener('click',e=>{e.stopPropagation();selected.delete(b.id);LS.set('sched.selected',[...selected]);buildToggles();render();});
     cont.appendChild(btn);
   });
 }
