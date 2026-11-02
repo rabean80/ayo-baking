@@ -1002,7 +1002,6 @@ function buildToggles(){
     btn.addEventListener('click',()=>openBreadModal(b.id));
     delIco.addEventListener('click',e=>{
       e.stopPropagation();
-      if(!confirm(`"${b.name}"을(를) 이 프로젝트에서 뺄까요?\n(라이브러리에 있는 빵은 Select Bread에서 다시 추가할 수 있어요.)`))return;
       breads=breads.filter(x=>x.id!==b.id);selected.delete(b.id);
       saveActiveProject();buildToggles();render();
     });
