@@ -609,6 +609,10 @@
         <div class="field"><label>1차 발효 시간</label><input type="text" id="hlBulkTime" placeholder="예: 5h 30m"></div>
         <div class="field"><label>1차 부피 증가 (%)</label><input type="number" inputmode="decimal" id="hlBulkRise" placeholder="60"></div>
       </div>
+      <div class="field-row">
+        <div class="field"><label>2차 발효 방식</label><input type="text" id="hlProofMethod" placeholder="예: 냉장 4°C / 실온"></div>
+        <div class="field"><label>2차 발효 시간</label><input type="text" id="hlProofTime" placeholder="예: 12h"></div>
+      </div>
       <div class="bl-group">굽기</div>
       <div class="field-row">
         <div class="field"><label>예열</label><input type="text" id="hlPreheat" placeholder="예: 스톤 270°C 1h"></div>
@@ -947,7 +951,7 @@ function escapeHtml(s){if(s==null)return '';return String(s).replace(/&/g,'&amp;
 // ── History ──
 let editingHistoryId=null,editingPhotos=[],editingMainPhotoIdx=0;
 // 굽기 기록 (구조화 칸) — h.log에 저장
-const HLOG_FIELDS=[['doughWeight','hlDoughWeight'],['pieces','hlPieces'],['doughTemp','hlDoughTemp'],['bulkTime','hlBulkTime'],['bulkRise','hlBulkRise'],['preheat','hlPreheat'],['steam','hlSteam'],['bakeSteps','hlBakeSteps'],['bakedWeight','hlBakedWeight']];
+const HLOG_FIELDS=[['doughWeight','hlDoughWeight'],['pieces','hlPieces'],['doughTemp','hlDoughTemp'],['bulkTime','hlBulkTime'],['bulkRise','hlBulkRise'],['proofMethod','hlProofMethod'],['proofTime','hlProofTime'],['preheat','hlPreheat'],['steam','hlSteam'],['bakeSteps','hlBakeSteps'],['bakedWeight','hlBakedWeight']];
 function hlogLoss(log){
   const a=parseFloat(log&&log.doughWeight),b=parseFloat(log&&log.bakedWeight);
   if(!(a>0)||!(b>0)||b>a) return null;
@@ -960,6 +964,7 @@ function hlogChips(log){
   else if(log.pieces) c.push(`${log.pieces}덩이`);
   if(log.doughTemp) c.push(`반죽 ${log.doughTemp}°C`);
   if(log.bulkTime||log.bulkRise) c.push(`1차 ${[log.bulkTime,log.bulkRise?'+'+log.bulkRise+'%':''].filter(Boolean).join(' ')}`);
+  if(log.proofMethod||log.proofTime) c.push(`2차 ${[log.proofMethod,log.proofTime].filter(Boolean).join(' ')}`);
   if(log.preheat) c.push(`예열 ${log.preheat}`);
   if(log.steam) c.push(`스팀 ${log.steam}`);
   const loss=hlogLoss(log); if(loss!=null) c.push(`수분 손실 ${loss}%`);
