@@ -87,6 +87,31 @@
   .h-body .h-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px}
   .h-body .h-note{font-size:12.5px;color:var(--ink-3);white-space:pre-wrap;word-break:break-word}
   .h-body .h-env{font-size:11px;color:var(--ink-4);margin-top:3px}
+  /* Journal: 월별 구분 + 접힌 카드 */
+  .h-layout{display:grid;grid-template-columns:120px 1fr;gap:20px;align-items:start}
+  .h-nav{position:sticky;top:12px;display:flex;flex-direction:column;gap:2px;max-height:calc(100vh - 24px);overflow-y:auto}
+  .h-nav:empty{display:none}
+  .h-nav-year{font-family:'Playfair Display',Georgia,serif;font-size:13px;font-weight:600;color:var(--crust-dark);padding:8px 10px 4px}
+  .h-nav button{border:none;background:none;text-align:left;font-family:inherit;font-size:13px;color:var(--ink-3);padding:6px 10px;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
+  .h-nav button .n{font-size:11px;color:var(--ink-4)}
+  .h-nav button:hover{background:var(--paper-2)}
+  .h-nav button.active{background:var(--accent-soft);color:var(--crust-dark);font-weight:600}
+  .h-month{margin-bottom:14px}
+  .h-month-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;width:100%;border:none;background:var(--paper);font-family:inherit;text-align:left;padding:10px 2px;margin-bottom:6px;cursor:pointer;border-bottom:1px solid #ece1c9;color:var(--crust-dark);font-size:14px;font-weight:600}
+  .h-month-head .n{font-size:12px;color:var(--ink-4);font-weight:400}
+  .h-month-head .tg{margin-left:auto;font-size:11px;color:var(--ink-4)}
+  .h-month.closed .history-list{display:none}
+  .h-body .h-note.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .h-more{border:none;background:none;padding:2px 0;margin-top:2px;font-family:inherit;font-size:12px;color:var(--accent);font-weight:600;cursor:pointer}
+  .h-photo-count{font-size:10.5px;color:var(--ink-4);text-align:center;margin-top:2px}
+  @media(max-width:720px){
+    .h-layout{grid-template-columns:1fr;gap:6px}
+    .h-nav{top:0;z-index:3;flex-direction:row;align-items:center;overflow-x:auto;overflow-y:hidden;max-height:none;background:var(--paper);padding:6px 0;margin:0 -4px;scrollbar-width:none}
+    .h-nav::-webkit-scrollbar{display:none}
+    .h-nav-year{padding:4px 4px 4px 8px;font-size:12px}
+    .h-nav button{flex-shrink:0;border:1px solid #e6d7b8;border-radius:16px;padding:5px 12px;font-size:12.5px}
+    .h-month-head{top:var(--hnav-h,44px)}
+  }
   .h-log{display:flex;flex-wrap:wrap;gap:4px;margin:3px 0 6px}
   .h-log span{font-size:11px;color:var(--crust-dark);background:#f3e6cf;border-radius:10px;padding:2px 8px}
   .bake-log{border:1px solid #ece1c9;border-radius:10px;padding:8px 12px;margin-bottom:12px;background:#fffaf2}
@@ -549,7 +574,10 @@
         </div>
         <button class="btn btn-primary" id="addHistoryBtn">＋ 기록 추가</button>
       </div>
-      <div class="history-list" id="historyList"></div>
+      <div class="h-layout">
+        <nav class="h-nav" id="historyNav"></nav>
+        <div id="historyList"></div>
+      </div>
     </div>
   </section>
 
@@ -975,38 +1003,103 @@ function updateHlogLoss(){
   document.getElementById('hlLoss').textContent=loss==null?'—':`${loss}%`;
 }
 ['hlDoughWeight','hlBakedWeight'].forEach(id=>document.getElementById(id).addEventListener('input',updateHlogLoss));
+// 월별 접힘 상태 (가장 최근 달만 펼친 채 시작) + 펼친 카드
+let historyClosedMonths=null;const historyExpanded=new Set();
+function historyMonthKey(h){return (h.date||'').slice(0,7)||'날짜 없음';}
 function renderHistory(){
-  const list=document.getElementById('historyList');list.innerHTML='';
+  const list=document.getElementById('historyList');const nav=document.getElementById('historyNav');
+  list.innerHTML='';nav.innerHTML='';
   if(histories.length===0){list.innerHTML=`<div class="empty-state"><div class="e-icon">🕰️</div>아직 기록이 없어요. 오늘 구운 빵부터 남겨볼까요?</div>`;return;}
-  histories.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(h=>{
-    const d=new Date(h.date);const dow=['일','월','화','수','목','금','토'][d.getDay()];
-    const stars='★'.repeat(h.rating||0)+'☆'.repeat(5-(h.rating||0));
-    const el=document.createElement('div');el.className='history-item';
-    // Photos on the right
-    let photosHtml='';
-    if(h.photos&&h.photos.length>0){
-      const mainIdx=h.mainPhotoIdx||0;
-      if(h.photos.length===1){
-        photosHtml=`<div class="h-photos"><img class="h-photo main-photo" src="${h.photos[0]}" alt="사진"></div>`;
-      } else {
-        photosHtml='<div class="h-photos">'+h.photos.map((src,i)=>`<img class="h-photo${i===mainIdx?' main-photo':''}" src="${src}" alt="사진">`).join('')+'</div>';
-      }
-    }
-    el.innerHTML=`
-      <div class="h-left">
-        <div class="h-date">${d.getMonth()+1}/${d.getDate()}<div class="dow">${d.getFullYear()} · ${dow}</div></div>
-      </div>
-      <div class="h-body">
-        <div class="h-title">${escapeHtml(h.title||'')}</div>
-        ${hlogChips(h.log)}
-        <div class="h-note">${escapeHtml(h.note||'')}</div>
-        ${h.env?`<div class="h-env">🌡 ${escapeHtml(h.env)}</div>`:''}
-        <div class="h-rating">${stars}</div>
-      </div>
-      ${photosHtml}`;
-    el.addEventListener('click',()=>openHistory(h.id));list.appendChild(el);
+  const sorted=histories.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const groups=[];sorted.forEach(h=>{const k=historyMonthKey(h);let g=groups[groups.length-1];if(!g||g.key!==k){g={key:k,items:[]};groups.push(g);}g.items.push(h);});
+  if(!historyClosedMonths) historyClosedMonths=new Set(groups.slice(1).map(g=>g.key));
+  let lastYear=null;
+  groups.forEach(g=>{
+    const [y,m]=g.key.split('-');const label=m?`${y}년 ${parseInt(m,10)}월`:g.key;
+    // 내비게이션
+    if(y!==lastYear&&m){const yl=document.createElement('div');yl.className='h-nav-year';yl.textContent=y;nav.appendChild(yl);lastYear=y;}
+    const nb=document.createElement('button');nb.dataset.ym=g.key;
+    nb.innerHTML=`<span>${m?parseInt(m,10)+'월':escapeHtml(g.key)}</span><span class="n">${g.items.length}</span>`;
+    nb.addEventListener('click',()=>jumpToMonth(g.key));nav.appendChild(nb);
+    // 월 섹션
+    const sec=document.createElement('section');sec.className='h-month'+(historyClosedMonths.has(g.key)?' closed':'');sec.id='hm-'+g.key;
+    const head=document.createElement('button');head.className='h-month-head';
+    head.innerHTML=`<span>${escapeHtml(label)}</span><span class="n">${g.items.length}개</span><span class="tg">${historyClosedMonths.has(g.key)?'펼치기 ▾':'접기 ▴'}</span>`;
+    head.addEventListener('click',()=>{if(historyClosedMonths.has(g.key))historyClosedMonths.delete(g.key);else historyClosedMonths.add(g.key);renderHistory();});
+    sec.appendChild(head);
+    const ul=document.createElement('div');ul.className='history-list';
+    g.items.forEach(h=>ul.appendChild(historyCard(h)));
+    sec.appendChild(ul);list.appendChild(sec);
+  });
+  // 메모가 3줄을 넘을 때만 '더보기' 표시
+  requestAnimationFrame(measureHistoryNotes);
+  updateHistoryNavActive();
+}
+function measureHistoryNotes(){
+  document.querySelectorAll('#historyList .h-more').forEach(btn=>{
+    if(btn.dataset.keep)return;const n=btn.parentElement.querySelector('.h-note.clamp');
+    if(n&&n.clientHeight>0)btn.style.display=n.scrollHeight>n.clientHeight+2?'':'none';
   });
 }
+document.querySelector('.tab-btn[data-tab="history"]').addEventListener('click',()=>requestAnimationFrame(()=>{measureHistoryNotes();updateHistoryNavActive();}));
+function historyCard(h){
+  const d=new Date(h.date);const dow=['일','월','화','수','목','금','토'][d.getDay()];
+  const stars='★'.repeat(h.rating||0)+'☆'.repeat(5-(h.rating||0));
+  const open=historyExpanded.has(h.id);
+  const el=document.createElement('div');el.className='history-item';
+  let photosHtml='';
+  const photos=h.photos||[];
+  if(photos.length){
+    const mainIdx=Math.min(h.mainPhotoIdx||0,photos.length-1);
+    if(open&&photos.length>1){
+      photosHtml='<div class="h-photos">'+photos.map((src,i)=>`<img class="h-photo${i===mainIdx?' main-photo':''}" src="${src}" alt="사진" loading="lazy">`).join('')+'</div>';
+    } else {
+      photosHtml=`<div><div class="h-photos"><img class="h-photo main-photo" src="${photos[mainIdx]}" alt="사진" loading="lazy"></div>${photos.length>1?`<div class="h-photo-count">+${photos.length-1}장</div>`:''}</div>`;
+    }
+  }
+  el.innerHTML=`
+    <div class="h-left">
+      <div class="h-date">${d.getMonth()+1}/${d.getDate()}<div class="dow">${d.getFullYear()} · ${dow}</div></div>
+    </div>
+    <div class="h-body">
+      <div class="h-title">${escapeHtml(h.title||'')}</div>
+      ${hlogChips(h.log)}
+      ${h.note?`<div class="h-note${open?'':' clamp'}">${escapeHtml(h.note)}</div>`:''}
+      ${(h.note||photos.length>1)?`<button class="h-more"${(open||photos.length>1)?' data-keep="1"':''}${!open&&!(photos.length>1)?' style="display:none"':''}>${open?'접기 ▴':'더보기 ▾'}</button>`:''}
+      ${h.env?`<div class="h-env">🌡 ${escapeHtml(h.env)}</div>`:''}
+      <div class="h-rating">${stars}</div>
+    </div>
+    ${photosHtml}`;
+  const more=el.querySelector('.h-more');
+  if(more) more.addEventListener('click',e=>{e.stopPropagation();if(historyExpanded.has(h.id))historyExpanded.delete(h.id);else historyExpanded.add(h.id);renderHistory();});
+  el.addEventListener('click',()=>openHistory(h.id));
+  return el;
+}
+function jumpToMonth(key){
+  if(historyClosedMonths&&historyClosedMonths.has(key)){historyClosedMonths.delete(key);renderHistory();}
+  const sec=document.getElementById('hm-'+key);if(!sec)return;
+  const navH=window.matchMedia('(max-width:720px)').matches?document.getElementById('historyNav').offsetHeight:0;
+  window.scrollTo({top:sec.getBoundingClientRect().top+window.scrollY-navH-4,behavior:'smooth'});
+  historyNavLock=Date.now()+1000;setHistoryNavActive(key);
+}
+let historyNavLock=0;
+function setHistoryNavActive(key){
+  const nav=document.getElementById('historyNav');
+  nav.querySelectorAll('button').forEach(b=>{
+    const on=b.dataset.ym===key;b.classList.toggle('active',on);
+    if(on&&nav.scrollWidth>nav.clientWidth){nav.scrollTo({left:b.offsetLeft-nav.clientWidth/2+b.offsetWidth/2});}
+  });
+}
+function updateHistoryNavActive(){
+  const nav=document.getElementById('historyNav');if(!nav||!nav.offsetParent||Date.now()<historyNavLock)return;
+  document.getElementById('historyList').style.setProperty('--hnav-h',(window.matchMedia('(max-width:720px)').matches?nav.offsetHeight:0)+'px');
+  const secs=[...document.querySelectorAll('#historyList .h-month')];if(!secs.length)return;
+  const limit=(window.matchMedia('(max-width:720px)').matches?nav.offsetHeight:0)+60;
+  let cur=secs[0];secs.forEach(s=>{if(s.getBoundingClientRect().top<=limit)cur=s;});
+  setHistoryNavActive(cur.id.slice(3));
+}
+let historyNavTick=false;
+window.addEventListener('scroll',()=>{if(historyNavTick)return;historyNavTick=true;requestAnimationFrame(()=>{historyNavTick=false;updateHistoryNavActive();});},{passive:true});
 
 const photoUploadArea=document.getElementById('photoUploadArea');
 const photoInput=document.getElementById('photoInput');
