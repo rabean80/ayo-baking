@@ -87,6 +87,17 @@
   .h-body .h-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px}
   .h-body .h-note{font-size:12.5px;color:var(--ink-3);white-space:pre-wrap;word-break:break-word}
   .h-body .h-env{font-size:11px;color:var(--ink-4);margin-top:3px}
+  .h-log{display:flex;flex-wrap:wrap;gap:4px;margin:3px 0 6px}
+  .h-log span{font-size:11px;color:var(--crust-dark);background:#f3e6cf;border-radius:10px;padding:2px 8px}
+  .bake-log{border:1px solid #ece1c9;border-radius:10px;padding:8px 12px;margin-bottom:12px;background:#fffaf2}
+  .bake-log>summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:13px;list-style:none;padding:4px 0}
+  .bake-log>summary::-webkit-details-marker{display:none}
+  .bake-log>summary::before{content:'▸ ';color:var(--ink-4)}
+  .bake-log[open]>summary::before{content:'▾ '}
+  .bl-group{font-size:11px;font-weight:700;color:var(--ink-3);margin:10px 0 6px;letter-spacing:.5px}
+  .bl-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .bl-loss{font-size:12.5px;color:var(--crust-dark);font-weight:600;padding:2px 0 6px}
+  @media(max-width:720px){.bl-row3{grid-template-columns:1fr 1fr}}
   .h-rating{font-size:13px;color:var(--accent-2);letter-spacing:1px;margin-top:4px}
   .h-photos{display:flex;gap:6px;flex-shrink:0;align-items:flex-start}
   .h-photo{width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e0d2b4}
@@ -585,6 +596,31 @@
       <div class="field"><label>구운 빵 / 제품</label><input type="text" id="hTitle" placeholder="예: 기본 식빵"></div>
       <div class="field"><label>온도 및 습도</label><input type="text" id="hEnv" placeholder="예: 22°C / 65%"></div>
     </div>
+    <details class="bake-log" id="hLogBox">
+      <summary>📋 굽기 기록 <span style="color:var(--ink-4);font-weight:400">(선택 · 회차 비교용)</span></summary>
+      <div class="bl-group">반죽</div>
+      <div class="bl-row3">
+        <div class="field"><label>총 반죽 무게 (g)</label><input type="number" inputmode="decimal" id="hlDoughWeight" placeholder="700"></div>
+        <div class="field"><label>덩이 수</label><input type="number" inputmode="numeric" id="hlPieces" placeholder="1"></div>
+        <div class="field"><label>믹싱 후 반죽 온도 (°C)</label><input type="number" inputmode="decimal" id="hlDoughTemp" placeholder="25"></div>
+      </div>
+      <div class="bl-group">발효</div>
+      <div class="field-row">
+        <div class="field"><label>1차 발효 시간</label><input type="text" id="hlBulkTime" placeholder="예: 5h 30m"></div>
+        <div class="field"><label>1차 부피 증가 (%)</label><input type="number" inputmode="decimal" id="hlBulkRise" placeholder="60"></div>
+      </div>
+      <div class="bl-group">굽기</div>
+      <div class="field-row">
+        <div class="field"><label>예열</label><input type="text" id="hlPreheat" placeholder="예: 스톤 270°C 1h"></div>
+        <div class="field"><label>스팀</label><input type="text" id="hlSteam" placeholder="예: 스팀돌+행주, 천장 팬"></div>
+      </div>
+      <div class="field"><label>굽기 과정</label><textarea id="hlBakeSteps" style="min-height:64px" placeholder="예: 열선 260°C 18분 → 컨벡션 230°C 22분 → 문 열고 3분"></textarea></div>
+      <div class="bl-group">결과</div>
+      <div class="field-row">
+        <div class="field"><label>구운 후 무게 (전체, g)</label><input type="number" inputmode="decimal" id="hlBakedWeight" placeholder="585"></div>
+        <div class="field"><label>수분 손실</label><div class="bl-loss" id="hlLoss">—</div></div>
+      </div>
+    </details>
     <div class="field"><label>메모 (변수, 결과, 다음번 개선점)</label><textarea id="hNote" style="min-height:320px" placeholder="예: 1차 발효 실온 1h → 냉장 12h, 크럼 탄력 ↑"></textarea></div>
     <div class="field">
       <label>사진 추가 <span style="color:var(--ink-4);font-weight:400">(클릭·끌어다 놓기·캡쳐 붙여넣기(⌘V) · 사진 클릭으로 대표 사진 지정)</span></label>
@@ -910,6 +946,30 @@ function escapeHtml(s){if(s==null)return '';return String(s).replace(/&/g,'&amp;
 
 // ── History ──
 let editingHistoryId=null,editingPhotos=[],editingMainPhotoIdx=0;
+// 굽기 기록 (구조화 칸) — h.log에 저장
+const HLOG_FIELDS=[['doughWeight','hlDoughWeight'],['pieces','hlPieces'],['doughTemp','hlDoughTemp'],['bulkTime','hlBulkTime'],['bulkRise','hlBulkRise'],['preheat','hlPreheat'],['steam','hlSteam'],['bakeSteps','hlBakeSteps'],['bakedWeight','hlBakedWeight']];
+function hlogLoss(log){
+  const a=parseFloat(log&&log.doughWeight),b=parseFloat(log&&log.bakedWeight);
+  if(!(a>0)||!(b>0)||b>a) return null;
+  return Math.round((a-b)/a*1000)/10;
+}
+function hlogChips(log){
+  if(!log) return '';
+  const c=[];
+  if(log.doughWeight) c.push(`${log.doughWeight}g${log.pieces&&String(log.pieces)!=='1'?` (${log.pieces}덩이)`:''}`);
+  else if(log.pieces) c.push(`${log.pieces}덩이`);
+  if(log.doughTemp) c.push(`반죽 ${log.doughTemp}°C`);
+  if(log.bulkTime||log.bulkRise) c.push(`1차 ${[log.bulkTime,log.bulkRise?'+'+log.bulkRise+'%':''].filter(Boolean).join(' ')}`);
+  if(log.preheat) c.push(`예열 ${log.preheat}`);
+  if(log.steam) c.push(`스팀 ${log.steam}`);
+  const loss=hlogLoss(log); if(loss!=null) c.push(`수분 손실 ${loss}%`);
+  return c.length?`<div class="h-log">${c.map(x=>`<span>${escapeHtml(x)}</span>`).join('')}</div>`:'';
+}
+function updateHlogLoss(){
+  const loss=hlogLoss({doughWeight:document.getElementById('hlDoughWeight').value,bakedWeight:document.getElementById('hlBakedWeight').value});
+  document.getElementById('hlLoss').textContent=loss==null?'—':`${loss}%`;
+}
+['hlDoughWeight','hlBakedWeight'].forEach(id=>document.getElementById(id).addEventListener('input',updateHlogLoss));
 function renderHistory(){
   const list=document.getElementById('historyList');list.innerHTML='';
   if(histories.length===0){list.innerHTML=`<div class="empty-state"><div class="e-icon">🕰️</div>아직 기록이 없어요. 오늘 구운 빵부터 남겨볼까요?</div>`;return;}
@@ -933,6 +993,7 @@ function renderHistory(){
       </div>
       <div class="h-body">
         <div class="h-title">${escapeHtml(h.title||'')}</div>
+        ${hlogChips(h.log)}
         <div class="h-note">${escapeHtml(h.note||'')}</div>
         ${h.env?`<div class="h-env">🌡 ${escapeHtml(h.env)}</div>`:''}
         <div class="h-rating">${stars}</div>
@@ -998,6 +1059,10 @@ function openHistory(id){
   document.getElementById('hTitle').value=h?(h.title||''):'';
   document.getElementById('hEnv').value=h?(h.env||''):'';
   document.getElementById('hNote').value=h?(h.note||''):'';
+  const log=(h&&h.log)||{};
+  HLOG_FIELDS.forEach(([k,id])=>{document.getElementById(id).value=log[k]!=null?log[k]:'';});
+  document.getElementById('hLogBox').open=HLOG_FIELDS.some(([k])=>log[k]!=null&&log[k]!=='');
+  updateHlogLoss();
   editingPhotos=h?(h.photos||[]).slice():[];
   editingMainPhotoIdx=h?(h.mainPhotoIdx||0):0;
   renderPhotoPreviews();
@@ -1026,6 +1091,8 @@ document.getElementById('hSave').addEventListener('click',()=>{
   const title=document.getElementById('hTitle').value.trim();if(!title){alert('구운 빵의 이름을 입력하세요');return;}
   if(photoUploading>0){alert('사진을 업로드하는 중이에요. 잠시 후 다시 저장해주세요.');return;}
   const data={date:document.getElementById('hDate').value||new Date().toISOString().slice(0,10),rating:parseInt(document.getElementById('hRating').value,10),title,env:document.getElementById('hEnv').value.trim(),note:document.getElementById('hNote').value,photos:editingPhotos,mainPhotoIdx:editingMainPhotoIdx};
+  const log={};HLOG_FIELDS.forEach(([k,id])=>{const v=document.getElementById(id).value.trim();if(v!=='')log[k]=v;});
+  data.log=Object.keys(log).length?log:undefined;
   if(editingHistoryId){histories=histories.map(h=>h.id===editingHistoryId?{...h,...data}:h);}else{histories.push({id:uid(),...data});}
   LS.set('baking.history',histories);closeModal('historyModal');renderHistory();
 });
