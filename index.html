@@ -101,8 +101,18 @@
   .h-month-head .n{font-size:12px;color:var(--ink-4);font-weight:400}
   .h-month-head .tg{margin-left:auto;font-size:11px;color:var(--ink-4)}
   .h-month.closed .history-list{display:none}
-  .h-body .h-note.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .h-note.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   .h-more{border:none;background:none;padding:2px 0;margin-top:2px;font-family:inherit;font-size:12px;color:var(--accent);font-weight:600;cursor:pointer}
+  .history-item.hc{display:grid;grid-template-columns:80px 1fr auto;grid-template-areas:"date title photo" "date detail photo" "date rating photo";column-gap:16px;row-gap:0}
+  .hc .h-left{grid-area:date;min-width:0}
+  .hc .h-title{grid-area:title;font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .hc .h-detail{grid-area:detail;min-width:0}
+  .hc .h-rating{grid-area:rating}
+  .hc .h-pic{grid-area:photo}
+  .hc .h-note{font-size:12.5px;color:var(--ink-3);white-space:pre-wrap;word-break:break-word}
+  .hc .h-env{font-size:11px;color:var(--ink-4);margin-top:3px}
+  .h-gallery{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .h-gallery img{width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e0d2b4}
   .h-photo-count{font-size:10.5px;color:var(--ink-4);text-align:center;margin-top:2px}
   @media(max-width:720px){
     .h-layout{grid-template-columns:1fr;gap:6px}
@@ -111,6 +121,11 @@
     .h-nav-year{padding:4px 4px 4px 8px;font-size:12px}
     .h-nav button{flex-shrink:0;border:1px solid #e6d7b8;border-radius:16px;padding:5px 12px;font-size:12.5px}
     .h-month-head{top:var(--hnav-h,44px)}
+    .history-item.hc{grid-template-columns:1fr auto;grid-template-areas:"date photo" "title photo" "rating photo" "detail detail";column-gap:12px;padding:12px 14px}
+    .hc .h-title{font-size:15px;margin-top:4px}
+    .hc .h-rating{margin-top:2px;align-self:start}
+    .hc .h-detail{margin-top:8px}
+    .hc .h-photo.main-photo{width:84px;height:84px}
   }
   .h-log{display:flex;flex-wrap:wrap;gap:4px;margin:3px 0 6px}
   .h-log span{font-size:11px;color:var(--crust-dark);background:#f3e6cf;border-radius:10px;padding:2px 8px}
@@ -1037,7 +1052,7 @@ function renderHistory(){
 }
 function measureHistoryNotes(){
   document.querySelectorAll('#historyList .h-more').forEach(btn=>{
-    if(btn.dataset.keep)return;const n=btn.parentElement.querySelector('.h-note.clamp');
+    if(btn.dataset.keep)return;const n=btn.closest('.history-item').querySelector('.h-note.clamp');
     if(n&&n.clientHeight>0)btn.style.display=n.scrollHeight>n.clientHeight+2?'':'none';
   });
 }
@@ -1046,30 +1061,21 @@ function historyCard(h){
   const d=new Date(h.date);const dow=['일','월','화','수','목','금','토'][d.getDay()];
   const stars='★'.repeat(h.rating||0)+'☆'.repeat(5-(h.rating||0));
   const open=historyExpanded.has(h.id);
-  const el=document.createElement('div');el.className='history-item';
-  let photosHtml='';
   const photos=h.photos||[];
-  if(photos.length){
-    const mainIdx=Math.min(h.mainPhotoIdx||0,photos.length-1);
-    if(open&&photos.length>1){
-      photosHtml='<div class="h-photos">'+photos.map((src,i)=>`<img class="h-photo${i===mainIdx?' main-photo':''}" src="${src}" alt="사진" loading="lazy">`).join('')+'</div>';
-    } else {
-      photosHtml=`<div><div class="h-photos"><img class="h-photo main-photo" src="${photos[mainIdx]}" alt="사진" loading="lazy"></div>${photos.length>1?`<div class="h-photo-count">+${photos.length-1}장</div>`:''}</div>`;
-    }
-  }
+  const mainIdx=Math.min(h.mainPhotoIdx||0,Math.max(photos.length-1,0));
+  const el=document.createElement('div');el.className='history-item hc';
   el.innerHTML=`
-    <div class="h-left">
-      <div class="h-date">${d.getMonth()+1}/${d.getDate()}<div class="dow">${d.getFullYear()} · ${dow}</div></div>
-    </div>
-    <div class="h-body">
-      <div class="h-title">${escapeHtml(h.title||'')}</div>
+    <div class="h-left"><div class="h-date">${d.getMonth()+1}/${d.getDate()}<div class="dow">${d.getFullYear()} · ${dow}</div></div></div>
+    <div class="h-title">${escapeHtml(h.title||'')}</div>
+    <div class="h-detail">
       ${hlogChips(h.log)}
       ${h.note?`<div class="h-note${open?'':' clamp'}">${escapeHtml(h.note)}</div>`:''}
-      ${(h.note||photos.length>1)?`<button class="h-more"${(open||photos.length>1)?' data-keep="1"':''}${!open&&!(photos.length>1)?' style="display:none"':''}>${open?'접기 ▴':'더보기 ▾'}</button>`:''}
+      ${open&&photos.length>1?`<div class="h-gallery">${photos.map(src=>`<img src="${src}" alt="사진" loading="lazy">`).join('')}</div>`:''}
+      ${(h.note||photos.length>1)?`<button class="h-more"${(open||photos.length>1)?' data-keep="1"':' style="display:none"'}>${open?'접기 ▴':'더보기 ▾'}</button>`:''}
       ${h.env?`<div class="h-env">🌡 ${escapeHtml(h.env)}</div>`:''}
-      <div class="h-rating">${stars}</div>
     </div>
-    ${photosHtml}`;
+    <div class="h-rating">${stars}</div>
+    ${photos.length?`<div class="h-pic"><div class="h-photos"><img class="h-photo main-photo" src="${photos[mainIdx]}" alt="사진" loading="lazy"></div>${photos.length>1&&!open?`<div class="h-photo-count">+${photos.length-1}장</div>`:''}</div>`:''}`;
   const more=el.querySelector('.h-more');
   if(more) more.addEventListener('click',e=>{e.stopPropagation();if(historyExpanded.has(h.id))historyExpanded.delete(h.id);else historyExpanded.add(h.id);renderHistory();});
   el.addEventListener('click',()=>openHistory(h.id));
