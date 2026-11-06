@@ -58,7 +58,11 @@
   .tab-btn:hover::before{opacity:.25}
   .tab-btn.active{background:transparent;box-shadow:none;color:var(--ink)}
   .tab-btn.active::before{opacity:.85}
-  .tab-btn:last-child{font-size:18px;font-weight:400}
+  .tab-btn[data-tab="calc"]{--tape:#f09011}
+  .tab-btn[data-tab="scheduler"]{--tape:#acb900}
+  .tab-btn[data-tab="history"]{--tape:#ea525d}
+  .tab-btn[data-tab="tips"]{--tape:#9587ff}
+  .tab-btn:last-child{--tape:#7fbf9a}
   @media(max-width:600px){.brand-logo{height:60px}.tab-btn{font-size:17px;min-width:auto;flex:0 0 auto}}
 
   .panel{display:none}
@@ -498,7 +502,7 @@
     <button class="tab-btn" data-tab="scheduler">Scheduler</button>
     <button class="tab-btn" data-tab="history">Journal</button>
     <button class="tab-btn" data-tab="tips">Baking Tips</button>
-    <button class="tab-btn" onclick="window.open('season.html','_blank')">제철재료</button>
+    <button class="tab-btn" onclick="window.open('season.html','_blank')">Seasonal</button>
   </nav>
 
   <!-- SCHEDULER -->
