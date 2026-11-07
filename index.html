@@ -163,6 +163,7 @@
   .bl-loss{font-size:12.5px;color:var(--crust-dark);font-weight:600;padding:2px 0 6px}
   @media(max-width:720px){.bl-row3{grid-template-columns:1fr 1fr}}
   .h-rating{font-size:13px;color:var(--accent-2);letter-spacing:1px;margin-top:4px}
+  .h-prebake{font-size:11px;letter-spacing:0;color:var(--ink-4);border:1px dashed #d8c9a8;border-radius:10px;padding:1px 8px}
   .h-photos{display:flex;gap:6px;flex-shrink:0;align-items:flex-start}
   .h-photo{width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e0d2b4}
   .h-photo.main-photo{width:80px;height:80px}
@@ -269,6 +270,8 @@
   .rh-diff span.del{background:#f6dfd9;color:#9a3b2a;text-decoration:line-through}
   .rh-diff .base{background:none;color:var(--ink-4);padding:1px 0}
   .rh-empty{font-size:12px;color:var(--ink-4);padding:10px 14px}
+  .rh-season{font-size:12px;color:var(--ink-3);margin:-6px 0 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .rh-season a{font-size:11.5px;padding:2px 9px;border-radius:100px;background:#e9f2df;color:#3f6b32;text-decoration:none;font-weight:600}
 
   /* Photo upload */
   .photo-upload-area{border:2px dashed #e0d2b4;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .15s;background:var(--paper-2)}
@@ -697,8 +700,9 @@
     </div>
     <div class="field-row">
       <div class="field"><label>날짜</label><input type="date" id="hDate"></div>
-      <div class="field"><label>평가 (1-5)</label>
+      <div class="field"><label>평가</label>
         <select id="hRating">
+          <option value="0">— 굽기 전</option>
           <option value="5">★★★★★</option><option value="4">★★★★☆</option>
           <option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option>
           <option value="1">★☆☆☆☆</option>
@@ -1274,7 +1278,7 @@ function measureHistoryNotes(){
 document.querySelector('.tab-btn[data-tab="history"]').addEventListener('click',()=>requestAnimationFrame(()=>{measureHistoryNotes();updateHistoryNavActive();}));
 function historyCard(h){
   const d=new Date(h.date);const dow=['일','월','화','수','목','금','토'][d.getDay()];
-  const stars='★'.repeat(h.rating||0)+'☆'.repeat(5-(h.rating||0));
+  const stars=h.rating?'★'.repeat(h.rating)+'☆'.repeat(5-h.rating):'<span class="h-prebake">굽기 전</span>';
   const open=historyExpanded.has(h.id);
   const photos=h.photos||[];
   const mainIdx=Math.min(h.mainPhotoIdx||0,Math.max(photos.length-1,0));
@@ -1378,7 +1382,7 @@ function openHistory(id){
   editingHistoryId=id;const h=id?histories.find(x=>x.id===id):null;
   document.getElementById('historyModalTitle').textContent=h?'기록 수정':'베이킹 기록 추가';
   document.getElementById('hDate').value=h?h.date:new Date().toISOString().slice(0,10);
-  document.getElementById('hRating').value=h?String(h.rating||5):'5';
+  document.getElementById('hRating').value=h?String(h.rating||0):'0';
   document.getElementById('hTitle').value=h?(h.title||''):'';
   document.getElementById('hEnv').value=h?(h.env||''):'';
   document.getElementById('hNote').value=h?(h.note||''):'';
@@ -1429,7 +1433,7 @@ document.getElementById('addHistoryBtn').addEventListener('click',()=>openHistor
 document.getElementById('hSave').addEventListener('click',()=>{
   const title=document.getElementById('hTitle').value.trim();if(!title){alert('구운 빵의 이름을 입력하세요');return;}
   if(photoUploading>0){alert('사진을 업로드하는 중이에요. 잠시 후 다시 저장해주세요.');return;}
-  const data={date:document.getElementById('hDate').value||new Date().toISOString().slice(0,10),rating:parseInt(document.getElementById('hRating').value,10),title,env:document.getElementById('hEnv').value.trim(),note:document.getElementById('hNote').value,changes:document.getElementById('hChanges').value.trim()||undefined,next:document.getElementById('hNext').value.trim()||undefined,photos:editingPhotos,mainPhotoIdx:editingMainPhotoIdx};
+  const data={date:document.getElementById('hDate').value||new Date().toISOString().slice(0,10),rating:parseInt(document.getElementById('hRating').value,10)||0,title,env:document.getElementById('hEnv').value.trim(),note:document.getElementById('hNote').value,changes:document.getElementById('hChanges').value.trim()||undefined,next:document.getElementById('hNext').value.trim()||undefined,photos:editingPhotos,mainPhotoIdx:editingMainPhotoIdx};
   const log={};HLOG_FIELDS.forEach(([k,id])=>{const v=document.getElementById(id).value.trim();if(v!=='')log[k]=v;});
   data.log=Object.keys(log).length?log:undefined;
   if(editingRecipe.id){
@@ -1657,14 +1661,16 @@ function renderRecipeHist(){
     return `<div class="rh-item" data-id="${escapeHtml(h.id)}">
       ${src?`<img src="${src}" alt="" loading="lazy">`:''}
       <div class="rh-main">
-        <div class="rh-top"><b>${idx+1}회 · ${d.getMonth()+1}/${d.getDate()}</b><span>${escapeHtml(h.title||'')}</span><span class="st">${'★'.repeat(h.rating||0)}</span>${loss!=null?`<span class="ls">수분 손실 ${loss}%</span>`:''}</div>
+        <div class="rh-top"><b>${idx+1}회 · ${d.getMonth()+1}/${d.getDate()}</b><span>${escapeHtml(h.title||'')}</span><span class="st">${h.rating?'★'.repeat(h.rating):'굽기 전'}</span>${loss!=null?`<span class="ls">수분 손실 ${loss}%</span>`:''}</div>
         <div class="rh-diff">${diffHtml}</div>
         ${h.changes?`<div class="rh-txt"><b>🔧</b>${escapeHtml(h.changes)}</div>`:''}
         ${h.next?`<div class="rh-txt"><b>➡️</b>${escapeHtml(h.next)}</div>`:''}
       </div>
     </div>`;
   }).join('');
-  box.innerHTML=`<div class="rh-box${recipeHistOpen?' open':''}">
+  const seasonIngs=(LS.get('season.ingredients',[])||[]).filter(i=>(i.recipeIds||[]).includes(pid));
+  const seasonHtml=seasonIngs.length?`<div class="rh-season">🌱 제철재료 ${seasonIngs.map(i=>`<a href="season.html" target="_blank">${escapeHtml(i.name)}</a>`).join('')}</div>`:'';
+  box.innerHTML=seasonHtml+`<div class="rh-box${recipeHistOpen?' open':''}">
     <button class="rh-head">🥖 굽기 기록<span class="n">${items.length}회</span><span class="tg">${recipeHistOpen?'접기 ▴':'펼치기 ▾'}</span></button>
     <div class="rh-list">${html||'<div class="rh-empty">아직 연결된 기록이 없어요. Journal에서 기록을 남길 때 이 레시피를 연결해 보세요.</div>'}</div>
   </div>`;
@@ -2428,13 +2434,7 @@ function renderPresetList(){
   }));
   wrap.querySelectorAll('.preset-load').forEach(b=>b.addEventListener('click',()=>{
     const p=calcPresets[+b.dataset.i];if(!p)return;
-    calc=JSON.parse(JSON.stringify(p.data));
-    if(!calc.flourName) calc.flourName='강력분';
-    ensureFlours(calc);
-    calc.loadedName=p.name; // 불러온 프리셋 이름 표시
-    calc.loadedPresetId=p.id; // ===== 덮어쓰기 판별용: 어느 프리셋에서 불러왔는지 기록 =====
-    calcChecked.clear(); // 새 배합을 불러오면 계량 체크 초기화
-    saveCalc();renderCalc();
+    loadCalcPreset(p);
     document.getElementById('presetModal').classList.remove('show');
   }));
   wrap.querySelectorAll('.preset-del').forEach(b=>b.addEventListener('click',()=>{
@@ -2444,6 +2444,27 @@ function renderPresetList(){
     }
   }));
 }
+function loadCalcPreset(p){
+  calc=JSON.parse(JSON.stringify(p.data));
+  if(!calc.flourName) calc.flourName='강력분';
+  ensureFlours(calc);
+  calc.loadedName=p.name; // 불러온 프리셋 이름 표시
+  calc.loadedPresetId=p.id; // ===== 덮어쓰기 판별용: 어느 프리셋에서 불러왔는지 기록 =====
+  calcChecked.clear(); // 새 배합을 불러오면 계량 체크 초기화
+  saveCalc();renderCalc();
+}
+// 다른 페이지(제철재료 등)에서 index.html#recipe=<id> 로 열면 그 레시피를 계산기에 불러옴
+function openRecipeFromHash(){
+  const m=location.hash.match(/^#recipe=(.+)$/);if(!m)return;
+  const id=decodeURIComponent(m[1]);
+  history.replaceState(null,'',location.pathname+location.search);
+  if(calcMode!=='normal') switchCalcMode('normal');
+  const p=calcPresets.find(x=>x.id===id);
+  if(!p){alert('연결된 레시피를 찾을 수 없어요. 삭제되었을 수 있어요.');return;}
+  const calcTab=document.querySelector('.tab-btn[data-tab="calc"]');if(calcTab)calcTab.click();
+  loadCalcPreset(p);
+}
+window.addEventListener('hashchange',openRecipeFromHash);
 document.getElementById('calcLoadPreset').addEventListener('click',()=>{
   renderPresetList();
   document.getElementById('presetModal').classList.add('show');
@@ -2671,6 +2692,7 @@ document.getElementById('calcRows').addEventListener('click',e=>{
 
 // Init
 renderHistory();renderFolders();renderTips();renderCalc();
+openRecipeFromHash();
 
 // Service Worker
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW error:',e));});}
