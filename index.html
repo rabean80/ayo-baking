@@ -1660,6 +1660,8 @@ const CALC_PRESETS_DEFAULT=[
 let calcMode = LS.get('baking.calcMode', 'normal'); // 'normal' | 'cost'
 let ingDragSrcIdx = null; // ===== 드래그 정렬: 재료 순서 변경 시 드래그 시작 인덱스 =====
 let flourDragSrcIdx = null; // ===== 드래그 정렬: 밀가루 순서 변경 시 드래그 시작 인덱스 =====
+// 스케줄러(iframe)의 Select Bread에서 저장된 레시피 목록을 읽어갈 때 사용 (항상 최신 값)
+window.getRecipesForScheduler=function(){ return {list:LS.get('baking.calcPresets',[])||[], sections:PRESET_SECTIONS, uncat:PRESET_UNCAT}; };
 function presetsKey(){ return calcMode==='cost' ? 'baking.costPresets' : 'baking.calcPresets'; }
 function calcStorageKey(){ return calcMode==='cost' ? 'baking.costCalc' : 'baking.calc'; }
 // ===== 단가계산 끝: 모드 상태 =====
@@ -2527,21 +2529,7 @@ document.getElementById('calcSavePreset').addEventListener('click',async ()=>{
   LS.set(presetsKey(),calcPresets);
   alert(`"${nm}" 저장 완료`);
 
-  // ===== 단가계산: 스케줄러 연계 질문은 일반 배합 모드에서만 =====
-  if(calcMode==='normal' && confirm(`Select Bread 라이브러리에도 "${nm}" 이름으로 개별 빵을 추가할까요?\n(어떤 프로젝트에도 속하지 않고, 나중에 원하는 프로젝트에 골라서 추가할 수 있어요.)`)){
-    try{
-      const iframe=document.getElementById('schedIframe');
-      if(iframe && iframe.contentWindow && typeof iframe.contentWindow.addLibraryBreadFromExternal==='function'){
-        iframe.contentWindow.addLibraryBreadFromExternal(nm, calc.notes||'');
-        alert(`"${nm}" 빵이 Select Bread 라이브러리에 추가됐어요. 스케줄러 탭 → Select Bread에서 확인해보세요.`);
-      } else {
-        alert('스케줄러가 아직 준비되지 않았어요. 스케줄러 탭을 한 번 열어보신 후 다시 시도해주세요.');
-      }
-    }catch(e){
-      console.warn('[server] 라이브러리 빵 추가 실패:', e);
-      alert('빵 추가 중 문제가 발생했어요. 스케줄러 탭을 열어보신 후 다시 시도해주세요.');
-    }
-  }
+  // (스케줄러 라이브러리 추가 질문은 제거됨 — 스케줄러 Select Bread에서 레시피를 직접 골라 추가)
 });
 function renderPresetList(){
   const wrap=document.getElementById('presetList');

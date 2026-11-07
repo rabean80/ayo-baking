@@ -247,8 +247,6 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
     <button class="btn btn-proj" id="projSelectorBtn">Select Bread</button>
     <button class="btn btn-add" id="addBreadBtn">＋ Add New Bread</button>
     <button class="btn btn-total" id="totalTimeBtn">총 작업시간 보기</button>
-    <button class="btn btn-reset" id="resetBtn">초기화</button>
-    <button class="btn btn-reset" id="dataResetBtn" style="color:#d94040;border-color:#f0c0c0">🗑 데이터 초기화</button>
   </div>
 </div>
 
@@ -768,8 +766,46 @@ document.getElementById('totalBackdrop').addEventListener('click',()=>{document.
 // ========================
 // Select Bread panel (pick breads from LIBRARY into this project)
 // ========================
+// 레시피(Recipe 탭에 저장된 배합) 목록 — 부모 페이지에서 최신 값을 읽고, 없으면 자체 캐시 사용
+function getSavedRecipes(){
+  try{ if(window.parent && window.parent!==window && typeof window.parent.getRecipesForScheduler==='function') return window.parent.getRecipesForScheduler(); }catch(e){}
+  return {list:LS.get('baking.calcPresets',[])||[], sections:['사워도우','하드·유럽빵','플랫브레드','식빵','소프트·단과자','구움과자'], uncat:'미분류'};
+}
+let recipeSectionOpen=true;
+function renderRecipeSection(list){
+  const {list:recipes,sections,uncat}=getSavedRecipes();
+  const hd=document.createElement('div');hd.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px;cursor:pointer;user-select:none';
+  hd.textContent=(recipeSectionOpen?'▾ ':'▸ ')+`내 레시피에서 추가 (${recipes.length})`;
+  hd.addEventListener('click',()=>{recipeSectionOpen=!recipeSectionOpen;renderProjPanel();});
+  list.appendChild(hd);
+  if(!recipeSectionOpen) return;
+  if(!recipes.length){const e=document.createElement('div');e.style.cssText='font-size:11.5px;color:#aaa;padding:4px 2px 8px';e.textContent='저장된 레시피가 없어요. Recipe 탭에서 💾 저장하면 여기에 나타나요.';list.appendChild(e);return;}
+  const order=[...sections,uncat];
+  const groups={};recipes.forEach(r=>{const c=sections.includes(r.category)?r.category:uncat;(groups[c]=groups[c]||[]).push(r);});
+  order.filter(c=>groups[c]).forEach(c=>{
+    const sh=document.createElement('div');sh.style.cssText='font-size:10.5px;color:#c0ab8c;margin:6px 2px 2px';sh.textContent=c;list.appendChild(sh);
+    groups[c].forEach(r=>{
+      const inProj=breads.some(b=>b.recipePresetId===r.id);
+      const el=document.createElement('div');el.className='proj-item';
+      el.innerHTML=`<span class="p-dot" style="background:#e8d9bf"></span><span class="p-name"></span>${inProj?'<span style="font-size:10.5px;color:#a8906f">추가됨</span>':''}<span style="font-size:13px;color:#5DCAA5;font-weight:700">＋</span>`;
+      el.querySelector('.p-name').textContent=r.name;
+      el.addEventListener('click',()=>{
+        // 같은 이름의 라이브러리 빵이 있으면 그 공정을 쓰고, 없으면 기본 공정으로 시작
+        const lib=getFullLibrary().find(l=>l.name===r.name);
+        const nb={id:uid(),name:r.name,recipe:(r.data&&r.data.notes)||(lib&&lib.recipe)||'',color:(lib&&lib.color)||COLORS[breads.length%COLORS.length],recipePresetId:r.id,
+          targetDate:(activeProject().defaultDate||getTodayStr()),targetTime:DEFAULT_TIME,
+          stages:(lib&&lib.stages&&lib.stages.length)?lib.stages.map(s=>({...s,id:uid()})):defaultNewStages()};
+        breads.push(nb);selected.add(nb.id);
+        saveActiveProject();renderProjPanel();buildToggles();render();
+      });
+      list.appendChild(el);
+    });
+  });
+  const sep=document.createElement('div');sep.style.cssText='height:1px;background:#eee;margin:10px 0 8px';list.appendChild(sep);
+}
 function renderProjPanel(){
   const list=document.getElementById('projList');list.innerHTML='';
+  renderRecipeSection(list);
   // Section 2: 라이브러리 — 탭하면 새 사본을 프로젝트에 추가
   const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px';hd2.textContent='빵 라이브러리 (탭하여 프로젝트에 추가)';
   list.appendChild(hd2);
@@ -1182,7 +1218,7 @@ function render(){
 
 // Reset: ask user what to reset
 // Data reset button
-document.getElementById('dataResetBtn').addEventListener('click',()=>openModal('dataResetModal'));
+document.getElementById('dataResetBtn')?.addEventListener('click',()=>openModal('dataResetModal'));
 document.getElementById('resetGroups').addEventListener('click',()=>{
   if(!confirm('현재 프로젝트의 그룹을 기본값으로 초기화할까요? 빵 데이터는 유지됩니다.'))return;
   groups=DEFAULT_GROUPS.map(g=>({...g}));saveActiveProject();closeModal('dataResetModal');location.reload();
@@ -1199,7 +1235,7 @@ document.getElementById('resetAll').addEventListener('click',()=>{
   closeModal('dataResetModal');location.reload();
 });
 
-document.getElementById('resetBtn').addEventListener('click',()=>{
+document.getElementById('resetBtn')?.addEventListener('click',()=>{
   if(!confirm('모든 빵의 완성 시각을 기본값(오후 8시)으로 초기화할까요?'))return;
   const tomorrow=getTomorrowStr();
   breads=breads.map(b=>({...b,targetDate:tomorrow,targetTime:DEFAULT_TIME}));
