@@ -1203,7 +1203,7 @@ function recipeSnapshot(p){
 // 실제로 쓰인 재료 목록 (르방 버전이 켜져 있으면 물·이스트·르방 줄을 르방 섹션 값으로 대체)
 function snapItems(s){
   if(!s) return [];
-  const isRep=i=>/물/.test(i.name)&&!/물엿/.test(i.name)||/이스트|르방|water|yeast|levain/i.test(i.name);
+  const isRep=i=>/물/.test(i.name)&&!/물엿/.test(i.name)||/이스트|르방|water|yeast|levain|^\s*(DY|IDY)/i.test(i.name);
   let ings=s.ingredients||[];
   if(s.levainOn){ ings=ings.filter(i=>!isRep(i)).concat(s.levainIngs||[]); }
   return [...(s.flours||[]).map(f=>({name:f.name,pct:f.pct,flour:true})),...ings.filter(i=>i.name.trim())];
@@ -1778,7 +1778,8 @@ const fmtP=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n*10)/10; retu
 
 // ===== 르방 버전 시작: 공통 판별/유효 재료 =====
 const lvIsWater=i=>/물/.test(i.name||'') && !/물엿/.test(i.name||'') || /water/i.test(i.name||'');
-const lvIsYeast=i=>/이스트/.test(i.name||'') || /yeast/i.test(i.name||'');
+// 이스트 이름 인식: 이스트·yeast, 'DY레드'처럼 DY/IDY로 시작하는 이름도 포함
+const lvIsYeast=i=>/이스트|yeast|^\s*(DY|IDY)/i.test(i.name||'');
 const lvIsLevain=i=>/르방/.test(i.name||'') || /levain/i.test(i.name||'');
 const lvIsReplaced=i=>lvIsWater(i)||lvIsYeast(i)||lvIsLevain(i);
 function levainActive(){ return calcMode!=='cost' && !!(calc.levain && calc.levain.on); }
@@ -2157,7 +2158,7 @@ function renderBiga(){
   const byeast=parseFloat(calc.biga.yeast)||0;
   // 재료 이름으로 물/이스트 자동 판별 (물·찬물·끓는물 등 / 이스트 종류)
   const isWater=i=>/물/.test(i.name||'')||/water/i.test(i.name||'');
-  const isYeast=i=>/이스트/.test(i.name||'')||/yeast/i.test(i.name||'');
+  const isYeast=lvIsYeast;
   const totalWater=effIngs().filter(isWater).reduce((s,i)=>s+F*(parseFloat(i.pct)||0)/100,0);
   const totalYeast=effIngs().filter(isYeast).reduce((s,i)=>s+F*(parseFloat(i.pct)||0)/100,0);
   const others=effIngs().filter(i=>!isWater(i)&&!isYeast(i));
