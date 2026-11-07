@@ -516,6 +516,9 @@
   .pt-scale{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;padding:10px 12px;background:#fbeeda;border-radius:8px;font-size:12.5px;color:var(--ink-2)}
   .pt-scale input{width:80px;padding:6px 8px;border:1px solid #e0d2b4;border-radius:7px;background:#fff;font-family:inherit;font-size:13px;text-align:center}
   @media(max-width:520px){.pt-row{grid-template-columns:1fr 1fr 70px auto}}
+  .calc-title{word-break:keep-all;overflow-wrap:anywhere;line-height:1.25}
+  .calc-title.is-empty{color:var(--ink-4)}
+  .calc-title-sub{color:var(--ink-4);margin-bottom:14px}
   .biga-none{background:var(--paper-2);border:1px dashed #d8c9a8;border-radius:var(--radius-sm);padding:20px;text-align:center;color:var(--ink-2);font-size:13.5px;font-weight:600;line-height:1.6}
   .biga-none span{display:block;margin-top:6px;font-size:12px;font-weight:400;color:var(--ink-3)}
   .biga-preset[data-ratio="0"].active{background:linear-gradient(135deg,#9a8c74,#6f6553)}
@@ -593,8 +596,8 @@
     <div class="surface" style="margin-bottom:18px">
       <div class="section-head">
         <div>
-          <div class="section-title">베이커스 퍼센티지 계산기</div>
-          <div class="section-sub">밀가루를 100% 기준으로, 분량만 넣으면 나머지 재료가 자동 계산돼요.</div>
+          <div class="section-title calc-title" id="calcTitle">새 레시피</div>
+          <div class="section-sub calc-title-sub">배합 (Baker's percentage)</div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost" id="calcLoadPreset">📚 내 레시피</button>
@@ -604,7 +607,6 @@
         </div>
       </div>
 
-      <div id="calcPresetName" class="calc-presetname" style="display:none"></div>
       <div id="calcRecipeHist"></div>
 
       <div class="calc-flourbox">
@@ -1717,11 +1719,14 @@ migratePresetSections(calcPresets, presetsKey());
 let presetOpenSecs=null; // 이번 세션에서 펼친 섹션 (null=아직 안 열어봄)
 // ===== 레시피 섹션 끝 =====
 const saveCalc=()=>LS.set(calcStorageKey(),calc);
+// 불러온 레시피 이름을 섹션 제목으로 크게 표시 (없으면 '새 레시피')
 function renderPresetName(){
-  const el=document.getElementById('calcPresetName');
-  if(!el) return;
-  if(calc.loadedName){ el.textContent='📋 '+calc.loadedName; el.style.display=''; }
-  else { el.style.display='none'; el.textContent=''; }
+  const el=document.getElementById('calcTitle');
+  if(el){
+    const nm=(calc.loadedName||'').trim();
+    el.textContent=nm||'새 레시피';
+    el.classList.toggle('is-empty',!nm);
+  }
   renderRecipeHist();
 }
 // ===== 레시피별 굽기 히스토리 (저널 연동) =====
