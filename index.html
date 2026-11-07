@@ -484,6 +484,11 @@
   .chk-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);cursor:pointer}
   .chk-row input{width:16px;height:16px;accent-color:var(--accent)}
   .calc-presetname{display:inline-flex;align-items:center;gap:4px;margin:2px 0 14px;padding:7px 14px;border-radius:100px;background:var(--accent-soft);color:var(--crust-dark);font-size:13px;font-weight:700;border:1px solid #eed8b6}
+  .biga-flour{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:10px 0 6px}
+  .biga-flour select{padding:8px 14px;border:1px solid #e0d2b4;border-radius:100px;background:var(--paper-2);font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
+  .biga-flour select:focus{outline:none;border-color:var(--accent);background:#fff}
+  .biga-line.fl .nm{padding-left:12px;color:var(--ink-3);font-size:12.5px}
+  .biga-line.fl .vl{font-weight:600;font-size:13px;color:var(--ink-2)}
   .biga-none{background:var(--paper-2);border:1px dashed #d8c9a8;border-radius:var(--radius-sm);padding:20px;text-align:center;color:var(--ink-2);font-size:13.5px;font-weight:600;line-height:1.6}
   .biga-none span{display:block;margin-top:6px;font-size:12px;font-weight:400;color:var(--ink-3)}
   .biga-preset[data-ratio="0"].active{background:linear-gradient(135deg,#9a8c74,#6f6553)}
@@ -632,6 +637,14 @@
           <div class="biga-custom">
             <input type="number" id="bigaRatio" min="0" max="100" step="1" value="40"><span class="calc-unit">%</span>
           </div>
+        </div>
+      </div>
+
+      <div class="biga-flour" id="bigaFlourRow" style="display:none">
+        <span class="biga-ratio-lb">비가 밀가루<br><small>(어떤 가루로 만들지)</small></span>
+        <div class="biga-presets">
+          <select id="bigaFlourSel"></select>
+          <button class="biga-preset" id="bigaFlourAll" type="button" style="display:none"></button>
         </div>
       </div>
 
@@ -2064,9 +2077,33 @@ function refreshLevainWeights(){
 }
 // ===== 르방 버전 끝 =====
 
+// 비가 밀가루 선택 (블렌드 비율대로 / 특정 밀가루) — calc.biga.flourId ('' = 블렌드)
+function bigaSelFlour(){
+  const id=calc.biga.flourId||'';
+  return id ? (calc.flours||[]).find(f=>f.id===id)||null : null;
+}
+function renderBigaFlourRow(ratio){
+  const row=document.getElementById('bigaFlourRow'), sel=document.getElementById('bigaFlourSel'), allBtn=document.getElementById('bigaFlourAll');
+  const fls=calc.flours||[];
+  if(fls.length<2 || ratio<=0){ row.style.display='none'; return; }
+  row.style.display='';
+  const cur=bigaSelFlour();
+  sel.innerHTML=`<option value="">블렌드 비율대로</option>`+fls.map(f=>`<option value="${f.id}">${escapeHtml(f.name||'밀가루')} (${Math.round((parseFloat(f.pct)||0)*10)/10}%)</option>`).join('');
+  sel.value=cur?cur.id:'';
+  if(cur){
+    const fp=Math.round((parseFloat(cur.pct)||0)*10)/10;
+    allBtn.textContent=`${cur.name||'밀가루'} 전량 (${fp}%)`;
+    allBtn.dataset.ratio=fp;
+    allBtn.classList.toggle('active', Math.abs(ratio-fp)<0.05);
+    allBtn.style.display='';
+  }else allBtn.style.display='none';
+}
 function renderBiga(){
   const F=calc.flour||0;
   const ratio=Math.max(0,Math.min(100,parseFloat(calc.biga.ratio)||0));
+  const hi=document.getElementById('bigaHydration'); if(document.activeElement!==hi) hi.value=parseFloat(calc.biga.hydration)||0;
+  const yi=document.getElementById('bigaYeast'); if(document.activeElement!==yi) yi.value=parseFloat(calc.biga.yeast)||0;
+  renderBigaFlourRow(ratio);
   // sync preset buttons + custom input
   document.querySelectorAll('.biga-preset').forEach(b=>b.classList.toggle('active', +b.dataset.ratio===Math.round(ratio)));
   const ri=document.getElementById('bigaRatio'); if(document.activeElement!==ri) ri.value=ratio;
@@ -2091,17 +2128,34 @@ function renderBiga(){
   const mainYeast=totalYeast-bigaYeast;
   const bigaTotal=bigaFlour+bigaWater+bigaYeast;
 
+  // 밀가루 종류별 분배: 선택한 밀가루에서 먼저 가져가고, 모자라면 나머지를 비율대로
+  const fls=(calc.flours||[]).map(f=>({id:f.id,name:f.name||'밀가루',g:F*(parseFloat(f.pct)||0)/100}));
+  const selF=bigaSelFlour();
+  let bigaBy=fls.map(f=>({...f,b:0}));
+  if(selF){
+    const t=bigaBy.find(f=>f.id===selF.id);
+    t.b=Math.min(bigaFlour,t.g);
+    const rest=bigaFlour-t.b, restTotal=F-t.g;
+    if(rest>0.0001 && restTotal>0) bigaBy.forEach(f=>{ if(f.id!==t.id) f.b=rest*f.g/restTotal; });
+  }else{
+    bigaBy.forEach(f=>{ f.b=F>0? bigaFlour*f.g/F : 0; });
+  }
+  const multi=fls.length>1;
+
   let warn='';
+  if(selF && bigaFlour>(F*(parseFloat(selF.pct)||0)/100)+0.05) warn+=`비가 비율이 ${escapeHtml(selF.name||'밀가루')} 양보다 많아요. 모자라는 만큼은 다른 밀가루로 채워 계산했어요.<br>`;
   if(mainWater<-0.05) warn+=`본반죽 물이 부족합니다 (${fmt(mainWater)}). 비가 비율 또는 수화율을 낮춰주세요.<br>`;
   if(mainYeast<-0.05) warn+=`본반죽 이스트가 부족합니다. 비가 이스트 비율을 낮춰주세요.`;
 
   const bigaLines=`
     <div class="biga-line"><span class="nm">밀가루</span><span class="vl">${fmt(bigaFlour)}</span></div>
-    <div class="biga-line"><span class="nm">물 (수화율 ${hyd}%)</span><span class="vl">${fmt(bigaWater)}</span></div>
+    ${multi?bigaBy.filter(f=>f.b>0.05).map(f=>`<div class="biga-line fl"><span class="nm">└ ${escapeHtml(f.name)}</span><span class="vl">${fmt(f.b)}</span></div>`).join(''):''}
+    <div class="biga-line"><span class="nm">물 (수화율 ${Math.round(hyd*10)/10}%)</span><span class="vl">${fmt(bigaWater)}</span></div>
     <div class="biga-line"><span class="nm">이스트</span><span class="vl">${fmt(bigaYeast)}</span></div>
     <div class="biga-line sum"><span class="nm">비가 합계</span><span class="vl">${fmt(bigaTotal)}</span></div>`;
 
   let mainLines=`<div class="biga-line"><span class="nm">밀가루</span><span class="vl">${fmt(mainFlour)}</span></div>`;
+  if(multi) mainLines+=bigaBy.filter(f=>f.g-f.b>0.05).map(f=>`<div class="biga-line fl"><span class="nm">└ ${escapeHtml(f.name)}</span><span class="vl">${fmt(Math.max(0,f.g-f.b))}</span></div>`).join('');
   if(totalWater>0) mainLines+=`<div class="biga-line"><span class="nm">물</span><span class="vl">${fmt(Math.max(0,mainWater))}</span></div>`;
   if(totalYeast>0) mainLines+=`<div class="biga-line"><span class="nm">이스트</span><span class="vl">${fmt(Math.max(0,mainYeast))}</span></div>`;
   others.forEach(i=>{ mainLines+=`<div class="biga-line"><span class="nm">${escapeHtml(i.name||'재료')}</span><span class="vl">${fmt(F*(parseFloat(i.pct)||0)/100)}</span></div>`; });
@@ -2110,7 +2164,7 @@ function renderBiga(){
 
   document.getElementById('bigaResult').innerHTML=`
     ${warn?`<div class="biga-warn">⚠️ ${warn}</div>`:''}
-    <div class="biga-col is-biga"><h4>🫧 비가 (사전발효)</h4><div class="sub">전체 밀가루의 ${ratio}% · 미리 발효</div>${bigaLines}</div>
+    <div class="biga-col is-biga"><h4>🫧 비가 (사전발효)</h4><div class="sub">전체 밀가루의 ${Math.round(ratio*10)/10}%${selF?` · ${escapeHtml(selF.name||'')}로`:''} · 미리 발효</div>${bigaLines}</div>
     <div class="biga-col"><h4>🥖 본반죽</h4><div class="sub">비가를 넣고 최종 반죽</div>${mainLines}</div>`;
 }
 
@@ -2234,6 +2288,8 @@ document.querySelectorAll('.biga-preset').forEach(b=>b.addEventListener('click',
 document.getElementById('bigaRatio').addEventListener('input',e=>{calc.biga.ratio=parseFloat(e.target.value)||0;saveCalc();renderBiga();});
 document.getElementById('bigaHydration').addEventListener('input',e=>{calc.biga.hydration=parseFloat(e.target.value)||0;saveCalc();renderBiga();});
 document.getElementById('bigaYeast').addEventListener('input',e=>{calc.biga.yeast=parseFloat(e.target.value)||0;saveCalc();renderBiga();});
+document.getElementById('bigaFlourSel').addEventListener('change',e=>{calc.biga.flourId=e.target.value||'';saveCalc();renderBiga();});
+document.getElementById('bigaFlourAll').addEventListener('click',e=>{calc.biga.ratio=parseFloat(e.currentTarget.dataset.ratio)||0;saveCalc();renderBiga();});
 
 
 
