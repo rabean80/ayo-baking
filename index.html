@@ -489,6 +489,33 @@
   .biga-flour select:focus{outline:none;border-color:var(--accent);background:#fff}
   .biga-line.fl .nm{padding-left:12px;color:var(--ink-3);font-size:12.5px}
   .biga-line.fl .vl{font-weight:600;font-size:13px;color:var(--ink-2)}
+  /* ===== 부재료(필링·토핑) ===== */
+  .parts-box{margin-top:14px;border:1px dashed #d8c9a8;border-radius:10px;padding:12px 14px;background:#fbf6ea}
+  .parts-box.has{border-style:solid;border-color:#d9bf8f;background:#fcf5e6}
+  .pt-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .pt-count{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2)}
+  .pt-count input{width:64px;padding:6px 8px;border:1px solid #e0d2b4;border-radius:7px;background:var(--paper-2);font-family:inherit;font-size:13px;text-align:center}
+  .pt-row{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 78px auto;gap:6px;align-items:center;margin-top:10px}
+  .pt-row select,.pt-row input{width:100%;padding:7px 8px;border:1px solid #e0d2b4;border-radius:7px;background:var(--paper-2);font-family:inherit;font-size:13px;color:var(--ink)}
+  .pt-row select:focus,.pt-row input:focus,.pt-count input:focus{outline:none;border-color:var(--accent);background:#fff}
+  .pt-del{border:none;background:transparent;color:var(--ink-4);cursor:pointer;font-size:15px;padding:2px 6px}
+  .pt-res{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3);padding:2px 2px 4px}
+  .pt-res b{color:var(--crust-dark);font-size:14px}
+  .pt-make{padding:4px 10px;font-size:12px}
+  .pt-empty{font-size:12px;color:var(--ink-3);margin-top:6px}
+  .pt-sec{font-size:12px;font-weight:700;color:var(--ink-3);margin:12px 0 4px}
+  .pt-item{display:block;width:100%;text-align:left;padding:9px 12px;margin-bottom:4px;border:1px solid #ece1c9;border-radius:8px;background:var(--paper-2);font-family:inherit;font-size:13.5px;color:var(--ink);cursor:pointer}
+  .pt-item:hover{background:#fff}
+  .pt-item small{color:var(--ink-4);margin-left:6px}
+  .pt-ed-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  .pt-ed-table th{font-size:11px;color:var(--ink-3);font-weight:600;text-align:left;padding:4px}
+  .pt-ed-table td{padding:3px 4px}
+  .pt-ed-table input{width:100%;padding:7px 8px;border:1px solid #e0d2b4;border-radius:7px;background:var(--paper-2);font-family:inherit;font-size:13px}
+  .pt-ed-table .pt-scaled{font-weight:700;color:var(--crust-dark);text-align:right;white-space:nowrap}
+  .pt-ed-table tfoot td{border-top:1px solid #ece1c9;font-weight:700;padding-top:6px}
+  .pt-scale{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;padding:10px 12px;background:#fbeeda;border-radius:8px;font-size:12.5px;color:var(--ink-2)}
+  .pt-scale input{width:80px;padding:6px 8px;border:1px solid #e0d2b4;border-radius:7px;background:#fff;font-family:inherit;font-size:13px;text-align:center}
+  @media(max-width:520px){.pt-row{grid-template-columns:1fr 1fr 70px auto}}
   .biga-none{background:var(--paper-2);border:1px dashed #d8c9a8;border-radius:var(--radius-sm);padding:20px;text-align:center;color:var(--ink-2);font-size:13.5px;font-weight:600;line-height:1.6}
   .biga-none span{display:block;margin-top:6px;font-size:12px;font-weight:400;color:var(--ink-3)}
   .biga-preset[data-ratio="0"].active{background:linear-gradient(135deg,#9a8c74,#6f6553)}
@@ -571,6 +598,7 @@
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost" id="calcLoadPreset">📚 내 레시피</button>
+          <button class="btn btn-ghost" id="calcPartsBtn">🧁 부재료</button>
           <button class="btn btn-ghost" id="calcSavePreset">💾 저장</button>
           <button class="btn btn-ghost" id="calcPrint">🖨 프린트</button>
         </div>
@@ -616,6 +644,7 @@
       </table>
       <button class="btn btn-ghost calc-addrow" id="calcAddRow">＋ 재료 추가</button>
       <div class="levain-box" id="levainBox"></div>
+      <div class="parts-box" id="partsBox"></div>
     </div>
 
     <!-- 비가 계산기 -->
@@ -833,6 +862,13 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('presetModal').classList.remove('show')">닫기</button>
     </div>
+  </div>
+</div>
+
+<!-- 부재료(필링·토핑) 모달: 목록 ↔ 편집 -->
+<div class="modal-back" id="partsModal">
+  <div class="modal-box" style="max-width:460px">
+    <div id="partsView"></div>
   </div>
 </div>
 
@@ -1625,6 +1661,9 @@ function presetsKey(){ return calcMode==='cost' ? 'baking.costPresets' : 'baking
 function calcStorageKey(){ return calcMode==='cost' ? 'baking.costCalc' : 'baking.calc'; }
 // ===== 단가계산 끝: 모드 상태 =====
 let calc = LS.get(calcStorageKey(), JSON.parse(JSON.stringify(CALC_DEFAULT)));
+// 부재료(필링·토핑) 데이터 — 아래 '부재료' 섹션에서 사용 (초기 렌더 전에 준비)
+const PART_SECTIONS=['비스킷·토핑','필링·크림','기타'];
+let parts=LS.get('baking.parts',[])||[];
 if(!calc.flourName) calc.flourName='강력분';
 // 밀가루 블렌드 마이그레이션: flours 없으면 기존 flourName으로 1종 블렌드 구성
 function ensureFlours(o){
@@ -1804,6 +1843,7 @@ function refreshCalcWeights(){
   });
   refreshLevainWeights();
   renderBiga();
+  refreshParts();
 }
 
 // 계량 체크 상태: 재료 id 모음 (배합/프리셋에는 저장하지 않음)
@@ -2004,6 +2044,7 @@ function renderCalc(){
   if(cdReset) cdReset.addEventListener('click',()=>{calcChecked.clear();renderCalc();});
   renderPresetName();
   renderLevain();
+  renderParts();
   renderBiga();
 }
 
@@ -2176,6 +2217,7 @@ document.getElementById('calcFlour').addEventListener('input',e=>{calc.flour=par
   document.querySelectorAll('#calcRows tr[data-idx]').forEach(tr=>{const i=+tr.dataset.idx;const cell=tr.querySelector('.ci-w');if(cell&&document.activeElement!==cell){const g=calc.flour*(parseFloat(calc.ingredients[i].pct)||0)/100;cell.value=g?Math.round(g*10)/10:'';}});
   refreshLevainWeights();
   renderBiga();
+  refreshParts();
 });
 document.getElementById('calcRevBtn').addEventListener('click',()=>{
   const target=parseFloat(document.getElementById('calcTarget').value)||0;
@@ -2561,7 +2603,195 @@ document.getElementById('calcLoadPreset').addEventListener('click',()=>{
   renderPresetList();
   document.getElementById('presetModal').classList.add('show');
 });
+
+// ===== 부재료(필링·토핑) 시작 =====
+// 부재료 레시피: baking.parts = [{id,name,section,ingredients:[{id,name,g}],notes}] — 만드는 분량(g) 그대로 저장
+// 빵 레시피 연결: calc.parts = [{id,partId,mode:'each'|'pct',amount}], calc.partsCount = 개수(개당 기준용)
+function saveParts(){ LS.set('baking.parts',parts); }
+function partById(id){ return parts.find(p=>p.id===id)||null; }
+function partTotal(p){ return (p&&p.ingredients||[]).reduce((s,i)=>s+(parseFloat(i.g)||0),0); }
+function partNeedG(link){
+  const a=parseFloat(link.amount)||0;
+  if(link.mode==='pct') return sumDisplayedTotalWeight()*a/100;
+  return a*(parseFloat(calc.partsCount)||0);
+}
+function partNeedTxt(link){
+  const a=parseFloat(link.amount)||0, need=partNeedG(link);
+  if(!a) return '사용량을 입력하세요';
+  if(link.mode==='pct') return `<b>${fmt(need)}</b> 사용 <span>(반죽 ${fmt(sumDisplayedTotalWeight())}의 ${Math.round(a*10)/10}%)</span>`;
+  const c=parseFloat(calc.partsCount)||0;
+  if(!c) return `개당 ${fmt(a)} · <span>위에 개수를 넣으면 총량이 나와요</span>`;
+  return `<b>${fmt(need)}</b> 사용 <span>(개당 ${fmt(a)} × ${c}개)</span>`;
+}
+function partOptions(selId){
+  let h=`<option value="">부재료 선택…</option>`;
+  PART_SECTIONS.forEach(sec=>{
+    const list=parts.filter(p=>(PART_SECTIONS.includes(p.section)?p.section:'기타')===sec);
+    if(list.length) h+=`<optgroup label="${escapeHtml(sec)}">`+list.map(p=>`<option value="${p.id}"${p.id===selId?' selected':''}>${escapeHtml(p.name||'이름 없음')}</option>`).join('')+`</optgroup>`;
+  });
+  if(selId && !partById(selId)) h+=`<option value="${selId}" selected>(삭제된 부재료)</option>`;
+  h+=`<option value="__new">＋ 새 부재료 만들기…</option>`;
+  return h;
+}
+function renderParts(){
+  const box=document.getElementById('partsBox'); if(!box) return;
+  if(calcMode==='cost'){ box.style.display='none'; return; }
+  box.style.display='';
+  if(!Array.isArray(calc.parts)) calc.parts=[];
+  const links=calc.parts;
+  box.classList.toggle('has',links.length>0);
+  let html=`<div class="pt-head"><div><div class="lv-title">🧁 사용 부재료</div><span class="lv-sub">필링·비스킷 등 이 빵에 쓰는 양을 정해 두면 불러올 때 함께 보여요.</span></div>`+
+    (links.some(l=>l.mode!=='pct')?`<label class="pt-count">개수 <input type="number" id="ptCount" min="0" step="1" value="${calc.partsCount||''}" placeholder="0">개</label>`:'')+`</div>`;
+  links.forEach((l,li)=>{
+    html+=`<div class="pt-row" data-pi="${li}">
+      <select class="pt-sel">${partOptions(l.partId)}</select>
+      <select class="pt-mode"><option value="each"${l.mode!=='pct'?' selected':''}>개당 g</option><option value="pct"${l.mode==='pct'?' selected':''}>반죽 대비 %</option></select>
+      <input class="pt-amt" type="number" min="0" step="${l.mode==='pct'?'0.5':'1'}" value="${l.amount===''||l.amount==null?'':l.amount}" placeholder="${l.mode==='pct'?'%':'g'}">
+      <button class="pt-del" title="연결 해제">✕</button>
+      <div class="pt-res"><span class="pt-need">${partNeedTxt(l)}</span>${l.partId&&partById(l.partId)&&partNeedG(l)>0?`<button class="btn btn-ghost pt-make" type="button">이만큼 만들기</button>`:''}</div>
+    </div>`;
+  });
+  if(!links.length && !parts.length) html+=`<div class="pt-empty">아직 부재료가 없어요. ＋ 부재료 연결 → "새 부재료 만들기"로 시작하세요.</div>`;
+  html+=`<button class="btn btn-ghost calc-addrow" id="ptAdd" type="button">＋ 부재료 연결</button>`;
+  box.innerHTML=html;
+
+  const cnt=document.getElementById('ptCount');
+  if(cnt) cnt.addEventListener('input',e=>{ calc.partsCount=parseFloat(e.target.value)||0; saveCalc(); refreshParts(); });
+  document.getElementById('ptAdd').addEventListener('click',()=>{ calc.parts.push({id:uid(),partId:'',mode:'each',amount:''}); saveCalc(); renderParts(); });
+  box.querySelectorAll('.pt-row').forEach(row=>{
+    const l=calc.parts[+row.dataset.pi];
+    row.querySelector('.pt-sel').addEventListener('change',e=>{
+      if(e.target.value==='__new'){ e.target.value=l.partId||''; openPartEditor(null,{linkId:l.id}); return; }
+      l.partId=e.target.value; saveCalc(); renderParts();
+    });
+    row.querySelector('.pt-mode').addEventListener('change',e=>{ l.mode=e.target.value; l.amount=''; saveCalc(); renderParts(); });
+    row.querySelector('.pt-amt').addEventListener('input',e=>{ l.amount=e.target.value===''?'':parseFloat(e.target.value)||0; saveCalc(); refreshParts(); });
+    row.querySelector('.pt-del').addEventListener('click',()=>{ calc.parts.splice(+row.dataset.pi,1); saveCalc(); renderParts(); });
+    const mk=row.querySelector('.pt-make');
+    if(mk) mk.addEventListener('click',()=>openPartEditor(l.partId,{target:partNeedG(l)}));
+  });
+}
+// 입력 중에는 상자를 다시 그리지 않고 계산 결과만 갱신
+function refreshParts(){
+  const box=document.getElementById('partsBox'); if(!box||calcMode==='cost') return;
+  if(!box.querySelector('.pt-row') && !(calc.parts||[]).length) return;
+  if(!box.contains(document.activeElement)){ renderParts(); return; }
+  box.querySelectorAll('.pt-row').forEach(row=>{ const l=calc.parts[+row.dataset.pi]; if(l) row.querySelector('.pt-need').innerHTML=partNeedTxt(l); });
+}
+
+// ----- 부재료 모달: 목록 / 편집 -----
+let partDraft=null, partDraftDirty=false, partEdCtx={};
+modalCloseGuards['partsModal']=()=>{ if(partDraft&&partDraftDirty) return confirm('저장하지 않은 변경이 있어요. 닫을까요?'); return true; };
+function openPartsList(){
+  partDraft=null; partDraftDirty=false;
+  const v=document.getElementById('partsView');
+  let h=`<h3>🧁 부재료</h3><p style="font-size:12.5px;color:#888;line-height:1.6;margin-bottom:4px">필링·크림·비스킷 등 빵에 넣거나 올리는 재료 레시피예요. 만드는 분량 그대로 저장하고, 만들 때 배율로 늘리거나 줄여요.</p>`;
+  if(!parts.length) h+=`<div class="pt-empty" style="margin:14px 0">아직 저장된 부재료가 없어요.</div>`;
+  PART_SECTIONS.forEach(sec=>{
+    const list=parts.filter(p=>(PART_SECTIONS.includes(p.section)?p.section:'기타')===sec);
+    if(!list.length) return;
+    h+=`<div class="pt-sec">${escapeHtml(sec)}</div>`+list.map(p=>`<button class="pt-item" data-id="${p.id}">${escapeHtml(p.name||'이름 없음')}<small>${fmt(partTotal(p))}</small></button>`).join('');
+  });
+  h+=`<div class="modal-actions" style="margin-top:14px"><button class="btn btn-ghost" data-pt="close">닫기</button><button class="btn btn-primary" data-pt="new">＋ 새 부재료</button></div>`;
+  v.innerHTML=h;
+  v.querySelectorAll('.pt-item').forEach(b=>b.addEventListener('click',()=>openPartEditor(b.dataset.id)));
+  v.querySelector('[data-pt="new"]').addEventListener('click',()=>openPartEditor(null));
+  v.querySelector('[data-pt="close"]').addEventListener('click',()=>tryCloseModal(document.getElementById('partsModal')));
+  openModal('partsModal');
+}
+function openPartEditor(id,ctx){
+  partEdCtx=ctx||{};
+  const src=id?partById(id):null;
+  partDraft=src?JSON.parse(JSON.stringify(src)):{id:uid(),name:'',section:PART_SECTIONS[0],ingredients:[{id:uid(),name:'',g:''}],notes:''};
+  partDraft._isNew=!src; partDraftDirty=false;
+  partDraft._scale=1;
+  if(partEdCtx.target>0 && partTotal(partDraft)>0) partDraft._scale=partEdCtx.target/partTotal(partDraft);
+  renderPartEditor();
+  openModal('partsModal');
+}
+function renderPartEditor(){
+  const d=partDraft, v=document.getElementById('partsView');
+  const tot=partTotal(d), sc=d._scale||1, scaled=Math.abs(sc-1)>0.0005;
+  v.innerHTML=`<h3>🧁 ${d._isNew?'새 부재료':'부재료 편집'}</h3>
+    <div class="field-row" style="margin-top:8px;grid-template-columns:2fr 1fr">
+      <div class="field"><label>이름</label><input id="ptName" value="${escapeHtml(d.name||'')}" placeholder="예: 모카 비스킷 (식빵 2개분)"></div>
+      <div class="field"><label>섹션</label><select id="ptSection">${PART_SECTIONS.map(s=>`<option${s===d.section?' selected':''}>${s}</option>`).join('')}</select></div>
+    </div>
+    <table class="pt-ed-table">
+      <thead><tr><th style="width:46%">재료</th><th style="width:22%">분량(g)</th><th style="width:24%;text-align:right">${scaled?'만들 양':''}</th><th></th></tr></thead>
+      <tbody>${d.ingredients.map((i,ii)=>`<tr data-ii="${ii}">
+        <td><input class="pe-name" value="${escapeHtml(i.name||'')}" placeholder="재료명"></td>
+        <td><input class="pe-g" type="number" min="0" step="0.5" value="${i.g===''||i.g==null?'':i.g}"></td>
+        <td class="pt-scaled">${scaled?fmt((parseFloat(i.g)||0)*sc):''}</td>
+        <td><button class="pt-del pe-del" title="삭제">✕</button></td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>합계</td><td id="peTot">${fmt(tot)}</td><td class="pt-scaled" id="peTotScaled">${scaled?fmt(tot*sc):''}</td><td></td></tr></tfoot>
+    </table>
+    <button class="btn btn-ghost calc-addrow" id="peAdd" type="button">＋ 재료 추가</button>
+    <div class="pt-scale">만들 때 배율 ×<input id="peScale" type="number" min="0" step="0.05" value="${Math.round(sc*100)/100}"> 또는 만들 양 <input id="peTarget" type="number" min="0" step="1" value="${scaled?Math.round(tot*sc):''}" placeholder="g">g
+      ${scaled?`<button class="btn btn-ghost pt-make" id="peScaleReset" type="button">원래 분량</button>`:''}</div>
+    <div class="field" style="margin-top:12px"><label>만드는 법 · 메모</label><textarea id="ptNotes" rows="6">${escapeHtml(d.notes||'')}</textarea></div>
+    <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap">
+      ${d._isNew?'':`<button class="btn btn-ghost" id="peDelete" style="margin-right:auto;color:#b84431">삭제</button>`}
+      <button class="btn btn-ghost" id="peBack">목록</button>
+      <button class="btn btn-primary" id="peSave">저장</button>
+    </div>`;
+  const dirty=()=>{partDraftDirty=true;};
+  v.querySelector('#ptName').addEventListener('input',e=>{d.name=e.target.value;dirty();});
+  v.querySelector('#ptSection').addEventListener('change',e=>{d.section=e.target.value;dirty();});
+  v.querySelector('#ptNotes').addEventListener('input',e=>{d.notes=e.target.value;dirty();});
+  const refreshScaled=()=>{
+    const t=partTotal(d), s=d._scale||1, on=Math.abs(s-1)>0.0005;
+    v.querySelectorAll('tbody tr').forEach(tr=>{ const i=d.ingredients[+tr.dataset.ii]; tr.querySelector('.pt-scaled').textContent=on?fmt((parseFloat(i.g)||0)*s):''; });
+    v.querySelector('#peTot').textContent=fmt(t);
+    v.querySelector('#peTotScaled').textContent=on?fmt(t*s):'';
+  };
+  v.querySelectorAll('tbody tr').forEach(tr=>{
+    const i=d.ingredients[+tr.dataset.ii];
+    tr.querySelector('.pe-name').addEventListener('input',e=>{i.name=e.target.value;dirty();});
+    tr.querySelector('.pe-g').addEventListener('input',e=>{i.g=e.target.value===''?'':parseFloat(e.target.value)||0;dirty();refreshScaled();});
+    tr.querySelector('.pe-del').addEventListener('click',()=>{d.ingredients.splice(+tr.dataset.ii,1);dirty();renderPartEditor();});
+  });
+  v.querySelector('#peAdd').addEventListener('click',()=>{d.ingredients.push({id:uid(),name:'',g:''});dirty();renderPartEditor();
+    const n=v.querySelectorAll('.pe-name'); if(n.length) n[n.length-1].focus();});
+  const scIn=v.querySelector('#peScale'), tgIn=v.querySelector('#peTarget');
+  scIn.addEventListener('change',e=>{ d._scale=parseFloat(e.target.value)||1; renderPartEditor(); });
+  tgIn.addEventListener('change',e=>{ const t=parseFloat(e.target.value)||0, tot=partTotal(d); d._scale=(t>0&&tot>0)?t/tot:1; renderPartEditor(); });
+  const rs=v.querySelector('#peScaleReset'); if(rs) rs.addEventListener('click',()=>{d._scale=1;renderPartEditor();});
+  v.querySelector('#peBack').addEventListener('click',()=>{ if(partDraftDirty && !confirm('저장하지 않은 변경이 있어요. 목록으로 갈까요?')) return; openPartsList(); });
+  const del=v.querySelector('#peDelete');
+  if(del) del.addEventListener('click',()=>{
+    const used=calcPresets.filter(p=>(p.data&&p.data.parts||[]).some(l=>l.partId===d.id)).map(p=>p.name);
+    if(!confirm(`"${d.name}" 부재료를 삭제할까요?`+(used.length?`\n\n연결된 레시피: ${used.join(', ')}\n(레시피에는 "삭제된 부재료"로 표시돼요)`:''))) return;
+    parts=parts.filter(p=>p.id!==d.id); saveParts(); partDraftDirty=false; openPartsList(); renderParts();
+  });
+  v.querySelector('#peSave').addEventListener('click',()=>{
+    if(!(d.name||'').trim()){ alert('이름을 입력하세요'); v.querySelector('#ptName').focus(); return; }
+    const out={id:d.id,name:d.name.trim(),section:d.section,ingredients:d.ingredients.filter(i=>(i.name||'').trim()||(parseFloat(i.g)||0)>0).map(i=>({id:i.id||uid(),name:(i.name||'').trim(),g:parseFloat(i.g)||0})),notes:d.notes||''};
+    const ix=parts.findIndex(p=>p.id===d.id);
+    if(ix>-1) parts[ix]=out; else parts.push(out);
+    saveParts(); partDraftDirty=false;
+    // 계산기의 "새 부재료 만들기"에서 왔으면 그 연결에 바로 지정
+    if(partEdCtx.linkId){ const l=(calc.parts||[]).find(x=>x.id===partEdCtx.linkId); if(l){ l.partId=out.id; saveCalc(); } closeModal('partsModal'); partDraft=null; }
+    else { partDraft=JSON.parse(JSON.stringify(out)); partDraft._scale=d._scale; partDraft._isNew=false; renderPartEditor(); }
+    renderParts();
+  });
+}
+document.getElementById('calcPartsBtn').addEventListener('click',openPartsList);
+// 다른 기기에서 바뀐 부재료를 반영하려면 새로고침 (서버 동기화는 저장 시점)
+// ===== 부재료(필링·토핑) 끝 =====
+
 // ===== 프린트 (배합 레시피 카드) =====
+function printPartsHtml(){
+  const links=(calc.parts||[]).filter(l=>l.partId&&(parseFloat(l.amount)||0)>0);
+  if(calcMode==='cost'||!links.length) return '';
+  return `<div class="pc-sec">🧁 사용 부재료</div><table><tbody>`+links.map(l=>{
+    const p=partById(l.partId), need=partNeedG(l), a=parseFloat(l.amount)||0;
+    const how=l.mode==='pct'?`반죽 대비 ${Math.round(a*10)/10}%`:`개당 ${fmt(a)}${calc.partsCount?` × ${calc.partsCount}개`:''}`;
+    const tot=partTotal(p), sc=tot>0?need/tot:0;
+    const sub=(p&&sc>0)?`<tr><td colspan="2" class="pc-sub" style="font-size:11px;color:#555">${p.ingredients.map(i=>`${escapeHtml(i.name)} ${fmt(i.g*sc)}`).join(' · ')}</td></tr>`:'';
+    return `<tr><td>${escapeHtml(p?p.name:'(삭제된 부재료)')} <span style="color:#666;font-size:11px">${how}</span></td><td class="pc-num">${fmt(need)}</td></tr>${sub}`;
+  }).join('')+`</tbody></table>`;
+}
 function buildPrintCard(){
   const F=calc.flour||0;
   const d=new Date();
@@ -2597,6 +2827,7 @@ function buildPrintCard(){
       </tbody>
     </table>
     ${bigaHtml}
+    ${printPartsHtml()}
     <div class="pc-foot">Ayo's Baking · 밀가루 100% 기준 베이커스 퍼센티지</div>
   `;
 }
