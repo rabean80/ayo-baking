@@ -62,7 +62,7 @@
   .tab-btn[data-tab="scheduler"]{--tape:#acb900}
   .tab-btn[data-tab="history"]{--tape:#ea525d}
   .tab-btn[data-tab="tips"]{--tape:#9587ff}
-  .tab-btn:last-child{--tape:#7fbf9a}
+  .tab-btn[data-tab="season"]{--tape:#7fbf9a}
   @media(max-width:600px){.brand-logo{height:60px}.tab-btn{font-size:17px;min-width:auto;flex:0 0 auto}}
 
   .panel{display:none}
@@ -85,6 +85,8 @@
   /* Scheduler iframe */
   .iframe-wrap{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid #ece1c9;background:var(--paper-2)}
   .iframe-wrap iframe{width:100%;min-height:820px;border:none;display:block;background:#f9f8f6}
+  /* Seasonal: 화면 높이에 맞추고 안에서 스크롤 (창이 화면 안에 뜨도록) */
+  .iframe-wrap iframe#seasonIframe{min-height:560px;height:calc(100vh - 230px);background:transparent}
   .iframe-toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--paper-2);border-bottom:1px solid #ece1c9;font-size:12px;color:var(--ink-3)}
   .iframe-toolbar .dot{width:9px;height:9px;border-radius:50%;background:#f5cf80;box-shadow:0 0 0 1px #d8a43e inset}
 
@@ -505,7 +507,7 @@
     <button class="tab-btn" data-tab="scheduler">Scheduler</button>
     <button class="tab-btn" data-tab="history">Journal</button>
     <button class="tab-btn" data-tab="tips">Baking Tips</button>
-    <button class="tab-btn" onclick="window.open('season.html','_blank')">Seasonal</button>
+    <button class="tab-btn" data-tab="season">Seasonal</button>
   </nav>
 
   <!-- SCHEDULER -->
@@ -524,6 +526,24 @@
       <div class="iframe-wrap">
         <div class="iframe-toolbar"><span class="dot"></span><span>Ayo's Baking Plan</span></div>
         <iframe src="baking_scheduler_v2.html" id="schedIframe" title="Baking Scheduler"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEASONAL (season.html을 탭 안에서 불러옴 · 지우려면 이 섹션 + 탭 버튼 + season.html) -->
+  <section class="panel" id="panel-season">
+    <div class="surface">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Seasonal</div>
+          <div class="section-sub">월별 제철 재료와 레시피 아이디어, 연결된 레시피</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" id="openSeasonNew">↗ 새 창으로 열기</button>
+        </div>
+      </div>
+      <div class="iframe-wrap">
+        <iframe id="seasonIframe" title="Seasonal" data-src="season.html?embed=1"></iframe>
       </div>
     </div>
   </section>
@@ -1002,6 +1022,8 @@ const LS = (function(){
   }
 
   return {
+    // 다른 페이지(탭 안 iframe)가 이미 서버에 저장한 값을 이 화면 캐시에만 반영
+    setLocal(k, v){ cache[k] = JSON.stringify(v); },
     // 이미지 업로드 → 서버 URL 반환
     async upload(blob){
       const r = await fetch(`${API_BASE}/upload`, {
@@ -1059,6 +1081,19 @@ document.querySelectorAll('.tab-btn[data-tab]').forEach(btn=>{btn.addEventListen
 // Scheduler
 document.getElementById('reloadScheduler').addEventListener('click',()=>{const f=document.getElementById('schedIframe');f.src=f.src;});
 document.getElementById('openSchedulerNew').addEventListener('click',()=>{window.open('baking_scheduler_v2.html','_blank');});
+// ===== Seasonal 탭: 열 때마다 최신 레시피 목록으로 다시 불러옴 =====
+document.querySelector('.tab-btn[data-tab="season"]').addEventListener('click',()=>{
+  const f=document.getElementById('seasonIframe');
+  f.src=f.dataset.src+'&t='+Date.now();
+});
+document.getElementById('openSeasonNew').addEventListener('click',()=>{window.open('season.html','_blank');});
+// season.html(탭 안)에서 보내는 메시지: 저장된 재료 반영, 레시피 열기, 높이 맞추기
+window.addEventListener('message',e=>{
+  if(e.origin!==location.origin||!e.data||typeof e.data!=='object') return;
+  if(e.data.type==='season-saved'){ LS.setLocal('season.ingredients',e.data.value); if(typeof renderRecipeHist==='function') renderRecipeHist(); }
+  if(e.data.type==='open-recipe'){ location.hash='recipe='+encodeURIComponent(e.data.id); }
+});
+function openSeasonTab(){ document.querySelector('.tab-btn[data-tab="season"]').click(); window.scrollTo({top:0,behavior:'smooth'}); }
 
 // Modals
 function openModal(id){document.getElementById(id).classList.add('show');}
@@ -1669,11 +1704,12 @@ function renderRecipeHist(){
     </div>`;
   }).join('');
   const seasonIngs=(LS.get('season.ingredients',[])||[]).filter(i=>(i.recipeIds||[]).includes(pid));
-  const seasonHtml=seasonIngs.length?`<div class="rh-season">🌱 제철재료 ${seasonIngs.map(i=>`<a href="season.html" target="_blank">${escapeHtml(i.name)}</a>`).join('')}</div>`:'';
+  const seasonHtml=seasonIngs.length?`<div class="rh-season">🌱 제철재료 ${seasonIngs.map(i=>`<a href="#" data-season-open>${escapeHtml(i.name)}</a>`).join('')}</div>`:'';
   box.innerHTML=seasonHtml+`<div class="rh-box${recipeHistOpen?' open':''}">
     <button class="rh-head">🥖 굽기 기록<span class="n">${items.length}회</span><span class="tg">${recipeHistOpen?'접기 ▴':'펼치기 ▾'}</span></button>
     <div class="rh-list">${html||'<div class="rh-empty">아직 연결된 기록이 없어요. Journal에서 기록을 남길 때 이 레시피를 연결해 보세요.</div>'}</div>
   </div>`;
+  box.querySelectorAll('[data-season-open]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();openSeasonTab();}));
   box.querySelector('.rh-head').addEventListener('click',()=>{recipeHistOpen=!recipeHistOpen;renderRecipeHist();});
   box.querySelectorAll('.rh-item').forEach(it=>it.addEventListener('click',()=>{
     document.querySelector('.tab-btn[data-tab="history"]').click();
