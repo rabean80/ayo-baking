@@ -798,11 +798,30 @@ function renderPickBreads(list){
   });
 }
 // 프로젝트 탭: 저장된 프로젝트를 탭하면 그 안의 빵들을 작업판에 담음 (여러 개·중복 가능)
+// 프로젝트 전체의 시작·완성 시각(분)
+function projSpan(p){
+  let start=Infinity,end=-Infinity;
+  (p.breads||[]).forEach(b=>{
+    const e=breadEndMin({targetDate:b.targetDate||getTodayStr(),targetTime:b.targetTime||DEFAULT_TIME});
+    const total=(b.stages||[]).reduce((t,s)=>t+(+s.m||0),0);
+    start=Math.min(start,e-total);end=Math.max(end,e);
+  });
+  return isFinite(start)?{start,end}:null;
+}
+// 저장된 날짜가 이미 지났으면 '지금부터 시작할 수 있는 가장 빠른 날'로 옮길 일수 (시각·빵 사이 간격은 그대로)
+function projShiftDays(p){
+  const sp=projSpan(p);if(!sp) return 0;
+  const now=Math.floor(Date.now()/60000);
+  return sp.start>=now?0:Math.ceil((now-sp.start)/1440);
+}
 function fmtProjWhen(p){
-  const ends=(p.breads||[]).map(b=>breadEndMin({targetDate:b.targetDate||getTodayStr(),targetTime:b.targetTime||DEFAULT_TIME}));
-  if(!ends.length) return '';
-  const d=new Date(Math.max(...ends)*60000);
-  return `완성 ${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const sp=projSpan(p);if(!sp) return '';
+  const hm=m=>{const d=new Date(m*60000);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+  const now=Math.floor(Date.now()/60000);
+  if(sp.start>=now){ const d=new Date(sp.end*60000); return `${d.getMonth()+1}/${d.getDate()} ${hm(sp.end)} 완성`; }
+  const day=m=>{const d=new Date(m*60000);d.setHours(0,0,0,0);return d.getTime();};
+  const gap=Math.round((day(sp.end)-day(sp.start))/86400000);
+  return `${hm(sp.start)} 시작 → ${gap===0?'':gap===1?'다음 날 ':gap+'일 뒤 '}${hm(sp.end)} 완성`;
 }
 function renderPickProjects(list){
   pickSectionHead(list,`저장된 프로젝트 (${projects.length}) · 탭하면 작업판에 담겨요`);
@@ -825,7 +844,11 @@ function renderPickProjects(list){
         return;
       }
       const wasEmpty=!breads.length;
-      (p.breads||[]).forEach(b=>addBreadCopyToBoard(b));
+      const shift=projShiftDays(p)*1440;
+      (p.breads||[]).forEach(b=>{
+        const dt=shift?absMinToDateTime(breadEndMin({targetDate:b.targetDate||getTodayStr(),targetTime:b.targetTime||DEFAULT_TIME})+shift):{};
+        addBreadCopyToBoard({...b,...dt});
+      });
       if(wasEmpty) board.name=p.name; else if(board.name!==p.name) board.name='';
       saveActiveProject();buildToggles();render();flashPicked(el);
     });
