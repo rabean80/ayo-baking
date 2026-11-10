@@ -37,6 +37,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 .toggle-btn.active{color:#fff}
 .toggle-btn .edit-ico{font-size:11px;font-weight:700;opacity:.8;cursor:pointer;padding:1px 5px;margin-left:2px;border-radius:50%}
 .toggle-btn .edit-ico:hover{opacity:1;background:rgba(255,255,255,.25)}
+.toggle-btn .chip-edit{font-size:12px;margin-left:6px;opacity:1}
 .action-btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .btn{padding:5px 12px;border-radius:20px;border:1px solid #ccc;font-size:12px;cursor:pointer;background:#fff;color:#444;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
 .btn:hover{background:#f0eeea}
@@ -620,6 +621,9 @@ if(!board){
   LS.set('sched.board',board);
 }
 
+// 빵이 하나도 없는 저장 프로젝트는 정리 (빈 프로젝트는 남기지 않음)
+if(projects.some(p=>!(p.breads||[]).length)){ projects=projects.filter(p=>(p.breads||[]).length); LS.set('sched.projects',projects); }
+
 // 공정이 비어 있는 기존 빵(라이브러리 + 프로젝트 + 작업판)에 기본 공정 채우기 — 빈 빵이 있을 때만 저장
 (function fillEmptyStages(){
   const empty=b=>!b.stages||!b.stages.length;
@@ -969,7 +973,8 @@ function buildToggles(){
     btn.className='toggle-btn active';btn.style.borderColor=b.color;btn.style.background=b.color;btn.style.color='#fff';
     const nameSpan=document.createElement('span');nameSpan.textContent=b.name;
     const delIco=document.createElement('span');delIco.className='edit-ico';delIco.textContent='✕';delIco.title='작업판에서 빼기 (Pick Breads & Projects에서 다시 담을 수 있어요)';
-    btn.appendChild(nameSpan);btn.appendChild(delIco);
+    const editIco=document.createElement('span');editIco.className='edit-ico chip-edit';editIco.textContent='✏️';editIco.title='공정 보기/수정';
+    btn.appendChild(nameSpan);btn.appendChild(editIco);btn.appendChild(delIco);
     btn.title='눌러서 공정 보기/수정';
     // 칩 클릭 = 공정 보기/수정, ✕ = 프로젝트에서 제거
     btn.addEventListener('click',()=>openBreadModal(b.id));
@@ -1057,10 +1062,7 @@ function render(){
     const nameCol=document.createElement('div');nameCol.className='name-col';nameCol.style.color=bread.color;
     const nameTop=document.createElement('div');nameTop.className='name-col-top';
     const nameText=document.createElement('span');nameText.textContent=bread.name;
-    const editBtn=document.createElement('button');
-    editBtn.style.cssText='background:transparent;border:none;cursor:pointer;font-size:11px;padding:1px 3px;color:#ccc;';
-    editBtn.textContent='✏️';editBtn.addEventListener('click',()=>openBreadModal(bread.id));
-    nameTop.appendChild(nameText);nameTop.appendChild(editBtn);
+    nameTop.appendChild(nameText); // 수정(✏️)은 위쪽 빵 칩으로 옮김
 
     const inputRow=document.createElement('div');inputRow.className='name-col-inputs';
     const dateIn=document.createElement('input');dateIn.type='date';dateIn.value=bread.targetDate;
