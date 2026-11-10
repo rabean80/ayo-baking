@@ -220,6 +220,21 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
   #printArea{display:block !important;position:absolute;left:0;top:0;width:100%;background:#fff !important}
   @page{margin:14mm}
 }
+  /* Pick Breads & Projects */
+  .pick-tabs{display:flex;gap:6px;margin:4px 0 10px}
+  .pick-tabs button{flex:1;border:1px solid #e3d3b5;background:#fff;color:#8a7253;border-radius:100px;padding:7px 10px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+  .pick-tabs button.active{background:#7a5333;color:#fff;border-color:#7a5333}
+  .pick-head{font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px}
+  .pick-sub{font-size:10.5px;color:#c0ab8c;margin:6px 2px 2px}
+  .pick-sep{height:1px;background:#eee;margin:12px 0 8px}
+  .pick-empty{font-size:11.5px;color:#aaa;padding:4px 2px 8px}
+  .proj-item .p-plus{font-size:13px;color:#5DCAA5;font-weight:700}
+  .proj-item .p-tag{font-size:10px;color:#a8906f;border:1px solid #e8d9bf;border-radius:8px;padding:0 5px}
+  .proj-item .p-libdel,.proj-item .p-ren{font-size:13px;cursor:pointer;padding:0 2px 0 8px;opacity:.7}
+  .proj-item.picked{background:#e9f6ef}
+  .proj-item-proj .p-main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .proj-item-proj .p-sub{font-size:10.5px;color:#a8906f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btn-saveproj{background:#fff;border:1px solid #d8c4a0;color:#7a5333}
 </style>
 </head>
 <body>
@@ -227,26 +242,11 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
 <h1>Baking Scheduler</h1>
 <p style="font-size:13px;color:#8a7253;margin-bottom:1rem">오늘은 어떤 빵을 만들까요?</p>
 
-<!-- Project bar (top-level work sessions) -->
-<div class="project-bar">
-  <div class="project-chips" id="projectChips"></div>
-  <div class="project-actions">
-    <button class="btn btn-newproj" id="newProjectBtn">＋ New Project</button>
-    <div class="np-form" id="npForm" style="display:none">
-      <input type="text" id="npName" class="project-name-input" placeholder="프로젝트 이름">
-      <input type="date" id="npDate" class="project-date-input">
-      <button class="btn np-create-btn" id="npCreate">생성</button>
-      <button class="btn np-cancel-btn" id="npCancel">취소</button>
-    </div>
-  </div>
-</div>
-
 <div class="top-row">
   <div class="toggles" id="toggles"></div>
   <div class="action-btns">
-    <button class="btn btn-proj" id="projSelectorBtn">Select Bread</button>
-    <button class="btn btn-add" id="addBreadBtn">＋ Add New Bread</button>
-    <button class="btn btn-total" id="totalTimeBtn">총 작업시간 보기</button>
+    <button class="btn btn-proj" id="projSelectorBtn">Pick Breads &amp; Projects</button>
+    <button class="btn btn-saveproj" id="saveProjBtn">💾 프로젝트 저장</button>
   </div>
 </div>
 
@@ -283,20 +283,27 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
   </div>
 </div>
 
-<!-- Total popup -->
-<div class="backdrop" id="totalBackdrop"></div>
-<div class="total-popup" id="totalPopup">
-  <button class="popup-close" id="totalClose">✕</button>
-  <h4>총 작업시간</h4>
-  <div id="totalContent"></div>
-</div>
-
 <!-- Project panel -->
 <div class="backdrop" id="projBackdrop"></div>
 <div class="proj-panel" id="projPanel">
   <button class="proj-panel-close" id="projPanelClose">✕</button>
-  <h4>Select Bread</h4>
+  <h4>Pick Breads &amp; Projects</h4>
+  <div class="pick-tabs" id="pickTabs"><button data-pick="bread" class="active">🍞 빵</button><button data-pick="project">📁 프로젝트</button></div>
   <div class="proj-list" id="projList"></div>
+</div>
+
+<!-- 프로젝트 저장 -->
+<div class="modal-back" id="saveProjModal">
+  <div class="modal-box" style="max-width:420px">
+    <h3>💾 프로젝트 저장</h3>
+    <div class="field"><label>프로젝트 이름</label><input type="text" id="spName" placeholder="예: 주말 캄빠뉴 + 식빵"></div>
+    <div style="font-size:11.5px;color:#8a7253;margin:-2px 0 6px">담긴 빵: <span id="spList"></span></div>
+    <div id="spHint" style="font-size:11.5px;color:#b8704a;min-height:16px"></div>
+    <div class="modal-actions">
+      <button class="m-btn m-btn-ghost" data-close="saveProjModal">취소</button>
+      <button class="m-btn m-btn-primary" id="spSave">저장</button>
+    </div>
+  </div>
 </div>
 
 <!-- Bread Modal -->
@@ -591,38 +598,29 @@ function upsertCustomBreadToLibrary(data){
   saveCustomBreads(customBreads);
 }
 
-// Build a fresh empty project. groups always seeded from defaults.
-let projSeq=LS.get('sched.projSeq',0);
-function makeProject(name,date){
-  projSeq++;LS.set('sched.projSeq',projSeq);
-  return {id:uid(),name:name||('Project '+projSeq),defaultDate:date||getTodayStr(),breads:[],groups:DEFAULT_GROUPS.map(g=>({...g})),selected:[]};
-}
-
-// Load or migrate projects
-let projects=LS.get('sched.projects',null);
-let activeProjectId=LS.get('sched.activeProject',null);
-
-if(!projects){
-  // Migration: if old flat data exists, wrap it as "Project 1". Otherwise start with one project pre-filled from the library.
-  const oldBreads=LS.get('sched.breads',null);
-  const oldGroups=LS.get('sched.groups',null);
-  const oldSelected=LS.get('sched.selected',null);
-  let first;
-  if(oldBreads){
-    first={id:uid(),name:'Project 1',breads:oldBreads,groups:oldGroups||DEFAULT_GROUPS.map(g=>({...g})),selected:oldSelected||[oldBreads[0]?.id].filter(Boolean)};
-    projSeq=1;LS.set('sched.projSeq',1);
+// ===== 저장된 프로젝트(일정 묶음) + 작업판(board) =====
+// projects: 💾 프로젝트 저장으로 남긴 일정 묶음 (Pick 창의 '프로젝트'에서 불러옴)
+// board: 지금 화면에 보이는 작업판 하나 (빵·프로젝트를 골라 담고, 필요하면 프로젝트로 저장)
+const _clone=o=>JSON.parse(JSON.stringify(o));
+let projects=LS.get('sched.projects',null)||[];
+let board=LS.get('sched.board',null);
+if(!board){
+  // 1회 이전: 예전 '활성 프로젝트'를 작업판으로 옮김. 기존 프로젝트들은 저장된 프로젝트로 그대로 남김
+  const actId=LS.get('sched.activeProject',null);
+  const src=projects.find(p=>p.id===actId)||projects[0];
+  if(src){
+    const sel=new Set(src.selected||[]);
+    board={name:src.name||'',breads:_clone((src.breads||[]).filter(b=>!sel.size||sel.has(b.id))),groups:_clone(src.groups&&src.groups.length?src.groups:DEFAULT_GROUPS),selected:[]};
+    board.selected=board.breads.map(b=>b.id);
   } else {
-    first={id:uid(),name:'Project 1',breads:[],groups:DEFAULT_GROUPS.map(g=>({...g})),selected:[]};
-    projSeq=1;LS.set('sched.projSeq',1);
+    const oldBreads=LS.get('sched.breads',null);
+    board={name:'',breads:oldBreads?_clone(oldBreads):[],groups:_clone(LS.get('sched.groups',null)||DEFAULT_GROUPS),selected:[]};
+    board.selected=board.breads.map(b=>b.id);
   }
-  projects=[first];
-  activeProjectId=first.id;
-  LS.set('sched.projects',projects);
-  LS.set('sched.activeProject',activeProjectId);
+  LS.set('sched.board',board);
 }
-if(!activeProjectId||!projects.find(p=>p.id===activeProjectId)){activeProjectId=projects[0].id;LS.set('sched.activeProject',activeProjectId);}
 
-// 공정이 비어 있는 기존 빵(라이브러리 + 모든 프로젝트)에 기본 공정 채우기 — 빈 빵이 있을 때만 저장
+// 공정이 비어 있는 기존 빵(라이브러리 + 프로젝트 + 작업판)에 기본 공정 채우기 — 빈 빵이 있을 때만 저장
 (function fillEmptyStages(){
   const empty=b=>!b.stages||!b.stages.length;
   const cb=getCustomBreads();
@@ -630,18 +628,7 @@ if(!activeProjectId||!projects.find(p=>p.id===activeProjectId)){activeProjectId=
   let changed=false;
   projects.forEach(p=>(p.breads||[]).forEach(b=>{ if(empty(b)){ b.stages=defaultNewStages(); changed=true; } }));
   if(changed) LS.set('sched.projects',projects);
-})();
-// 1회: 숨겨진 채로 남아 있던 빵 정리 (이제 프로젝트의 빵 = 화면에 보이는 빵)
-(function dropHiddenBreads(){
-  if(LS.get('sched.migDropHidden',false)) return;
-  let changed=false;
-  projects.forEach(p=>{
-    const sel=new Set(p.selected||[]);
-    const kept=(p.breads||[]).filter(b=>sel.has(b.id));
-    if(kept.length!==(p.breads||[]).length){ p.breads=kept; changed=true; }
-  });
-  if(changed) LS.set('sched.projects',projects);
-  LS.set('sched.migDropHidden',true);
+  if(board.breads.some(empty)){ board.breads.forEach(b=>{ if(empty(b)) b.stages=defaultNewStages(); }); LS.set('sched.board',board); }
 })();
 // 1회: 자동으로 채워진 기본 공정의 '반죽' 30분 → 15분 (기본값 변경 반영)
 (function migrateDough15(){
@@ -649,36 +636,35 @@ if(!activeProjectId||!projects.find(p=>p.id===activeProjectId)){activeProjectId=
   const fix=b=>{ let c=false; (b.stages||[]).forEach(st=>{ if(st.n==='반죽'&&st.g==='반죽'&&+st.m===30){ st.m=15; c=true; } }); return c; };
   const cb=getCustomBreads(); if(cb.map(fix).some(Boolean)) saveCustomBreads(cb);
   if(projects.map(p=>(p.breads||[]).map(fix).some(Boolean)).some(Boolean)) LS.set('sched.projects',projects);
+  if(board.breads.map(fix).some(Boolean)) LS.set('sched.board',board);
   LS.set('sched.migDough15',true);
 })();
 
-// Active project's data is exposed via the same variable names the rest of the code uses.
-function activeProject(){return projects.find(p=>p.id===activeProjectId)||projects[0];}
+// 작업판의 데이터는 예전과 같은 변수 이름(breads/groups/selected)으로 씀
+function activeProject(){return board;}
 let breads,groups,selected;
 function loadActiveProject(){
-  const p=activeProject();
-  breads=p.breads.map(b=>({targetDate:getTodayStr(),targetTime:DEFAULT_TIME,...b}));
-  groups=p.groups&&p.groups.length?p.groups:DEFAULT_GROUPS.map(g=>({...g}));
-  selected=new Set(p.selected||[]);
+  breads=(board.breads||[]).map(b=>({targetDate:getTodayStr(),targetTime:DEFAULT_TIME,...b}));
+  groups=board.groups&&board.groups.length?board.groups:DEFAULT_GROUPS.map(g=>({...g}));
+  selected=new Set(board.selected||[]);
 }
 loadActiveProject();
 
-// Persist the active project's current state back into the projects array.
+// 작업판 현재 상태 저장 (빵이 다 빠지면 이름도 비움)
 function saveActiveProject(){
-  const p=activeProject();
-  p.breads=breads;
-  p.groups=groups;
-  p.selected=[...selected];
-  LS.set('sched.projects',projects);
+  board.breads=breads;
+  board.groups=groups;
+  board.selected=[...selected];
+  if(!breads.length) board.name='';
+  LS.set('sched.board',board);
 }
 
-// Back-compat shim: old code calls LS.set('sched.breads'/'sched.groups'/'sched.selected').
-// Reroute those writes into the active project instead of flat keys.
+// 예전 코드의 LS.set('sched.breads'/'sched.groups'/'sched.selected') → 작업판으로
 const _origSet=LS.set;
 LS.set=function(k,v){
-  if(k==='sched.breads'){const p=activeProject();p.breads=v;return _origSet('sched.projects',projects);}
-  if(k==='sched.groups'){const p=activeProject();p.groups=v;return _origSet('sched.projects',projects);}
-  if(k==='sched.selected'){const p=activeProject();p.selected=v;return _origSet('sched.projects',projects);}
+  if(k==='sched.breads'){board.breads=v;if(!v.length)board.name='';return _origSet('sched.board',board);}
+  if(k==='sched.groups'){board.groups=v;return _origSet('sched.board',board);}
+  if(k==='sched.selected'){board.selected=v;return _origSet('sched.board',board);}
   return _origSet(k,v);
 };
 
@@ -745,180 +731,144 @@ document.querySelectorAll('[data-close]').forEach(b=>{b.addEventListener('click'
 document.querySelectorAll('.modal-back').forEach(mb=>{mb.addEventListener('click',e=>{if(e.target===mb)mb.classList.remove('show');});});
 
 // ========================
-// Total time
+// Pick Breads & Projects 창 — 빵(라이브러리 → 내 레시피)과 저장된 프로젝트를 골라 작업판에 담기 (중복 허용)
 // ========================
-document.getElementById('totalTimeBtn').addEventListener('click',()=>{
-  const active=breads.filter(b=>selected.has(b.id));
-  const el=document.getElementById('totalContent');
-  if(!active.length){el.innerHTML='<div style="color:#aaa;font-size:12px">선택된 빵이 없어요</div>';}
-  else{
-    let rows='',grand=0;
-    active.forEach(b=>{const total=b.stages.reduce((s,st)=>s+st.m,0);grand+=total;rows+=`<div class="t-row"><span>${b.name}</span><span>${fmtDur(total)}</span></div>`;});
-    if(active.length>1)rows+=`<div class="t-row"><span>전체 합계</span><span>${fmtDur(grand)}</span></div>`;
-    el.innerHTML=rows;
-  }
-  document.getElementById('totalBackdrop').classList.add('show');
-  document.getElementById('totalPopup').classList.add('show');
-});
-document.getElementById('totalClose').addEventListener('click',()=>{document.getElementById('totalBackdrop').classList.remove('show');document.getElementById('totalPopup').classList.remove('show');});
-document.getElementById('totalBackdrop').addEventListener('click',()=>{document.getElementById('totalBackdrop').classList.remove('show');document.getElementById('totalPopup').classList.remove('show');});
-
-// ========================
-// Select Bread panel (pick breads from LIBRARY into this project)
-// ========================
-// 레시피(Recipe 탭에 저장된 배합) 목록 — 부모 페이지에서 최신 값을 읽고, 없으면 자체 캐시 사용
+// 레시피(계산기 '내 레시피') 목록 — 부모 페이지에서 최신 값을 읽고, 없으면 자체 캐시 사용
 function getSavedRecipes(){
   try{ if(window.parent && window.parent!==window && typeof window.parent.getRecipesForScheduler==='function') return window.parent.getRecipesForScheduler(); }catch(e){}
   return {list:LS.get('baking.calcPresets',[])||[], sections:['사워도우','하드·유럽빵','플랫브레드','식빵','소프트·단과자','구움과자'], uncat:'미분류'};
 }
-let recipeSectionOpen=true;
-function renderRecipeSection(list){
+let pickTab='bread';
+function pickSectionHead(list,text){const hd=document.createElement('div');hd.className='pick-head';hd.textContent=text;list.appendChild(hd);}
+function addBreadCopyToBoard(src){
+  const nb={..._clone(src),id:uid(),targetDate:src.targetDate||(board.defaultDate||getTodayStr()),targetTime:src.targetTime||DEFAULT_TIME,
+    stages:(src.stages&&src.stages.length)?src.stages.map(s=>({...s,id:uid()})):defaultNewStages()};
+  delete nb._default;
+  breads.push(nb);selected.add(nb.id);
+  return nb;
+}
+function flashPicked(el){el.classList.add('picked');setTimeout(()=>el.classList.remove('picked'),600);}
+// 빵 탭: 라이브러리(위) → 내 레시피(아래). 이미 라이브러리에 있는 레시피(연결됐거나 이름이 같은 것)는 레시피 목록에서 숨김
+function renderPickBreads(list){
+  const lib=getFullLibrary();
+  pickSectionHead(list,`빵 라이브러리 (${lib.length})`);
+  lib.forEach(l=>{
+    const el=document.createElement('div');el.className='proj-item';
+    el.innerHTML=`<span class="p-dot" style="background:${l.color}"></span><span class="p-name"></span>${l.recipePresetId?'<span class="p-tag">레시피</span>':''}<span class="p-plus">＋</span><span class="p-libdel" title="라이브러리에서 삭제">🗑</span>`;
+    el.querySelector('.p-name').textContent=l.name;
+    el.addEventListener('click',e=>{
+      if(e.target.classList.contains('p-libdel')){
+        e.stopPropagation();
+        if(confirm(`"${l.name}"을(를) 빵 라이브러리에서 삭제할까요?\n(이미 작업판·프로젝트에 담긴 빵은 그대로 남아요.${l.recipePresetId?'\n레시피는 다시 \'내 레시피에서 추가\' 목록에 나타나요.':''})`)){ deleteLibraryBread(l); renderProjPanel(); }
+        return;
+      }
+      addBreadCopyToBoard({...l,targetDate:null,targetTime:null});
+      saveActiveProject();buildToggles();render();flashPicked(el);
+    });
+    list.appendChild(el);
+  });
   const {list:recipes,sections,uncat}=getSavedRecipes();
-  const hd=document.createElement('div');hd.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px;cursor:pointer;user-select:none';
-  hd.textContent=(recipeSectionOpen?'▾ ':'▸ ')+`내 레시피에서 추가 (${recipes.length})`;
-  hd.addEventListener('click',()=>{recipeSectionOpen=!recipeSectionOpen;renderProjPanel();});
-  list.appendChild(hd);
-  if(!recipeSectionOpen) return;
-  if(!recipes.length){const e=document.createElement('div');e.style.cssText='font-size:11.5px;color:#aaa;padding:4px 2px 8px';e.textContent='저장된 레시피가 없어요. Recipe 탭에서 💾 저장하면 여기에 나타나요.';list.appendChild(e);return;}
-  const order=[...sections,uncat];
-  const groups={};recipes.forEach(r=>{const c=sections.includes(r.category)?r.category:uncat;(groups[c]=groups[c]||[]).push(r);});
-  order.filter(c=>groups[c]).forEach(c=>{
-    const sh=document.createElement('div');sh.style.cssText='font-size:10.5px;color:#c0ab8c;margin:6px 2px 2px';sh.textContent=c;list.appendChild(sh);
-    groups[c].forEach(r=>{
-      const inProj=breads.some(b=>b.recipePresetId===r.id);
+  const libIds=new Set(lib.map(l=>l.recipePresetId).filter(Boolean));
+  const libNames=new Set(lib.map(l=>l.name));
+  const left=recipes.filter(r=>!libIds.has(r.id)&&!libNames.has(r.name));
+  const sep=document.createElement('div');sep.className='pick-sep';list.appendChild(sep);
+  pickSectionHead(list,`내 레시피에서 추가 (${left.length}) · 담으면 라이브러리로 옮겨져요`);
+  if(!left.length){const e=document.createElement('div');e.className='pick-empty';e.textContent=recipes.length?'모든 레시피가 라이브러리에 있어요.':'저장된 레시피가 없어요. Calculator에서 💾 저장하면 여기에 나타나요.';list.appendChild(e);return;}
+  const groups2={};left.forEach(r=>{const c=sections.includes(r.category)?r.category:uncat;(groups2[c]=groups2[c]||[]).push(r);});
+  [...sections,uncat].filter(c=>groups2[c]).forEach(c=>{
+    const sh=document.createElement('div');sh.className='pick-sub';sh.textContent=c;list.appendChild(sh);
+    groups2[c].forEach(r=>{
       const el=document.createElement('div');el.className='proj-item';
-      el.innerHTML=`<span class="p-dot" style="background:#e8d9bf"></span><span class="p-name"></span>${inProj?'<span style="font-size:10.5px;color:#a8906f">추가됨</span>':''}<span style="font-size:13px;color:#5DCAA5;font-weight:700">＋</span>`;
+      el.innerHTML=`<span class="p-dot" style="background:#e8d9bf"></span><span class="p-name"></span><span class="p-plus">＋</span>`;
       el.querySelector('.p-name').textContent=r.name;
       el.addEventListener('click',()=>{
-        // 같은 이름의 라이브러리 빵이 있으면 그 공정을 쓰고, 없으면 기본 공정으로 시작
-        const lib=getFullLibrary().find(l=>l.name===r.name);
-        const nb={id:uid(),name:r.name,recipe:(r.data&&r.data.notes)||(lib&&lib.recipe)||'',color:(lib&&lib.color)||COLORS[breads.length%COLORS.length],recipePresetId:r.id,
-          targetDate:(activeProject().defaultDate||getTodayStr()),targetTime:DEFAULT_TIME,
-          stages:(lib&&lib.stages&&lib.stages.length)?lib.stages.map(s=>({...s,id:uid()})):defaultNewStages()};
-        breads.push(nb);selected.add(nb.id);
-        saveActiveProject();renderProjPanel();buildToggles();render();
+        // 레시피 → 라이브러리에 저장(레시피와 연결) → 작업판에 사본 추가
+        const cb=getCustomBreads();
+        const libBread={id:uid(),name:r.name,color:COLORS[cb.length%COLORS.length],recipe:(r.data&&r.data.notes)||'',recipePresetId:r.id,stages:defaultNewStages()};
+        cb.push(libBread);saveCustomBreads(cb);
+        addBreadCopyToBoard(libBread);
+        saveActiveProject();buildToggles();render();renderProjPanel();
       });
       list.appendChild(el);
     });
   });
-  const sep=document.createElement('div');sep.style.cssText='height:1px;background:#eee;margin:10px 0 8px';list.appendChild(sep);
 }
-function renderProjPanel(){
-  const list=document.getElementById('projList');list.innerHTML='';
-  renderRecipeSection(list);
-  // Section 2: 라이브러리 — 탭하면 새 사본을 프로젝트에 추가
-  const hd2=document.createElement('div');hd2.style.cssText='font-size:11px;color:#a8906f;font-weight:600;margin:2px 0 4px';hd2.textContent='빵 라이브러리 (탭하여 프로젝트에 추가)';
-  list.appendChild(hd2);
-  getFullLibrary().forEach(lib=>{
-    const el=document.createElement('div');el.className='proj-item';
-    el.innerHTML=`<span class="p-dot" style="background:${lib.color}"></span><span class="p-name">${lib.name}</span><span style="font-size:13px;color:#5DCAA5;font-weight:700">＋</span><span class="p-libdel" title="라이브러리에서 삭제" style="font-size:13px;cursor:pointer;padding:0 2px 0 8px;opacity:.7">🗑</span>`;
+// 프로젝트 탭: 저장된 프로젝트를 탭하면 그 안의 빵들을 작업판에 담음 (여러 개·중복 가능)
+function fmtProjWhen(p){
+  const ends=(p.breads||[]).map(b=>breadEndMin({targetDate:b.targetDate||getTodayStr(),targetTime:b.targetTime||DEFAULT_TIME}));
+  if(!ends.length) return '';
+  const d=new Date(Math.max(...ends)*60000);
+  return `완성 ${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function renderPickProjects(list){
+  pickSectionHead(list,`저장된 프로젝트 (${projects.length}) · 탭하면 작업판에 담겨요`);
+  if(!projects.length){const e=document.createElement('div');e.className='pick-empty';e.textContent='저장된 프로젝트가 없어요. 작업판을 꾸민 뒤 💾 프로젝트 저장을 눌러 보세요.';list.appendChild(e);return;}
+  projects.forEach(p=>{
+    const el=document.createElement('div');el.className='proj-item proj-item-proj';
+    el.innerHTML=`<div class="p-main"><span class="p-name"></span><span class="p-sub"></span></div><span class="p-plus">＋</span><span class="p-ren" title="이름 변경">✏️</span><span class="p-libdel" title="프로젝트 삭제">🗑</span>`;
+    el.querySelector('.p-name').textContent=p.name;
+    el.querySelector('.p-sub').textContent=[(p.breads||[]).map(b=>b.name).join(', '),fmtProjWhen(p)].filter(Boolean).join(' · ');
     el.addEventListener('click',e=>{
       if(e.target.classList.contains('p-libdel')){
         e.stopPropagation();
-        if(confirm(`"${lib.name}"을(를) 빵 라이브러리에서 삭제할까요?\n(이미 프로젝트에 추가된 빵은 그대로 남아요.)`)){ deleteLibraryBread(lib); renderProjPanel(); }
+        if(confirm(`'${p.name}' 프로젝트를 삭제할까요?\n(작업판에 이미 담긴 빵은 그대로 남아요.)`)){projects=projects.filter(x=>x.id!==p.id);LS.set('sched.projects',projects);renderProjPanel();}
         return;
       }
-      const nb={...lib,id:uid(),targetDate:(activeProject().defaultDate||getTodayStr()),targetTime:DEFAULT_TIME,stages:(lib.stages&&lib.stages.length)?lib.stages.map(s=>({...s,id:uid()})):defaultNewStages()};
-      delete nb._default;
-      breads.push(nb);selected.add(nb.id);
-      saveActiveProject();renderProjPanel();buildToggles();render();
+      if(e.target.classList.contains('p-ren')){
+        e.stopPropagation();
+        const v=(prompt('프로젝트 이름',p.name)||'').trim();
+        if(v&&v!==p.name){p.name=v;LS.set('sched.projects',projects);renderProjPanel();}
+        return;
+      }
+      const wasEmpty=!breads.length;
+      (p.breads||[]).forEach(b=>addBreadCopyToBoard(b));
+      if(wasEmpty) board.name=p.name; else if(board.name!==p.name) board.name='';
+      saveActiveProject();buildToggles();render();flashPicked(el);
     });
     list.appendChild(el);
   });
 }
+function renderProjPanel(){
+  document.querySelectorAll('#pickTabs [data-pick]').forEach(b=>b.classList.toggle('active',b.dataset.pick===pickTab));
+  const list=document.getElementById('projList');list.innerHTML='';
+  if(pickTab==='project') renderPickProjects(list); else renderPickBreads(list);
+}
+document.querySelectorAll('#pickTabs [data-pick]').forEach(b=>b.addEventListener('click',()=>{pickTab=b.dataset.pick;renderProjPanel();}));
+function closePickPanel(){document.getElementById('projBackdrop').classList.remove('show');document.getElementById('projPanel').classList.remove('show');}
 document.getElementById('projSelectorBtn').addEventListener('click',()=>{renderProjPanel();document.getElementById('projBackdrop').classList.add('show');document.getElementById('projPanel').classList.add('show');});
-document.getElementById('projPanelClose').addEventListener('click',()=>{document.getElementById('projBackdrop').classList.remove('show');document.getElementById('projPanel').classList.remove('show');});
-document.getElementById('projBackdrop').addEventListener('click',()=>{document.getElementById('projBackdrop').classList.remove('show');document.getElementById('projPanel').classList.remove('show');});
+document.getElementById('projPanelClose').addEventListener('click',closePickPanel);
+document.getElementById('projBackdrop').addEventListener('click',closePickPanel);
 
 // ========================
-// Project bar (top-level work sessions)
+// 💾 프로젝트 저장 — 작업판을 이름 붙여 저장. 같은 이름이 있으면 덮어쓰기
 // ========================
-let editingProjectNameId=null;
-function renderProjectBar(){
-  const chips=document.getElementById('projectChips');chips.innerHTML='';
-  if(!projects.length){const e=document.createElement('span');e.className='proj-chip-empty';e.textContent='프로젝트가 없습니다';chips.appendChild(e);return;}
-  projects.forEach(p=>{
-    if(editingProjectNameId===p.id){
-      const wrap=document.createElement('span');wrap.style.cssText='display:inline-flex;align-items:center;gap:4px';
-      const inp=document.createElement('input');inp.className='project-name-input';inp.value=p.name;
-      const commit=()=>{const v=inp.value.trim();if(v)p.name=v;editingProjectNameId=null;LS_setProjects();renderProjectBar();};
-      inp.addEventListener('keydown',e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){editingProjectNameId=null;renderProjectBar();}});
-      inp.addEventListener('blur',()=>{setTimeout(commit,120);});
-      const del=document.createElement('button');del.className='btn';del.style.cssText='padding:4px 8px;font-size:11px;color:#d94040;border-color:#f0c0c0;background:#fff';del.textContent='🗑';del.title='프로젝트 삭제';
-      del.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();deleteProject(p.id);});
-      wrap.appendChild(inp);wrap.appendChild(del);
-      chips.appendChild(wrap);
-      setTimeout(()=>{inp.focus();inp.select();},0);
-      return;
-    }
-    const chip=document.createElement('div');
-    chip.className='proj-chip'+(p.id===activeProjectId?' active':'');
-    const nm=document.createElement('span');nm.textContent=p.name;
-    const edit=document.createElement('span');edit.className='pc-edit';edit.textContent='✏️';edit.title='이름 변경';
-    chip.appendChild(nm);chip.appendChild(edit);
-    nm.addEventListener('click',()=>{switchProject(p.id);});
-    edit.addEventListener('click',e=>{e.stopPropagation();editingProjectNameId=p.id;renderProjectBar();});
-    chips.appendChild(chip);
-  });
+function updateSaveProjHint(){
+  const v=document.getElementById('spName').value.trim();
+  const exists=projects.some(p=>p.name===v);
+  document.getElementById('spHint').textContent=exists?'같은 이름의 프로젝트가 있어요. 저장하면 덮어써요. 새로 저장하려면 이름을 바꿔 주세요.':'';
+  document.getElementById('spSave').textContent=exists?'덮어쓰기':'저장';
 }
-function LS_setProjects(){LS.set('sched.projects',projects);}
-function switchProject(id){
-  if(id===activeProjectId)return;
-  saveActiveProject();
-  activeProjectId=id;LS.set('sched.activeProject',id);
-  loadActiveProject();
-  renderProjectBar();buildToggles();render();
-}
-function newProject(name,date){
-  saveActiveProject();
-  const p=makeProject(name,date);
-  // start empty per spec — breads added via Select Bread inherit p.defaultDate
-  projects.push(p);
-  activeProjectId=p.id;LS.set('sched.activeProject',p.id);
+document.getElementById('saveProjBtn').addEventListener('click',()=>{
+  if(!breads.length){alert('작업판에 빵이 없어요. Pick Breads & Projects에서 먼저 담아 주세요.');return;}
+  document.getElementById('spName').value=board.name||'';
+  document.getElementById('spList').textContent=breads.map(b=>b.name).join(', ');
+  updateSaveProjHint();openModal('saveProjModal');
+  setTimeout(()=>{const i=document.getElementById('spName');i.focus();i.select();},50);
+});
+document.getElementById('spName').addEventListener('input',updateSaveProjHint);
+document.getElementById('spName').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('spSave').click();});
+document.getElementById('spSave').addEventListener('click',()=>{
+  const name=document.getElementById('spName').value.trim();
+  if(!name){alert('프로젝트 이름을 입력하세요');return;}
+  const data={name,breads:_clone(breads).map(b=>({...b,stages:b.stages.map(s=>({...s}))})),groups:_clone(groups)};
+  data.selected=data.breads.map(b=>b.id);
+  const idx=projects.findIndex(p=>p.name===name);
+  if(idx>-1) projects[idx]={...projects[idx],...data}; else projects.push({id:uid(),...data});
   LS.set('sched.projects',projects);
-  loadActiveProject();
-  renderProjectBar();buildToggles();render();
-  // open Select Bread so the user can pick breads right away
-  renderProjPanel();document.getElementById('projBackdrop').classList.add('show');document.getElementById('projPanel').classList.add('show');
-}
-// New Project: show inline name/date form first
-const npBtn=document.getElementById('newProjectBtn');
-const npForm=document.getElementById('npForm');
-const npName=document.getElementById('npName');
-const npDate=document.getElementById('npDate');
-function openNewProjectForm(){
-  npName.value='';
-  npName.placeholder='Project '+(projSeq+1);
-  npDate.value=getTodayStr();
-  npBtn.style.display='none';
-  npForm.style.display='flex';
-  setTimeout(()=>npName.focus(),0);
-}
-function closeNewProjectForm(){
-  npForm.style.display='none';
-  npBtn.style.display='';
-}
-function submitNewProject(){
-  const name=npName.value.trim();
-  const date=npDate.value||getTodayStr();
-  closeNewProjectForm();
-  newProject(name,date);
-}
-npBtn.addEventListener('click',openNewProjectForm);
-document.getElementById('npCreate').addEventListener('click',submitNewProject);
-document.getElementById('npCancel').addEventListener('click',closeNewProjectForm);
-npName.addEventListener('keydown',e=>{if(e.key==='Enter')submitNewProject();if(e.key==='Escape')closeNewProjectForm();});
-npDate.addEventListener('keydown',e=>{if(e.key==='Enter')submitNewProject();if(e.key==='Escape')closeNewProjectForm();});
-function deleteProject(id){
-  if(projects.length<=1){alert('최소 한 개의 프로젝트는 있어야 해요.');editingProjectNameId=null;renderProjectBar();return;}
-  const p=projects.find(x=>x.id===id);
-  if(!confirm(`'${p.name}' 프로젝트를 삭제할까요?`)){editingProjectNameId=null;renderProjectBar();return;}
-  projects=projects.filter(x=>x.id!==id);
-  editingProjectNameId=null;
-  if(activeProjectId===id){activeProjectId=projects[0].id;LS.set('sched.activeProject',activeProjectId);loadActiveProject();}
-  LS.set('sched.projects',projects);
-  renderProjectBar();buildToggles();render();
-}
+  board.name=name;saveActiveProject();
+  closeModal('saveProjModal');
+  const t=document.getElementById('saveProjBtn');const o=t.textContent;t.textContent='✓ 저장됨';setTimeout(()=>t.textContent=o,1400);
+});
 
 // ========================
 // Bread Modal
@@ -1010,19 +960,6 @@ document.getElementById('sSave').addEventListener('click',()=>{
 document.getElementById('sDelete').addEventListener('click',()=>{if(editingStageIdx===null)return;editingStages.splice(editingStageIdx,1);closeModal('stageModal');renderStageList();});
 
 // ========================
-// Add Bread
-// ========================
-document.getElementById('addBreadBtn').addEventListener('click',()=>{
-  const active=breads.filter(b=>selected.has(b.id));
-  const base=active.length>0?active[0]:breads[0];
-  if(!base){openBreadModal(null);return;}
-  const nb={...base,id:uid(),name:base.name+' (복사)',stages:base.stages.map(s=>({...s,id:uid()}))};
-  breads.push(nb);selected.add(nb.id);
-  LS.set('sched.breads',breads);LS.set('sched.selected',[...selected]);
-  buildToggles();render();openBreadModal(nb.id);
-});
-
-// ========================
 // Timeline render
 // ========================
 function buildToggles(){
@@ -1031,7 +968,7 @@ function buildToggles(){
     const btn=document.createElement('button');
     btn.className='toggle-btn active';btn.style.borderColor=b.color;btn.style.background=b.color;btn.style.color='#fff';
     const nameSpan=document.createElement('span');nameSpan.textContent=b.name;
-    const delIco=document.createElement('span');delIco.className='edit-ico';delIco.textContent='✕';delIco.title='프로젝트에서 제거 (Select Bread 라이브러리에서 다시 추가할 수 있어요)';
+    const delIco=document.createElement('span');delIco.className='edit-ico';delIco.textContent='✕';delIco.title='작업판에서 빼기 (Pick Breads & Projects에서 다시 담을 수 있어요)';
     btn.appendChild(nameSpan);btn.appendChild(delIco);
     btn.title='눌러서 공정 보기/수정';
     // 칩 클릭 = 공정 보기/수정, ✕ = 프로젝트에서 제거
@@ -1220,18 +1157,18 @@ function render(){
 // Data reset button
 document.getElementById('dataResetBtn')?.addEventListener('click',()=>openModal('dataResetModal'));
 document.getElementById('resetGroups').addEventListener('click',()=>{
-  if(!confirm('현재 프로젝트의 그룹을 기본값으로 초기화할까요? 빵 데이터는 유지됩니다.'))return;
+  if(!confirm('작업판의 그룹을 기본값으로 초기화할까요? 빵 데이터는 유지됩니다.'))return;
   groups=DEFAULT_GROUPS.map(g=>({...g}));saveActiveProject();closeModal('dataResetModal');location.reload();
 });
 document.getElementById('resetBreads').addEventListener('click',()=>{
-  if(!confirm('현재 프로젝트의 빵을 라이브러리 기본값으로 초기화할까요?'))return;
+  if(!confirm('작업판의 빵을 라이브러리 기본값으로 초기화할까요?'))return;
   breads=LIBRARY.map(b=>({...b,id:uid(),targetDate:getTodayStr(),targetTime:DEFAULT_TIME,stages:b.stages.map(s=>({...s,id:uid()}))}));
   selected=new Set([breads[0]?.id].filter(Boolean));
   saveActiveProject();closeModal('dataResetModal');location.reload();
 });
 document.getElementById('resetAll').addEventListener('click',()=>{
-  if(!confirm('모든 프로젝트와 데이터를 삭제하고 새로 시작할까요? 이 작업은 되돌릴 수 없습니다.'))return;
-  ['sched.projects','sched.activeProject','sched.projSeq','sched.breads','sched.groups','sched.selected'].forEach(k=>LS.remove(k));
+  if(!confirm('작업판과 저장된 프로젝트를 모두 삭제하고 새로 시작할까요? 이 작업은 되돌릴 수 없습니다.'))return;
+  ['sched.projects','sched.board','sched.activeProject','sched.projSeq','sched.breads','sched.groups','sched.selected'].forEach(k=>LS.remove(k));
   closeModal('dataResetModal');location.reload();
 });
 
@@ -1281,7 +1218,7 @@ function renderCalendar(){
     if(!isOther&&day===today.getDate()&&calMonth===today.getMonth()&&calYear===today.getFullYear())cell.classList.add('today');
     const dayEl=document.createElement('div');dayEl.className='cal-day';dayEl.textContent=day;cell.appendChild(dayEl);
     const dateStr=y2+'-'+String(m2+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-    const dayEvents=events.filter(e=>e.date===dateStr);
+    const dayEvents=events.filter(e=>e.date===dateStr).sort((a,b)=>a.sortKey-b.sortKey);
     let expanded=false;
     const eventContainer=document.createElement('div');
     function renderEvents(){
@@ -1322,7 +1259,12 @@ function getCalendarEvents(){
       let cur=new Date(startD);cur.setHours(0,0,0,0);
       while(cur<=endD){
         const ds=cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0');
-        events.push({date:ds,label:t.n,fullLabel:b.name+' · '+t.n+' ('+fmtDur(t.m)+')',color:b.color});
+        const hm=d=>String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+        const isStartDay=cur.toDateString()===startD.toDateString();
+        // 시작한 날: '17:20 오토리즈' / 이어지는 날: '~10:30 2차 냉장 발효'(끝나는 시각)
+        const label=(isStartDay?hm(startD):'~'+(cur.toDateString()===endD.toDateString()?hm(endD):'24:00'))+' '+t.n;
+        const sortKey=isStartDay?(startD.getHours()*60+startD.getMinutes()):-1;
+        events.push({date:ds,label,sortKey,fullLabel:b.name+' · '+t.n+' '+hm(startD)+'~'+hm(endD)+' ('+fmtDur(t.m)+')',color:b.color});
         cur.setDate(cur.getDate()+1);
       }
     });
@@ -1336,12 +1278,12 @@ function getCalendarEvents(){
 function _esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function buildSchedulePrint(){
   const active=breads.filter(b=>selected.has(b.id));
-  const proj=activeProject();
+  const proj=board.name?{name:board.name}:null;
   const d=new Date();
   const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   let body='';
   if(!active.length){
-    body='<div class="sp-empty">선택된 빵이 없습니다. Select Bread에서 빵을 추가해 주세요.</div>';
+    body='<div class="sp-empty">작업판에 빵이 없습니다. Pick Breads &amp; Projects에서 담아 주세요.</div>';
   } else {
     const list=active.map(b=>({b,times:computeTimings(b)})).sort((x,y)=>(x.times[0]?.startMin??Infinity)-(y.times[0]?.startMin??Infinity));
     list.forEach(({b,times})=>{
@@ -1367,7 +1309,6 @@ document.getElementById('schedPrint').addEventListener('click',()=>{ buildSchedu
 // ========================
 // Init
 // ========================
-renderProjectBar();
 buildToggles();
 render();
 </script>
