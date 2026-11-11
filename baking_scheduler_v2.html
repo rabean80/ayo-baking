@@ -307,6 +307,24 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
   </div>
 </div>
 
+<!-- 라이브러리에 저장 -->
+<div class="modal-back" id="libSaveModal">
+  <div class="modal-box" style="max-width:420px">
+    <h3>📚 라이브러리에 저장</h3>
+    <div class="field"><label>라이브러리 이름</label><input type="text" id="lsName"></div>
+    <div class="field"><label>종류</label><select id="lsCat"></select></div>
+    <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:#7a6a52;margin:8px 0 2px;cursor:pointer">
+      <input type="checkbox" id="lsTime" style="width:auto">
+      <span>완성 시각 <b id="lsTimeVal"></b>도 함께 저장 <span style="color:#aaa">(꺼내면 이 시각으로 들어와요)</span></span>
+    </label>
+    <div id="lsHint" style="font-size:11.5px;color:#b8704a;min-height:16px;margin-top:6px"></div>
+    <div class="modal-actions">
+      <button class="m-btn m-btn-ghost" data-close="libSaveModal">취소</button>
+      <button class="m-btn m-btn-primary" id="lsSave">새 빵으로 추가</button>
+    </div>
+  </div>
+</div>
+
 <!-- Bread Modal -->
 <div class="modal-back" id="breadModal">
   <div class="modal-box">
@@ -325,10 +343,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:.25rem;color:#7a4f30}
       <div class="stage-list" id="stageList"></div>
       <button class="add-stage-btn" id="addStageInBreadBtn">＋ 단계 추가</button>
     </div>
-    <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:#7a6a52;margin:10px 0 4px;cursor:pointer">
-      <input type="checkbox" id="bSaveToLibrary" style="width:auto">
-      라이브러리에도 이 공정으로 저장
-    </label>
+    <button class="m-btn m-btn-ghost" id="bSaveToLibBtn" style="margin:10px 0 4px;color:#7a6a52">📚 라이브러리에 저장…</button>
     <div class="modal-actions">
       <button class="m-btn m-btn-danger left" id="bDelete">삭제</button>
       <button class="m-btn m-btn-ghost" data-close="breadModal">취소</button>
@@ -578,23 +593,59 @@ function deleteLibraryBread(lib){
 // 외부(Calculator 등)에서 이름/메모만으로 커스텀 빵을 라이브러리에 추가
 window.addLibraryBreadFromExternal = function(name, recipeNotes){
   const customBreads = getCustomBreads();
-  const nb = { id: uid(), name: name, recipe: recipeNotes||'', color: COLORS[customBreads.length % COLORS.length], stages: defaultNewStages() };
+  const nb = { id: uid(), name: name, recipe: recipeNotes||'', category: libAutoCategory(name), color: COLORS[customBreads.length % COLORS.length], stages: defaultNewStages() };
   customBreads.push(nb);
   saveCustomBreads(customBreads);
   return nb;
 };
 
-// 빵 편집 모달에서 "라이브러리에도 저장" 체크 시 사용 - 이름이 같은 기존 항목이 있으면 갱신, 없으면 새로 추가
+// ===== 라이브러리 종류(섹션) — Calculator '내 레시피'와 같은 섹션·분류 규칙 =====
+function libSections(){ const r=getSavedRecipes(); return {sections:r.sections, uncat:r.uncat}; }
+function libAutoCategory(name){
+  const n=String(name||'');
+  if(/원시|피타|또르띠아|토르티야|(^|[\s(])난([\s(]|$)/.test(n)) return '플랫브레드';
+  if(/식빵/.test(n)) return '식빵';
+  if(/사워도우|르방/.test(n)) return '사워도우';
+  if(/치아바타|캄파뉴|캄빠뉴|깜빠뉴|깜파뉴|바게트|포카치아|하드빵/.test(n)) return '하드·유럽빵';
+  if(/소금빵|단과자|모닝빵|브리오슈/.test(n)) return '소프트·단과자';
+  if(/스콘|비스코티|쿠키|머핀/.test(n)) return '구움과자';
+  return libSections().uncat;
+}
+// 종류: 직접 정한 값 → 연결된 레시피의 섹션 → 이름으로 자동 분류
+function libCategoryOf(l){
+  const {sections}=libSections();
+  if(l.category&&sections.includes(l.category)) return l.category;
+  if(l.recipePresetId){ const r=(getSavedRecipes().list||[]).find(x=>x.id===l.recipePresetId); if(r&&sections.includes(r.category)) return r.category; }
+  return libAutoCategory(l.name);
+}
+// 같은 섹션 안에서는 이름이 겹치는 빵끼리 모아서 정렬 (예: 사워도우 → 사워도우(새벽굽기) → 통밀사워도우(새벽굽기))
+const libBase=n=>String(n||'').replace(/\(.*?\)/g,'').replace(/\s+/g,'');
+function sortLibGroup(arr){
+  const bases=arr.map(l=>libBase(l.name)).filter(Boolean);
+  const fam=l=>{const b=libBase(l.name);return bases.filter(x=>b.includes(x)).sort((a,c)=>a.length-c.length)[0]||b;};
+  return arr.map(l=>({l,f:fam(l),b:libBase(l.name)}))
+    .sort((a,c)=>a.f.localeCompare(c.f,'ko')||a.b.length-c.b.length||a.b.localeCompare(c.b,'ko')||a.l.name.localeCompare(c.l.name,'ko'))
+    .map(x=>x.l);
+}
+function findLibByName(name){ return getFullLibrary().find(b=>b.name===name)||null; }
+// 빵 편집 → 📚 라이브러리에 저장. 같은 이름이 있으면 덮어쓰기, 없으면 새로 추가
 function upsertCustomBreadToLibrary(data){
   const customBreads = getCustomBreads();
   const idx = customBreads.findIndex(b=>b.name===data.name);
+  // 같은 이름의 기본 빵을 덮어쓰면: 기본 빵은 숨기고 커스텀으로 대체
+  const def = DEFAULT_BREADS.find(b=>b.name===data.name);
+  if(idx<0 && def){ const removed=getRemovedDefaults(); if(!removed.includes(def.name)){removed.push(def.name);LS.set('sched.removedDefaults',removed);} }
+  const prev = idx>-1 ? customBreads[idx] : {};
   const libBread = {
-    id: idx>-1 ? customBreads[idx].id : uid(),
+    ...prev,
+    id: idx>-1 ? prev.id : uid(),
     name: data.name,
     color: data.color,
     recipe: data.recipe||'',
+    category: data.category||prev.category||'',
     stages: data.stages.map(s=>({...s, id:uid()})) // 라이브러리 전용 사본(새 id)
   };
+  if(data.targetTime) libBread.targetTime=data.targetTime; else delete libBread.targetTime;
   if(idx>-1){ customBreads[idx]=libBread; } else { customBreads.push(libBread); }
   saveCustomBreads(customBreads);
 }
@@ -756,9 +807,16 @@ function flashPicked(el){el.classList.add('picked');setTimeout(()=>el.classList.
 function renderPickBreads(list){
   const lib=getFullLibrary();
   pickSectionHead(list,`빵 라이브러리 (${lib.length})`);
-  lib.forEach(l=>{
+  const {sections:libSecs,uncat:libUncat}=libSections();
+  const libGroups={};lib.forEach(l=>{const c=libCategoryOf(l);(libGroups[c]=libGroups[c]||[]).push(l);});
+  const libOrdered=[];
+  [...libSecs,libUncat].filter(c=>libGroups[c]).forEach(c=>{libOrdered.push({head:c});sortLibGroup(libGroups[c]).forEach(l=>libOrdered.push(l));});
+  libOrdered.forEach(l=>{
+    if(l.head){const sh=document.createElement('div');sh.className='pick-sub';sh.textContent=l.head;list.appendChild(sh);return;}
+    const libTime=l._default?null:(l.targetTime||null); // 저장된 완성 시각은 커스텀 빵만
     const el=document.createElement('div');el.className='proj-item';
-    el.innerHTML=`<span class="p-dot" style="background:${l.color}"></span><span class="p-name"></span>${l.recipePresetId?'<span class="p-tag">레시피</span>':''}<span class="p-plus">＋</span><span class="p-libdel" title="라이브러리에서 삭제">🗑</span>`;
+    el.innerHTML=`<span class="p-dot" style="background:${l.color}"></span><span class="p-name"></span>${libTime?'<span class="p-tag p-time"></span>':''}${l.recipePresetId?'<span class="p-tag">레시피</span>':''}<span class="p-plus">＋</span><span class="p-libdel" title="라이브러리에서 삭제">🗑</span>`;
+    if(libTime) el.querySelector('.p-time').textContent=`완성 ${libTime}`;
     el.querySelector('.p-name').textContent=l.name;
     el.addEventListener('click',e=>{
       if(e.target.classList.contains('p-libdel')){
@@ -766,7 +824,10 @@ function renderPickBreads(list){
         if(confirm(`"${l.name}"을(를) 빵 라이브러리에서 삭제할까요?\n(이미 작업판·프로젝트에 담긴 빵은 그대로 남아요.${l.recipePresetId?'\n레시피는 다시 \'내 레시피에서 추가\' 목록에 나타나요.':''})`)){ deleteLibraryBread(l); renderProjPanel(); }
         return;
       }
-      addBreadCopyToBoard({...l,targetDate:null,targetTime:null});
+      // 완성 시각이 저장된 빵: 오늘 그 시각이 이미 지났으면 내일로
+      let tDate=null;
+      if(libTime&&!board.defaultDate){const [hh,mm]=libTime.split(':').map(Number);const n=new Date();if(hh*60+mm<=n.getHours()*60+n.getMinutes()) tDate=getTomorrowStr();}
+      addBreadCopyToBoard({...l,targetDate:tDate,targetTime:libTime});
       saveActiveProject();buildToggles();render();flashPicked(el);
     });
     list.appendChild(el);
@@ -788,7 +849,7 @@ function renderPickBreads(list){
       el.addEventListener('click',()=>{
         // 레시피 → 라이브러리에 저장(레시피와 연결) → 작업판에 사본 추가
         const cb=getCustomBreads();
-        const libBread={id:uid(),name:r.name,color:COLORS[cb.length%COLORS.length],recipe:(r.data&&r.data.notes)||'',recipePresetId:r.id,stages:defaultNewStages()};
+        const libBread={id:uid(),name:r.name,color:COLORS[cb.length%COLORS.length],recipe:(r.data&&r.data.notes)||'',recipePresetId:r.id,category:c,stages:defaultNewStages()};
         cb.push(libBread);saveCustomBreads(cb);
         addBreadCopyToBoard(libBread);
         saveActiveProject();buildToggles();render();renderProjPanel();
@@ -908,7 +969,6 @@ function openBreadModal(breadId){
   document.getElementById('breadModalTitle').textContent=bread?'빵 편집':'새 빵 추가';
   document.getElementById('bName').value=bread?bread.name:'';
   document.getElementById('bRecipe').value=bread?(bread.recipe||''):'';
-  document.getElementById('bSaveToLibrary').checked=false;
   selectedColor=bread?bread.color:COLORS[0];
   // 공정이 없는 빵(새 빵, 계산기에서 저장된 빵 등)은 기본 공정으로 채워서 보여줌 → 저장 시 반영
   editingStages=(bread&&bread.stages&&bread.stages.length)?bread.stages.map(s=>({...s})):defaultNewStages();
@@ -947,10 +1007,44 @@ document.getElementById('bSave').addEventListener('click',()=>{
   if(editingBreadId){breads=breads.map(b=>b.id===editingBreadId?{...b,...data}:b);}
   else{const nb={id:uid(),targetDate:getTodayStr(),targetTime:DEFAULT_TIME,...data};breads.push(nb);selected.add(nb.id);}
   LS.set('sched.breads',breads);
-  if(document.getElementById('bSaveToLibrary').checked){
-    upsertCustomBreadToLibrary(data);
-  }
   closeModal('breadModal');buildToggles();render();
+});
+// 📚 라이브러리에 저장 — 빵 편집 내용을 작업판에 저장하고, 라이브러리에도 저장(덮어쓰기 / 새 빵으로 추가)
+function curEditingTime(){ const b=editingBreadId&&breads.find(x=>x.id===editingBreadId); return (b&&b.targetTime)||DEFAULT_TIME; }
+function updateLibSaveHint(){
+  const v=document.getElementById('lsName').value.trim();
+  const ex=v&&findLibByName(v);
+  document.getElementById('lsHint').textContent=ex?'같은 이름의 빵이 라이브러리에 있어요. 저장하면 덮어써요. 따로 남기려면 이름을 바꿔 주세요.':'';
+  document.getElementById('lsSave').textContent=ex?'덮어쓰기':'새 빵으로 추가';
+  // 덮어쓰는 경우 기존 종류를 기본값으로
+  if(ex&&!document.getElementById('lsCat').dataset.touched) document.getElementById('lsCat').value=libCategoryOf(ex);
+  else if(!ex&&!document.getElementById('lsCat').dataset.touched) document.getElementById('lsCat').value=libAutoCategory(v);
+}
+document.body.appendChild(document.getElementById('libSaveModal')); // 빵 편집 창 위에 뜨도록
+document.getElementById('bSaveToLibBtn').addEventListener('click',()=>{
+  const name=document.getElementById('bName').value.trim();if(!name){alert('빵 이름을 입력하세요');return;}
+  const {sections,uncat}=libSections();
+  const sel=document.getElementById('lsCat');sel.innerHTML='';delete sel.dataset.touched;
+  [...sections,uncat].forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+  document.getElementById('lsName').value=name;
+  const t=curEditingTime();document.getElementById('lsTimeVal').textContent=t;
+  const ex=findLibByName(name);
+  document.getElementById('lsTime').checked=ex?!!ex.targetTime:(t!==DEFAULT_TIME);
+  updateLibSaveHint();openModal('libSaveModal');
+});
+document.getElementById('lsName').addEventListener('input',updateLibSaveHint);
+document.getElementById('lsCat').addEventListener('change',e=>{e.target.dataset.touched='1';});
+document.getElementById('lsSave').addEventListener('click',()=>{
+  const libName=document.getElementById('lsName').value.trim();if(!libName){alert('이름을 입력하세요');return;}
+  const name=document.getElementById('bName').value.trim();
+  const data={name,color:selectedColor,recipe:document.getElementById('bRecipe').value,stages:editingStages};
+  // 작업판의 빵도 함께 저장
+  if(editingBreadId){breads=breads.map(b=>b.id===editingBreadId?{...b,...data}:b);}
+  else{const nb={id:uid(),targetDate:getTodayStr(),targetTime:DEFAULT_TIME,...data};breads.push(nb);selected.add(nb.id);editingBreadId=nb.id;}
+  LS.set('sched.breads',breads);
+  upsertCustomBreadToLibrary({...data,name:libName,category:document.getElementById('lsCat').value,
+    targetTime:document.getElementById('lsTime').checked?curEditingTime():null});
+  closeModal('libSaveModal');closeModal('breadModal');buildToggles();render();
 });
 document.getElementById('bDelete').addEventListener('click',()=>{
   if(!editingBreadId)return;if(!confirm('이 빵을 삭제할까요?'))return;
