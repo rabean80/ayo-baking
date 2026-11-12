@@ -1216,21 +1216,32 @@ function hlogSummary(log){
   const s=t.join(' · ');
   return s.length>40?s.slice(0,40)+'…':s;
 }
+// 같은 빵 판별: 연결 레시피가 같거나, 이름 끝 'N차'를 뺀 이름이 같으면 같은 빵
+const hlogBaseName=t=>String(t||'').replace(/\s*\d+\s*차\s*$/,'').replace(/\s+/g,'').toLowerCase();
+const hlogKey=log=>JSON.stringify(HLOG_FIELDS.filter(([k])=>!HLOG_NO_IMPORT.includes(k)).map(([k])=>String(log[k]??'').trim()));
+let hlImportShowOther=false;
 function renderHlogImport(){
   const row=document.getElementById('hlImportRow'),sel=document.getElementById('hlImport');
-  const rid=editingRecipe&&editingRecipe.id, title=document.getElementById('hTitle').value.trim();
+  const rid=editingRecipe&&editingRecipe.id, base=hlogBaseName(document.getElementById('hTitle').value);
   const list=histories.filter(x=>x.id!==editingHistoryId&&x.log&&HLOG_FIELDS.some(([k])=>!HLOG_NO_IMPORT.includes(k)&&x.log[k]!=null&&x.log[k]!==''))
     .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   if(!list.length){row.style.display='none';sel.innerHTML='';return;}
-  const same=list.filter(x=>(rid&&x.recipeId===rid)||(title&&(x.title||'').trim()===title));
-  const other=list.filter(x=>!same.includes(x));
+  // 값이 완전히 같은 기록은 가장 최근 것 하나만
+  const dedupe=(arr,max)=>{const seen=new Set(),out=[];for(const x of arr){const k=hlogKey(x.log);if(seen.has(k))continue;seen.add(k);out.push(x);if(out.length>=max)break;}return out;};
+  const isSame=x=>(rid&&x.recipeId===rid)||(base&&hlogBaseName(x.title)===base);
+  const same=dedupe(list.filter(isSame),5);
+  const otherAll=list.filter(x=>!isSame(x));
+  const showOther=hlImportShowOther||!same.length;
+  const other=showOther?dedupe(otherAll,same.length?15:10):[];
   const opt=x=>`<option value="${escapeHtml(x.id)}">${escapeHtml((x.date||'').slice(5).replace('-','/'))} · ${escapeHtml(x.title||x.recipeName||'')}${hlogSummary(x.log)?' — '+escapeHtml(hlogSummary(x.log)):''}</option>`;
   let html='<option value="">— 기록 선택 —</option>';
   if(same.length) html+=`<optgroup label="같은 빵">${same.map(opt).join('')}</optgroup>`;
-  if(other.length) html+=`<optgroup label="${same.length?'다른 기록':'최근 기록'}">${other.slice(0,30).map(opt).join('')}</optgroup>`;
+  if(other.length) html+=`<optgroup label="${same.length?'다른 빵':'최근 기록 (같은 빵 기록 없음)'}">${other.map(opt).join('')}</optgroup>`;
+  else if(otherAll.length) html+='<option value="__other">다른 빵 기록 보기…</option>';
   sel.innerHTML=html;row.style.display='';
 }
 document.getElementById('hlImport').addEventListener('change',e=>{
+  if(e.target.value==='__other'){hlImportShowOther=true;renderHlogImport();e.target.value='';try{e.target.showPicker&&e.target.showPicker();}catch(_){}return;}
   const src=histories.find(x=>x.id===e.target.value); e.target.value='';
   if(!src||!src.log) return;
   const fields=HLOG_FIELDS.filter(([k])=>!HLOG_NO_IMPORT.includes(k));
@@ -1239,7 +1250,7 @@ document.getElementById('hlImport').addEventListener('change',e=>{
   fields.forEach(([k,id])=>{document.getElementById(id).value=src.log[k]!=null?src.log[k]:'';});
   updateHlogLoss();updateHistoryDirty();
 });
-document.getElementById('hTitle').addEventListener('change',renderHlogImport);
+['input','change'].forEach(ev=>document.getElementById('hTitle').addEventListener(ev,renderHlogImport));
 
 // ── 저널 ↔ 레시피 연결 ──
 // 연결할 때 그 시점 배합을 함께 저장(스냅샷) → 레시피가 나중에 바뀌어도 회차별 배합이 남음
@@ -1559,6 +1570,7 @@ function openHistory(id,preset){
   fillRecipeSelect(editingRecipe.id);
   renderRecipeSnapInfo();
   renderNextSuggestion();
+  hlImportShowOther=false;
   renderHlogImport();
   document.getElementById('hDelete').style.display=h?'':'none';
   document.getElementById('hSameDay').style.display=h?'':'none';
