@@ -161,6 +161,8 @@
   .bake-log>summary::-webkit-details-marker{display:none}
   .bake-log>summary::before{content:'▸ ';color:var(--ink-4)}
   .bake-log[open]>summary::before{content:'▾ '}
+  .bl-import{display:flex;align-items:center;gap:8px;margin:6px 0 4px;padding:7px 10px;background:#f6efe3;border-radius:8px;font-size:12px;color:var(--ink-3)}
+  .bl-import select{flex:1;min-width:0;font-size:12.5px;padding:5px 8px;border:1px solid #e3d6bd;border-radius:6px;background:#fff;font-family:inherit;color:var(--ink-2)}
   .bl-group{font-size:11px;font-weight:700;color:var(--ink-3);margin:10px 0 6px;letter-spacing:.5px}
   .bl-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   .bl-loss{font-size:12.5px;color:var(--crust-dark);font-weight:600;padding:2px 0 6px}
@@ -798,6 +800,7 @@
     </div>
     <details class="bake-log" id="hLogBox">
       <summary>📋 굽기 기록 <span style="color:var(--ink-4);font-weight:400">(선택 · 회차 비교용)</span></summary>
+      <div class="bl-import" id="hlImportRow" style="display:none"><span style="white-space:nowrap">↩︎ 이전 기록에서 가져오기</span><select id="hlImport"></select></div>
       <div class="bl-group">반죽</div>
       <div class="bl-row3">
         <div class="field"><label>총 반죽 무게 (g)</label><input type="number" inputmode="decimal" id="hlDoughWeight" placeholder="700"></div>
@@ -1201,6 +1204,41 @@ function updateHlogLoss(){
   document.getElementById('hlLoss').textContent=loss==null?'—':`${loss}%`;
 }
 ['hlDoughWeight','hlBakedWeight'].forEach(id=>document.getElementById(id).addEventListener('input',updateHlogLoss));
+// 이전 기록의 굽기 기록 가져오기 — '구운 후 무게'(이번 결과)는 빼고 채움
+const HLOG_NO_IMPORT=['bakedWeight'];
+function hlogSummary(log){
+  const t=[];
+  if(log.doughWeight) t.push(log.doughWeight+'g');
+  if(log.bulkTime) t.push('1차 '+log.bulkTime);
+  if(log.proofTime||log.proofMethod) t.push('2차 '+[log.proofMethod,log.proofTime].filter(Boolean).join(' '));
+  if(log.preheat) t.push('예열 '+log.preheat);
+  const s=t.join(' · ');
+  return s.length>40?s.slice(0,40)+'…':s;
+}
+function renderHlogImport(){
+  const row=document.getElementById('hlImportRow'),sel=document.getElementById('hlImport');
+  const rid=editingRecipe&&editingRecipe.id, title=document.getElementById('hTitle').value.trim();
+  const list=histories.filter(x=>x.id!==editingHistoryId&&x.log&&HLOG_FIELDS.some(([k])=>!HLOG_NO_IMPORT.includes(k)&&x.log[k]!=null&&x.log[k]!==''))
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(!list.length){row.style.display='none';sel.innerHTML='';return;}
+  const same=list.filter(x=>(rid&&x.recipeId===rid)||(title&&(x.title||'').trim()===title));
+  const other=list.filter(x=>!same.includes(x));
+  const opt=x=>`<option value="${escapeHtml(x.id)}">${escapeHtml((x.date||'').slice(5).replace('-','/'))} · ${escapeHtml(x.title||x.recipeName||'')}${hlogSummary(x.log)?' — '+escapeHtml(hlogSummary(x.log)):''}</option>`;
+  let html='<option value="">— 기록 선택 —</option>';
+  if(same.length) html+=`<optgroup label="같은 빵">${same.map(opt).join('')}</optgroup>`;
+  if(other.length) html+=`<optgroup label="${same.length?'다른 기록':'최근 기록'}">${other.slice(0,30).map(opt).join('')}</optgroup>`;
+  sel.innerHTML=html;row.style.display='';
+}
+document.getElementById('hlImport').addEventListener('change',e=>{
+  const src=histories.find(x=>x.id===e.target.value); e.target.value='';
+  if(!src||!src.log) return;
+  const fields=HLOG_FIELDS.filter(([k])=>!HLOG_NO_IMPORT.includes(k));
+  const filled=fields.some(([,id])=>document.getElementById(id).value.trim()!=='');
+  if(filled&&!confirm('지금 적힌 굽기 기록을 선택한 기록 값으로 바꿀까요?\n(구운 후 무게는 그대로 둬요)')) return;
+  fields.forEach(([k,id])=>{document.getElementById(id).value=src.log[k]!=null?src.log[k]:'';});
+  updateHlogLoss();updateHistoryDirty();
+});
+document.getElementById('hTitle').addEventListener('change',renderHlogImport);
 
 // ── 저널 ↔ 레시피 연결 ──
 // 연결할 때 그 시점 배합을 함께 저장(스냅샷) → 레시피가 나중에 바뀌어도 회차별 배합이 남음
@@ -1279,6 +1317,7 @@ document.getElementById('hRecipe').addEventListener('change',e=>{
   else{const p=normalRecipes().find(x=>x.id===id);editingRecipe={id,name:p?p.name:'',snap:p?recipeSnapshot(p):null};}
   renderRecipeSnapInfo();
   renderNextSuggestion();
+  renderHlogImport();
 });
 
 // ── '다음엔' → 다음 회차 '이번 변경점'에 제안 (누를 때만 가져옴) ──
@@ -1519,6 +1558,7 @@ function openHistory(id,preset){
   fillRecipeSelect(editingRecipe.id);
   renderRecipeSnapInfo();
   renderNextSuggestion();
+  renderHlogImport();
   document.getElementById('hDelete').style.display=h?'':'none';
   document.getElementById('hSameDay').style.display=h?'':'none';
   historyOpenState=historyFormState();
