@@ -245,6 +245,18 @@
   .h-sub{font-size:12px;color:var(--ink-3);white-space:pre-wrap;word-break:break-word;margin:2px 0 4px;padding-left:8px;border-left:2px solid #ecd9b8}
   .h-sub b{color:var(--crust-dark);font-weight:700;margin-right:4px}
   .h-sub.next{border-left-color:#c9dcbf}
+  .h-next-sug{display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;padding:8px 10px;background:#f1f7ec;border:1px solid #c9dcbf;border-radius:8px;font-size:12px;color:var(--ink-3)}
+  .h-next-sug .t{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word}
+  .h-next-sug .t b{color:#4f6b42;font-weight:700;display:block;margin-bottom:2px}
+  .h-next-sug button{border:1px solid #b9d2ac;background:#fff;color:#4f6b42;font-size:11.5px;border-radius:100px;padding:3px 10px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap}
+  .h-next-sug button:hover{background:#e6f0df}
+  .h-sameday{border:1px solid #e6cfa8;background:#fff6e6;color:var(--crust-dark);font-size:12px;border-radius:100px;padding:5px 12px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap}
+  .h-sameday:hover{background:#fbebcf}
+  @media (max-width:480px){.h-sameday{padding:4px 8px;font-size:11px}}
+  .h-day{display:flex;flex-direction:column;gap:6px;padding:6px;border-radius:calc(var(--radius-sm) + 4px);background:#f6ead3}
+  .h-day .h-day-label{font-size:11px;color:var(--ink-4);padding:0 4px}
+  .h-day .history-item.same-day .h-left{visibility:hidden}
+  @media (max-width:720px){.h-day .history-item.same-day .h-left{display:none}.h-day .history-item.same-day .h-title{margin-top:0}}
   .h-sub.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .rh-txt{font-size:11.5px;color:var(--ink-3);margin-top:4px;white-space:pre-wrap;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .rh-txt b{color:var(--crust-dark);margin-right:3px}
@@ -760,6 +772,7 @@
       <h3 id="historyModalTitle">베이킹 기록 추가</h3>
       <span class="h-dirty-tip" id="hDirtyTip">● 저장 안 됨</span>
       <button class="h-del-link" id="hDelete" style="display:none">삭제</button>
+      <button type="button" class="h-sameday" id="hSameDay" style="display:none" title="날짜·온습도를 그대로 가져와 새 기록을 열어요">＋ 같은 날 빵</button>
       <button class="btn btn-primary" id="hSave">저장</button>
       <button class="modal-x" data-close title="닫기" aria-label="닫기">✕</button>
     </div>
@@ -812,9 +825,9 @@
         <div class="field"><label>수분 손실</label><div class="bl-loss" id="hlLoss">—</div></div>
       </div>
     </details>
-    <div class="field"><label>🔧 이번 변경점 <span style="color:var(--ink-4);font-weight:400" id="hChangesHint">(굽기 전 · 이전 회차 대비 바꾼 것)</span></label><textarea id="hChanges" style="min-height:90px" placeholder="예: 예열 270°C → 260°C, 컨벡션 9분 → 13분"></textarea></div>
+    <div class="field"><label>🔧 이번 변경점 <span style="color:var(--ink-4);font-weight:400" id="hChangesHint">(굽기 전 · 이전 회차 대비 바꾼 것)</span></label><div class="h-next-sug" id="hNextSug" style="display:none"></div><textarea id="hChanges" style="min-height:90px" placeholder="예: 예열 270°C → 260°C, 컨벡션 9분 → 13분"></textarea></div>
     <div class="field"><label>📝 결과·메모 <span style="color:var(--ink-4);font-weight:400">(굽고 나서 · 관찰, 맛, 문제점)</span></label><textarea id="hNote" style="min-height:240px" placeholder="예: 바닥 테두리 탐 없음, 속이 약간 떡짐, 껍질 바삭"></textarea></div>
-    <div class="field"><label style="display:flex;align-items:center;gap:8px">➡️ 다음엔 <span style="color:var(--ink-4);font-weight:400;flex:1">(다음 회차 새 기록의 '이번 변경점'에 자동으로 들어가요)</span><button type="button" class="h-tipsend" id="hNextToTip">💡 Tips로 보내기</button></label><textarea id="hNext" style="min-height:90px" placeholder="예: 컨벡션 13~15분으로 늘리기, 쿠프 더 깊게"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px">➡️ 다음엔 <span style="color:var(--ink-4);font-weight:400;flex:1">(같은 레시피 다음 회차 기록에서 '가져오기'로 쓸 수 있어요)</span><button type="button" class="h-tipsend" id="hNextToTip">💡 Tips로 보내기</button></label><textarea id="hNext" style="min-height:90px" placeholder="예: 컨벡션 13~15분으로 늘리기, 쿠프 더 깊게"></textarea></div>
     <div class="field">
       <label>사진 추가 <span style="color:var(--ink-4);font-weight:400">(클릭·끌어다 놓기·캡쳐 붙여넣기(⌘V) · 사진 클릭으로 대표 사진 지정)</span></label>
       <div class="photo-upload-area" id="photoUploadArea">
@@ -1265,31 +1278,35 @@ document.getElementById('hRecipe').addEventListener('change',e=>{
   else if(editingRecipeOrig&&id===editingRecipeOrig.id){editingRecipe={...editingRecipeOrig};}
   else{const p=normalRecipes().find(x=>x.id===id);editingRecipe={id,name:p?p.name:'',snap:p?recipeSnapshot(p):null};}
   renderRecipeSnapInfo();
-  if(!editingHistoryId) carryNextIntoChanges();
+  renderNextSuggestion();
 });
 
-// ── '다음엔' → 다음 회차 '이번 변경점' 자동 채우기 ──
-// 같은 레시피에 연결된 가장 최근 기록의 '다음엔'을 가져옴. 직접 쓴 내용은 덮어쓰지 않음.
-let autoChangesText=null;
+// ── '다음엔' → 다음 회차 '이번 변경점'에 제안 (누를 때만 가져옴) ──
+// 같은 레시피에 연결된, 이 기록 날짜 이전(같은 날 포함) 가장 최근 기록의 '다음엔'을 보여줌.
 function latestNextFor(recipeId){
   if(!recipeId) return null;
-  const list=histories.filter(x=>x.recipeId===recipeId&&x.id!==editingHistoryId).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const upto=document.getElementById('hDate').value||'9999';
+  const list=histories.filter(x=>x.recipeId===recipeId&&x.id!==editingHistoryId&&x.next&&(x.date||'')<=upto)
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const last=list[0];
-  return last&&last.next?{text:last.next,from:last}:null;
+  return last?{text:last.next,from:last}:null;
 }
-function carryNextIntoChanges(){
-  const ta=document.getElementById('hChanges'),hint=document.getElementById('hChangesHint');
-  const cur=ta.value;
-  if(cur.trim()!==''&&cur!==autoChangesText) return; // 직접 쓴 내용이 있으면 그대로
+function renderNextSuggestion(){
+  const box=document.getElementById('hNextSug');
   const n=latestNextFor(editingRecipe.id);
-  if(n){
-    ta.value=n.text;autoChangesText=n.text;
-    hint.textContent=`(${n.from.title||''} · ${(n.from.date||'').slice(5).replace('-','/')}의 '다음엔'에서 가져옴 · 실제로 바꾼 대로 고쳐 주세요)`;
-  } else {
-    if(cur===autoChangesText) ta.value='';
-    autoChangesText=null;hint.textContent='(굽기 전 · 이전 회차 대비 바꾼 것)';
-  }
+  const cur=document.getElementById('hChanges').value;
+  if(!n||cur.includes(n.text.trim())){box.style.display='none';box.innerHTML='';return;}
+  const d=(n.from.date||'').slice(5).replace('-','/');
+  box.innerHTML=`<div class="t"><b>📌 ${escapeHtml(n.from.title||n.from.recipeName||'')} · ${escapeHtml(d)}의 '다음엔'</b>${escapeHtml(n.text)}</div><button type="button" id="hNextSugUse">가져오기</button>`;
+  box.style.display='';
+  document.getElementById('hNextSugUse').addEventListener('click',()=>{
+    const ta=document.getElementById('hChanges');
+    ta.value=ta.value.trim()?ta.value.replace(/\s+$/,'')+'\n'+n.text:n.text;
+    renderNextSuggestion();updateHistoryDirty();ta.focus();
+  });
 }
+document.getElementById('hDate').addEventListener('change',renderNextSuggestion);
+document.getElementById('hChanges').addEventListener('input',renderNextSuggestion);
 
 // ── '다음엔' → Baking Tips로 보내기 ──
 document.getElementById('hNextToTip').addEventListener('click',()=>{
@@ -1348,7 +1365,15 @@ function renderHistory(){
     head.addEventListener('click',()=>{if(historyClosedMonths.has(g.key))historyClosedMonths.delete(g.key);else historyClosedMonths.add(g.key);renderHistory();});
     sec.appendChild(head);
     const ul=document.createElement('div');ul.className='history-list';
-    g.items.forEach(h=>ul.appendChild(historyCard(h)));
+    // 같은 날 기록은 한 묶음으로
+    const days=[];g.items.forEach(h=>{const d=days[days.length-1];if(d&&d.date===(h.date||''))d.items.push(h);else days.push({date:h.date||'',items:[h]});});
+    days.forEach(d=>{
+      if(d.items.length===1){ul.appendChild(historyCard(d.items[0]));return;}
+      const box=document.createElement('div');box.className='h-day';
+      box.innerHTML=`<div class="h-day-label">같은 날 ${d.items.length}종</div>`;
+      d.items.forEach((h,i)=>{const c=historyCard(h);if(i>0)c.classList.add('same-day');box.appendChild(c);});
+      ul.appendChild(box);
+    });
     sec.appendChild(ul);list.appendChild(sec);
   });
   // 메모가 3줄을 넘을 때만 '더보기' 표시
@@ -1465,17 +1490,16 @@ function renderPhotoPreviews(){
   }
   updateHistoryDirty();
 }
-function openHistory(id){
+function openHistory(id,preset){
   editingHistoryId=id;const h=id?histories.find(x=>x.id===id):null;
   document.getElementById('historyModalTitle').textContent=h?'기록 수정':'베이킹 기록 추가';
-  document.getElementById('hDate').value=h?h.date:new Date().toISOString().slice(0,10);
+  document.getElementById('hDate').value=h?h.date:(preset&&preset.date)||new Date().toISOString().slice(0,10);
   document.getElementById('hRating').value=h?String(h.rating||0):'0';
   document.getElementById('hTitle').value=h?(h.title||''):'';
-  document.getElementById('hEnv').value=h?(h.env||''):'';
+  document.getElementById('hEnv').value=h?(h.env||''):((preset&&preset.env)||'');
   document.getElementById('hNote').value=h?(h.note||''):'';
   document.getElementById('hChanges').value=h?(h.changes||''):'';
   document.getElementById('hNext').value=h?(h.next||''):'';
-  autoChangesText=null;
   const log=(h&&h.log)||{};
   HLOG_FIELDS.forEach(([k,id])=>{document.getElementById(id).value=log[k]!=null?log[k]:'';});
   document.getElementById('hLogBox').open=HLOG_FIELDS.some(([k])=>log[k]!=null&&log[k]!=='');
@@ -1483,8 +1507,9 @@ function openHistory(id){
   editingPhotos=h?(h.photos||[]).slice():[];
   editingMainPhotoIdx=h?(h.mainPhotoIdx||0):0;
   renderPhotoPreviews();
-  // 레시피 연결: 기존 기록은 저장된 연결, 새 기록은 계산기에서 지금 불러온 레시피를 미리 선택
+  // 레시피 연결: 기존 기록은 저장된 연결, 새 기록은 계산기에서 지금 불러온 레시피를 미리 선택 (같은 날 빵 추가는 비워 둠)
   if(h){ editingRecipe={id:h.recipeId||'',name:h.recipeName||'',snap:h.recipeSnap||null}; }
+  else if(preset){ editingRecipe={id:'',name:'',snap:null}; }
   else{
     const pid=(typeof calc!=='undefined'&&calcMode==='normal'&&calc.loadedPresetId)||'';
     const p=pid?normalRecipes().find(x=>x.id===pid):null;
@@ -1493,8 +1518,9 @@ function openHistory(id){
   editingRecipeOrig={...editingRecipe};
   fillRecipeSelect(editingRecipe.id);
   renderRecipeSnapInfo();
-  if(!h) carryNextIntoChanges();
+  renderNextSuggestion();
   document.getElementById('hDelete').style.display=h?'':'none';
+  document.getElementById('hSameDay').style.display=h?'':'none';
   historyOpenState=historyFormState();
   openModal('historyModal');
   updateHistoryDirty();
@@ -1517,9 +1543,9 @@ document.getElementById('addHistoryBtn').addEventListener('click',()=>openHistor
   }
   if(changed){ LS.set('baking.history',histories); renderHistory(); console.log('[server] Journal 사진 서버 이전 완료'); }
 })();
-document.getElementById('hSave').addEventListener('click',()=>{
-  const title=document.getElementById('hTitle').value.trim();if(!title){alert('구운 빵의 이름을 입력하세요');return;}
-  if(photoUploading>0){alert('사진을 업로드하는 중이에요. 잠시 후 다시 저장해주세요.');return;}
+function saveHistoryForm(){
+  const title=document.getElementById('hTitle').value.trim();if(!title){alert('구운 빵의 이름을 입력하세요');return false;}
+  if(photoUploading>0){alert('사진을 업로드하는 중이에요. 잠시 후 다시 저장해주세요.');return false;}
   const data={date:document.getElementById('hDate').value||new Date().toISOString().slice(0,10),rating:parseInt(document.getElementById('hRating').value,10)||0,title,env:document.getElementById('hEnv').value.trim(),note:document.getElementById('hNote').value,changes:document.getElementById('hChanges').value.trim()||undefined,next:document.getElementById('hNext').value.trim()||undefined,photos:editingPhotos,mainPhotoIdx:editingMainPhotoIdx};
   const log={};HLOG_FIELDS.forEach(([k,id])=>{const v=document.getElementById(id).value.trim();if(v!=='')log[k]=v;});
   data.log=Object.keys(log).length?log:undefined;
@@ -1530,6 +1556,17 @@ document.getElementById('hSave').addEventListener('click',()=>{
   historyOpenState=historyFormState(); // 저장했으니 닫을 때 확인 안 함
   if(editingHistoryId){histories=histories.map(h=>h.id===editingHistoryId?{...h,...data}:h);}else{histories.push({id:uid(),...data});}
   LS.set('baking.history',histories);closeModal('historyModal');renderHistory();renderRecipeHist();
+  return true;
+}
+document.getElementById('hSave').addEventListener('click',saveHistoryForm);
+// ── 같은 날 다른 빵: 날짜·온습도만 가져와 새 기록 (레시피는 비워 둠) ──
+document.getElementById('hSameDay').addEventListener('click',()=>{
+  const preset={date:document.getElementById('hDate').value,env:document.getElementById('hEnv').value};
+  if(historyIsDirty()){
+    if(!confirm('이 기록을 저장하고 같은 날 새 기록을 열까요?'))return;
+    if(!saveHistoryForm())return;
+  } else closeModal('historyModal');
+  setTimeout(()=>openHistory(null,preset),50);
 });
 document.getElementById('hDelete').addEventListener('click',()=>{
   if(!editingHistoryId)return;if(!confirm('이 기록을 삭제할까요?'))return;
