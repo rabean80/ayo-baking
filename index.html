@@ -602,8 +602,8 @@
   <section class="panel active" id="panel-calc">
     <!-- ===== 단가계산 시작: 서브탭 ===== -->
     <div class="calc-modetabs" style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
-      <button class="btn btn-ghost calc-modetab active" id="calcModeNormal">일반 배합</button>
-      <button class="btn btn-ghost calc-modetab" id="calcModeCost">💰 단가 계산</button>
+      <button class="btn btn-ghost" id="calcLoadPreset">📚 내 레시피</button>
+      <button class="btn btn-ghost" id="calcPartsBtn">🧁 부재료</button>
       <button class="btn btn-ghost" id="priceBookLoadBtn" style="display:none" title="이름이 같은 재료에 저장된 단가를 채워넣어요">📖 단가 불러오기</button>
     </div>
     <!-- ===== 단가계산 끝: 서브탭 ===== -->
@@ -614,11 +614,12 @@
           <div class="section-title calc-title" id="calcTitle">새 레시피</div>
           <div class="section-sub calc-title-sub">배합 (Baker's percentage)</div>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost" id="calcLoadPreset">📚 내 레시피</button>
-          <button class="btn btn-ghost" id="calcPartsBtn">🧁 부재료</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-ghost" id="calcSavePreset">💾 저장</button>
           <button class="btn btn-ghost" id="calcPrint">🖨 프린트</button>
+          <span style="width:1px;align-self:stretch;background:#e6dac4;margin:4px 2px"></span>
+          <button class="btn btn-ghost calc-modetab active" id="calcModeNormal">일반 배합</button>
+          <button class="btn btn-ghost calc-modetab" id="calcModeCost">💰 단가 계산</button>
         </div>
       </div>
 
